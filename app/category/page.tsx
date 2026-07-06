@@ -5,10 +5,20 @@ import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { Trash2 } from "lucide-react";
-import { getCategories } from "../query/categories";
+import { useGetCategories } from "../query/useGetCategories";
+import { useDeleteCategory } from "../mutation/useDeleteCategory";
 
 export default function CategoryPage() {
-   const { data: categories = [] } = getCategories();
+   const { data: categories = [] } = useGetCategories();
+   const deleteCategory = useDeleteCategory();
+
+   function handleAddCategory() {
+      // Implement the logic to add a new category
+   }
+
+   function handleDeleteCategory(categoryId: number) {
+      deleteCategory.mutate(categoryId);
+   }
 
    return (
       <section className="flex flex-col h-screen">
@@ -28,7 +38,7 @@ export default function CategoryPage() {
             {categories?.map((category: { id: number; name: string }) => (
                <Card key={category.id} className="flex flex-row justify-between items-center w-full p-4">
                   <span>{category.name}</span>
-                  <Button variant="destructive" size="sm">
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteCategory(category.id)}>
                      <Trash2 />
                   </Button>
                </Card>
