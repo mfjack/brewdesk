@@ -5,7 +5,7 @@ import { useState } from "react";
 import { MenuList } from "./_components/menu-list";
 import { OrderPanel, TCategory, TProduct } from "./_components/order-panel";
 import { Separator } from "@/_components/ui/separator";
-import { getCategories } from "../query/product";
+import { getCategories } from "../query/categories";
 
 export default function OrderPage() {
    const [selectedCategory, setSelectedCategory] = useState<TCategory | null>(null);

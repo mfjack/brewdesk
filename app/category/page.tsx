@@ -5,7 +5,7 @@ import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { Trash2 } from "lucide-react";
-import { getCategories } from "../query/product";
+import { getCategories } from "../query/categories";
 
 export default function CategoryPage() {
    const { data: categories = [] } = getCategories();
