@@ -7,13 +7,26 @@ import { Separator } from "@/_components/ui/separator";
 import { Trash2 } from "lucide-react";
 import { useGetCategories } from "../query/useGetCategories";
 import { useDeleteCategory } from "../mutation/useDeleteCategory";
+import { useCreateCategory } from "../mutation/useCreateCategory";
+import { useForm } from "react-hook-form";
+
+interface TFormData {
+   name: string;
+}
 
 export default function CategoryPage() {
-   const { data: categories = [] } = useGetCategories();
+   const { data: categories } = useGetCategories();
    const deleteCategory = useDeleteCategory();
+   const createCategory = useCreateCategory();
 
-   function handleAddCategory() {
-      // Implement the logic to add a new category
+   const { register, handleSubmit, reset } = useForm<TFormData>();
+
+   function handleCreateCategory(data: TFormData) {
+      createCategory.mutate(data.name);
+
+      reset({
+         name: "",
+      });
    }
 
    function handleDeleteCategory(categoryId: number) {
@@ -29,12 +42,14 @@ export default function CategoryPage() {
 
          <Separator className="h-px w-full" />
 
-         <div className="flex items-center flex-row gap-2 w-1/3 p-4">
-            <Input type="text" placeholder="Nome da categoria" />
-            <Button size="lg">Adicionar categoria</Button>
+         <div className="flex items-center flex-row gap-2 lg:w-1/3 w-full p-4">
+            <Input type="text" placeholder="Nome da categoria" {...register("name")} />
+            <Button size="lg" onClick={handleSubmit(handleCreateCategory)}>
+               {createCategory.isPending ? "Adicionando..." : "Adicionar categoria"}
+            </Button>
          </div>
 
-         <div className="flex gap-3 w-full p-4">
+         <div className="p-4 flex gap-2 flex-col">
             {categories?.map((category: { id: number; name: string }) => (
                <Card key={category.id} className="flex flex-row justify-between items-center w-full p-4">
                   <span>{category.name}</span>
