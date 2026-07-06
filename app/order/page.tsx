@@ -5,17 +5,11 @@ import { useState } from "react";
 import { MenuList } from "./_components/menu-list";
 import { OrderPanel, TCategory, TProduct } from "./_components/order-panel";
 import { Separator } from "@/_components/ui/separator";
+import { getCategories } from "../query/product";
 
 export default function OrderPage() {
    const [selectedCategory, setSelectedCategory] = useState<TCategory | null>(null);
-
-   const { data: categories } = useQuery({
-      queryKey: ["categories"],
-      queryFn: async () => {
-         const response = await fetch("http://localhost:8080/categories");
-         return response.json();
-      },
-   });
+   const { data: categories = [] } = getCategories();
 
    const { data: products } = useQuery({
       queryKey: ["products"],
