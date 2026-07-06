@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { MenuList } from "./_components/menu-list";
 import { OrderPanel, TCategory, TProduct } from "./_components/order-panel";
+import { Separator } from "@/_components/ui/separator";
 
-export function Order() {
+export default function OrderPage() {
    const [selectedCategory, setSelectedCategory] = useState<TCategory | null>(null);
 
    const { data: categories } = useQuery({
@@ -34,14 +35,14 @@ export function Order() {
    }
 
    return (
-      <section className="flex gap-4 w-full">
+      <section className="flex flex-row h-full">
          <OrderPanel
             categories={categories || []}
-            products={products || []}
             selectedCategory={selectedCategory}
             handleCategoryClick={handleCategoryClick}
             filteredProducts={filteredProducts}
          />
+         <Separator orientation="vertical" className="w-px bg-border" />
          <MenuList />
       </section>
    );

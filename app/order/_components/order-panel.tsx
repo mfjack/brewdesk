@@ -5,7 +5,6 @@ import { Separator } from "@/_components/ui/separator";
 
 export interface TOrderPanel {
    categories: TCategory[];
-   products: TProduct[];
    selectedCategory: TCategory | null;
    handleCategoryClick: (categoryId: number) => void;
    filteredProducts: TProduct[] | undefined;
@@ -26,19 +25,20 @@ export interface TProduct {
    };
 }
 
-export function OrderPanel({ categories, products, selectedCategory, handleCategoryClick, filteredProducts }: TOrderPanel) {
+export function OrderPanel({ categories, selectedCategory, handleCategoryClick, filteredProducts }: TOrderPanel) {
    return (
-      <div>
-         <div className="p-6 flex flex-col gap-2">
-            <p className="text-sm text-muted-foreground">Abra uma comanda e monte o pedido do cliente.</p>
-
-            <div className="flex gap-2 max-w-105">
+      <section className="flex flex-col h-screen w-full">
+         <div className="flex flex-col gap-2 p-4 bg-muted/50">
+            <p>Abra uma comanda e monte o pedido do cliente.</p>
+            <div className="flex items-center flex-row gap-2 w-1/2">
                <Input type="text" placeholder="Nome do cliente" />
-               <Button>Abrir Comanda</Button>
+               <Button size="lg">Abrir Comanda</Button>
             </div>
          </div>
-         <Separator />
-         <div className="flex gap-2 px-6 mt-2">
+
+         <Separator className="h-px bg-border" />
+
+         <div className="flex gap-2 p-4">
             {categories?.map((category: TCategory) => (
                <Button
                   key={category.id}
@@ -49,15 +49,18 @@ export function OrderPanel({ categories, products, selectedCategory, handleCateg
                </Button>
             ))}
          </div>
-         <div className="flex flex-wrap gap-6 px-6 mt-2">
-            {filteredProducts?.map((product: TProduct) => (
-               <Card key={product.id} className="w-96 p-4">
-                  <CardTitle className="text-lg font-bold">{product.name}</CardTitle>
-                  <CardContent className="text-sm font-bold p-0">R${product.price.toFixed(2)}</CardContent>
-                  <Button className="w-full">Adicionar</Button>
-               </Card>
-            ))}
+
+         <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+            <div className="flex flex-wrap gap-4 p-4">
+               {filteredProducts?.map((product: TProduct) => (
+                  <Card key={product.id} className="w-75 p-4">
+                     <CardTitle className="text-lg font-bold">{product.name}</CardTitle>
+                     <CardContent className="text-sm font-bold p-0">R${product.price.toFixed(2)}</CardContent>
+                     <Button size="lg">Adicionar</Button>
+                  </Card>
+               ))}
+            </div>
          </div>
-      </div>
+      </section>
    );
 }

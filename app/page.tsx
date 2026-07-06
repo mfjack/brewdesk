@@ -1,5 +1,3 @@
-import { Order } from "./order/order";
-
 export default function Home() {
-   return <Order />;
+   return <h1>Olá mundo!</h1>;
 }
