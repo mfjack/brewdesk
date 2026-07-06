@@ -5,9 +5,9 @@ import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { Trash2 } from "lucide-react";
-import { useGetCategories } from "../query/useGetCategories";
-import { useDeleteCategory } from "../mutation/useDeleteCategory";
-import { useCreateCategory } from "../mutation/useCreateCategory";
+import { useGetCategories } from "./query/useGetCategories";
+import { useDeleteCategory } from "./mutation/useDeleteCategory";
+import { useCreateCategory } from "./mutation/useCreateCategory";
 import { useForm } from "react-hook-form";
 
 interface TFormData {
@@ -42,12 +42,12 @@ export default function CategoryPage() {
 
          <Separator className="h-px w-full" />
 
-         <div className="flex items-center flex-row gap-2 lg:w-1/3 w-full p-4">
+         <form className="flex items-center flex-row gap-2 lg:w-1/3 w-full p-4" onSubmit={handleSubmit(handleCreateCategory)}>
             <Input type="text" placeholder="Nome da categoria" {...register("name")} />
-            <Button size="lg" onClick={handleSubmit(handleCreateCategory)}>
+            <Button size="lg" type="submit">
                {createCategory.isPending ? "Adicionando..." : "Adicionar categoria"}
             </Button>
-         </div>
+         </form>
 
          <div className="p-4 flex gap-2 flex-col">
             {categories?.map((category: { id: number; name: string }) => (
