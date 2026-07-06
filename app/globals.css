@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@source "../**/*.{js,ts,jsx,tsx,mdx}";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -128,6 +128,6 @@
       cursor: pointer;
    }
    html {
-      @apply --font-sans;
+      @apply font-sans;
    }
 }
