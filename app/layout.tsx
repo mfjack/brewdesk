@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 import { ClientProvider } from "./client-provider";
 import { cn } from "@/_lib/utils";

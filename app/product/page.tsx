@@ -9,8 +9,9 @@ import { useGetProducts } from "./query/useGetProducts";
 import { Card } from "@/_components/ui/card";
 import { Trash2 } from "lucide-react";
 import { useGetCategories } from "../category/query/useGetCategories";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import { useDeleteProduct } from "./mutation/useDeleteProduct";
+import type { TCategory, TProduct } from "../order/interface";
 
 export default function ProductPage() {
    const createProduct = useCreateProduct();
@@ -53,7 +54,7 @@ export default function ProductPage() {
                         <SelectValue placeholder="Categoria" />
                      </SelectTrigger>
                      <SelectContent>
-                        {categories?.map((category: any) => (
+                        {categories?.map((category: TCategory) => (
                            <SelectItem key={category.id} value={String(category.id)}>
                               {category.name}
                            </SelectItem>
@@ -69,7 +70,7 @@ export default function ProductPage() {
          </form>
 
          <div className="p-4 flex gap-2 flex-col">
-            {products?.map((product: any) => (
+            {products?.map((product: TProduct) => (
                <Card key={product.id} className="flex flex-row justify-between items-center w-full p-4">
                   <div className="flex flex-col">
                      <span>{product.name}</span>

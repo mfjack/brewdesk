@@ -7,7 +7,6 @@ import { useGetOrder } from "./query/useGetOrder";
 import { TOrderResponse } from "../order/interface";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
-import { cn } from "@/_lib/utils";
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
 
 export default function KitchenPage() {
