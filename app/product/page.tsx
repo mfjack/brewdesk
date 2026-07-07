@@ -37,7 +37,7 @@ export default function ProductPage() {
       <section className="flex flex-col h-screen">
          <div className="flex flex-col p-4">
             <h1 className="text-xl font-bold">Produtos</h1>
-            <p className="text-sm text-muted-foreground">Gerencie os itens do cardápio da cafeteria.</p>
+            <p className="text-sm text-muted-foreground">Gerencie os itens do cardápio.</p>
          </div>
 
          <Separator className="h-px w-full" />
