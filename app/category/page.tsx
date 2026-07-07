@@ -9,10 +9,7 @@ import { useGetCategories } from "./query/useGetCategories";
 import { useDeleteCategory } from "./mutation/useDeleteCategory";
 import { useCreateCategory } from "./mutation/useCreateCategory";
 import { useForm } from "react-hook-form";
-
-interface TFormData {
-   name: string;
-}
+import { TFormData } from "./interface";
 
 export default function CategoryPage() {
    const { data: categories } = useGetCategories();
