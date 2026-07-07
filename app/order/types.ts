@@ -42,7 +42,7 @@ export interface TOrderItem {
 export interface TOrderResponse {
    id: number;
    customerName: string;
-   status: "PENDING" | "IN_PROGRESS" | "READY";
+   status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED";
    createdAt: string;
    total: number;
    orderItems: TOrderItem[];

@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 
 export interface TUpdateOrderStatus {
    orderId: number;
-   status: "PENDING" | "IN_PROGRESS" | "READY";
+   status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED";
 }
 
 export function useUpdateOrderStatus() {
