@@ -3,6 +3,7 @@ import { Card, CardContent, CardTitle } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { TCategory, TOrderPanel, TProduct } from "../interface";
+import { formatCurrency } from "@/_lib/format-currency";
 
 export function OrderPanel({
    categories,
@@ -51,7 +52,7 @@ export function OrderPanel({
                {filteredProducts?.map((product: TProduct) => (
                   <Card key={product.id} className="w-75 p-4">
                      <CardTitle className="text-lg font-bold">{product.name}</CardTitle>
-                     <CardContent className="text-sm font-bold p-0">R$ {product.price.toFixed(2)}</CardContent>
+                     <CardContent className="text-sm font-bold p-0">{formatCurrency(product.price)}</CardContent>
                      <Button size="lg" onClick={() => onAddProduct(product)} disabled={!hasActiveOrder}>
                         Adicionar
                      </Button>
