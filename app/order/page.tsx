@@ -10,7 +10,7 @@ import { useCreateOrder } from "./mutation/useCreateOrder";
 import { useAddOrderItem } from "./mutation/useAddOrderItem";
 import { useRemoveOrderItem } from "./mutation/useRemoveOrderItem";
 import { useUpdateOrderStatus } from "./mutation/useUpdateOrderStatus";
-import { TCategory, TOrderResponse, TProduct } from "./types";
+import { TCategory, TOrderResponse, TProduct } from "./interface";
 
 export default function OrderPage() {
    const [selectedCategory, setSelectedCategory] = useState<TCategory | null>(null);

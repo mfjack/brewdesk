@@ -2,7 +2,7 @@ import { Button } from "@/_components/ui/button";
 import { Card, CardContent, CardTitle } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
-import { TCategory, TOrderPanel, TProduct } from "../types";
+import { TCategory, TOrderPanel, TProduct } from "../interface";
 
 export function OrderPanel({
    categories,

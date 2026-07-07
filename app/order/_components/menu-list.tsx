@@ -3,7 +3,7 @@ import { ShoppingBag, Send } from "lucide-react";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Card } from "@/_components/ui/card";
-import { TMenuList, TOrderItem, TOrderResponse } from "../types";
+import { TMenuList, TOrderItem, TOrderResponse } from "../interface";
 
 export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovingItem }: TMenuList) {
    const formatCurrency = (value: number) =>

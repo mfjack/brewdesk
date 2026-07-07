@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
 import { useGetOrder } from "./query/useGetOrder";
-import { TOrderResponse } from "../order/types";
+import { TOrderResponse } from "../order/interface";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { cn } from "@/_lib/utils";

@@ -23,8 +23,6 @@ export default function ProductPage() {
    function handleCreateProduct(data: TCreateProduct) {
       createProduct.mutate({
          ...data,
-         price: Number(data.price),
-         categoryId: Number(data.categoryId),
       });
       reset();
    }
