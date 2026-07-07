@@ -4,14 +4,9 @@ import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Card } from "@/_components/ui/card";
 import { TMenuList, TOrderItem } from "../interface";
+import { formatCurrency } from "@/_lib/format-currency";
 
 export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovingItem }: TMenuList) {
-   const formatCurrency = (value: number) =>
-      new Intl.NumberFormat("pt-BR", {
-         style: "currency",
-         currency: "BRL",
-      }).format(value);
-
    return (
       <div className="h-screen w-1/2">
          <div className="flex flex-col h-full">
