@@ -8,6 +8,7 @@ import { TOrderResponse } from "../order/interface";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
+import { Check, HandPlatter, Play } from "lucide-react";
 
 export default function KitchenPage() {
    const queryClient = useQueryClient();
@@ -20,11 +21,12 @@ export default function KitchenPage() {
 
    const columns = [
       {
-         title: "Pendente",
+         title: "Aguardando",
          orders: pendingOrders,
          badgeClassName: "bg-yellow-500/15 text-yellow-600 border-yellow-500/20",
          emptyMessage: "Nenhum pedido pendente.",
          actionLabel: "Iniciar Preparo",
+         icon: <Play />,
       },
       {
          title: "Preparando",
@@ -32,13 +34,15 @@ export default function KitchenPage() {
          badgeClassName: "bg-blue-500/15 text-blue-500 border-blue-500/20",
          emptyMessage: "Nenhum pedido em preparo.",
          actionLabel: "Marcar como pronto",
+         icon: <Check />,
       },
       {
          title: "Pronto",
          orders: readyOrders,
          badgeClassName: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20",
          emptyMessage: "Nenhum pedido pronto.",
-         actionLabel: "Entregue",
+         actionLabel: "Pronto para Entrega",
+         icon: <HandPlatter />,
       },
    ] as const;
 
@@ -114,7 +118,8 @@ export default function KitchenPage() {
                               )}
 
                               <Button size={"lg"} onClick={() => handleAdvanceStatus(order)} disabled={updateOrderStatus.isPending}>
-                                 {column.actionLabel}
+                                 <span>{column.icon}</span>
+                                 <span>{column.actionLabel}</span>
                               </Button>
                            </Card>
                         ))
