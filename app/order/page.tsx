@@ -98,13 +98,15 @@ export default function OrderPage() {
             onAddProduct={handleAddProduct}
          />
          <Separator orientation="vertical" className="w-px bg-border" />
-         <MenuList
-            order={currentOrder}
-            onRemoveItem={handleRemoveItem}
-            onSendOrder={handleSendOrder}
-            isSending={updateOrderStatus.isPending}
-            isRemovingItem={removeOrderItem.isPending}
-         />
+         {currentOrder && (
+            <MenuList
+               order={currentOrder}
+               onRemoveItem={handleRemoveItem}
+               onSendOrder={handleSendOrder}
+               isSending={updateOrderStatus.isPending}
+               isRemovingItem={removeOrderItem.isPending}
+            />
+         )}
       </section>
    );
 }
