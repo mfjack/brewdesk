@@ -68,33 +68,29 @@ export function OrderPanel({
 
          <Separator className="h-px bg-border" />
 
-         <div className="p-4">
-            <div className="flex gap-2 p-4 rounded-xl">
-               {categories?.map((category: TCategory) => (
-                  <Button
-                     key={category.id}
-                     onClick={() => handleCategoryClick(category.id)}
-                     variant={selectedCategory?.id === category.id ? "default" : "outline"}
-                  >
-                     {category.name}
-                  </Button>
-               ))}
-            </div>
+         <div className="flex gap-2 p-4 rounded-xl">
+            {categories?.map((category: TCategory) => (
+               <Button
+                  key={category.id}
+                  onClick={() => handleCategoryClick(category.id)}
+                  variant={selectedCategory?.id === category.id ? "default" : "outline"}
+               >
+                  {category.name}
+               </Button>
+            ))}
          </div>
 
-         <div className="px-4 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-            <div className="p-4 rounded-xl ">
-               <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                  {filteredProducts?.map((product: TProduct) => (
-                     <Card key={product.id} className="p-4">
-                        <CardTitle className="text-lg font-bold">{product.name}</CardTitle>
-                        <CardContent className="text-sm font-bold p-0">{formatCurrency(product.price)}</CardContent>
-                        <Button size="lg" onClick={() => onAddProduct(product)} disabled={!hasActiveOrder}>
-                           Adicionar
-                        </Button>
-                     </Card>
-                  ))}
-               </div>
+         <div className="rounded-xl flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+            <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+               {filteredProducts?.map((product: TProduct) => (
+                  <Card key={product.id} className="p-4">
+                     <CardTitle className="text-lg font-bold">{product.name}</CardTitle>
+                     <CardContent className="text-sm font-bold p-0">{formatCurrency(product.price)}</CardContent>
+                     <Button size="lg" onClick={() => onAddProduct(product)} disabled={!hasActiveOrder}>
+                        Adicionar
+                     </Button>
+                  </Card>
+               ))}
             </div>
          </div>
       </section>
