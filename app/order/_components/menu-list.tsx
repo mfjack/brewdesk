@@ -1,10 +1,11 @@
-import { ShoppingBag, Send, Trash2 } from "lucide-react";
+import { ShoppingBag, Send, Trash2, NotebookPen } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Card } from "@/_components/ui/card";
 import { TMenuList, TOrderItem } from "../interface";
 import { formatCurrency } from "@/_lib/format-currency";
+import { Input } from "@/_components/ui/input";
 
 export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovingItem }: TMenuList) {
    return (
@@ -51,6 +52,11 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                            ))}
                         </div>
                      )}
+                  </div>
+
+                  <div className="relative flex items-center w-full px-4">
+                     <NotebookPen className="absolute left-7 h-4 w-4 text-muted-foreground" />
+                     <Input type="text" placeholder="Adicionar observação..." className="pl-9" />
                   </div>
 
                   <div className="flex flex-row items-center justify-between p-4 w-full">
