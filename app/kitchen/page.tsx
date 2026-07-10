@@ -99,8 +99,8 @@ export default function KitchenPage() {
                            <Card key={order.id} className="flex flex-col gap-2 p-4">
                               <div className="flex justify-between gap-2">
                                  <div className="flex gap-2 items-center">
-                                    <span className="font-bold text-lg">{order.customerName}</span>
-                                    <span className="text-foreground">#{order.id}</span>
+                                    <span className="font-bold text-sm">{order.customerName}</span>
+                                    <span className="text-foreground text-xs">#{order.id}</span>
                                  </div>
 
                                  <Badge className={column.badgeClassName}>{getStatusLabel(order.status)}</Badge>
@@ -110,8 +110,8 @@ export default function KitchenPage() {
                                  <div className="flex flex-col gap-2">
                                     {order.orderItems.map((item: TOrderResponse["orderItems"][number]) => (
                                        <div key={item.id} className="flex flex-row gap-2">
-                                          <span className="text-base">{item.quantity}</span>
-                                          <span className="text-base">{item.product.name}</span>
+                                          <span className="text-base font-medium">{item.quantity}</span>
+                                          <span className="text-base font-medium">{item.product.name}</span>
                                        </div>
                                     ))}
                                  </div>

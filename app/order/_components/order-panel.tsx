@@ -83,10 +83,10 @@ export function OrderPanel({
          </div>
 
          <div className="rounded-xl flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-            <div className="p-4 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="p-4 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                {filteredProducts?.map((product: TProduct) => (
                   <Card key={product.id} className="p-4">
-                     <CardTitle className="text-lg font-bold">{product.name}</CardTitle>
+                     <CardTitle className="text-sm font-bold">{product.name}</CardTitle>
                      <CardContent className="text-sm font-bold p-0">{formatCurrency(product.price)}</CardContent>
                      <Button size="lg" onClick={() => onAddProduct(product)} disabled={!hasActiveOrder}>
                         Adicionar
