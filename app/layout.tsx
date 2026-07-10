@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClientProvider } from "./client-provider";
 import { cn } from "@/_lib/utils";
-import { Saira } from "next/font/google";
+import { Montserrat } from "next/font/google";
 
-const saira = Saira({
+const montserrat = Montserrat({
    subsets: ["latin"],
-   variable: "--font-saira",
+   variable: "--font-montserrat",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export default function RootLayout({
    children: React.ReactNode;
 }>) {
    return (
-      <html lang="pt-BR" className={cn("h-full", "antialiased", saira.variable)}>
+      <html lang="pt-BR" className={cn("h-full", "antialiased", montserrat.variable)}>
          <body className="min-h-full flex flex-col">
             <ClientProvider>{children}</ClientProvider>
          </body>

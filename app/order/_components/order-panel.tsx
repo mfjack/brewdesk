@@ -29,8 +29,8 @@ export function OrderPanel({
 
    return (
       <section className="flex flex-col h-screen w-full">
-         <div className="flex flex-col p-4">
-            <div className="flex items-center justify-between w-full">
+         <div className="flex flex-col p-4 w-full">
+            <div className="flex items-center justify-between">
                <div>
                   <h1 className="text-2xl font-bold">PDV</h1>
                   <p className="text-sm text-muted-foreground">Registre produtos, monte pedidos e finalize vendas.</p>
@@ -39,7 +39,9 @@ export function OrderPanel({
                   <Plus />
                   Novo pedido
                </Button>
+            </div>
 
+            <form>
                <Dialog open={isOpenOrderDialogOpen} onOpenChange={setIsOpenOrderDialogOpen}>
                   <DialogContent className="sm:max-w-sm">
                      <DialogHeader>
@@ -63,12 +65,12 @@ export function OrderPanel({
                      </DialogFooter>
                   </DialogContent>
                </Dialog>
-            </div>
+            </form>
          </div>
 
          <Separator className="h-px bg-border" />
 
-         <div className="flex gap-2 p-4 rounded-xl">
+         <div className="flex gap-3 p-4 rounded-xl">
             {categories?.map((category: TCategory) => (
                <Button
                   key={category.id}
@@ -81,7 +83,7 @@ export function OrderPanel({
          </div>
 
          <div className="rounded-xl flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-            <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <div className="p-4 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                {filteredProducts?.map((product: TProduct) => (
                   <Card key={product.id} className="p-4">
                      <CardTitle className="text-lg font-bold">{product.name}</CardTitle>

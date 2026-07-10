@@ -1,4 +1,4 @@
-import { ShoppingBag, Send } from "lucide-react";
+import { ShoppingBag, Send, Trash2 } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
@@ -32,7 +32,7 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                            Adicione itens do cardápio à comanda.
                         </p>
                      ) : (
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-1">
                            {order.orderItems.map((item: TOrderItem) => (
                               <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3">
                                  <div className="flex items-center gap-6">
@@ -44,8 +44,8 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                                     </div>
                                  </div>
 
-                                 <Button size="sm" onClick={() => onRemoveItem(item.id)} disabled={isRemovingItem}>
-                                    Remover
+                                 <Button size="icon-sm" onClick={() => onRemoveItem(item.id)} disabled={isRemovingItem}>
+                                    <Trash2 />
                                  </Button>
                               </Card>
                            ))}
@@ -58,9 +58,14 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                      <span className="px-4 py-2 text-lg font-bold">{formatCurrency(order.total)}</span>
                   </div>
 
-                  <Button className="mx-4 mb-4" size="lg" onClick={onSendOrder} disabled={isSending || order.orderItems.length === 0}>
+                  <Button
+                     className="mx-4 mb-4 flex gap-3"
+                     size="lg"
+                     onClick={onSendOrder}
+                     disabled={isSending || order.orderItems.length === 0}
+                  >
                      <Send />
-                     Enviar pedido
+                     Finalizar pedido
                   </Button>
                </>
             )}
