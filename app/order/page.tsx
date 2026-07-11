@@ -81,6 +81,7 @@ export default function OrderPage() {
          status: "PENDING",
       });
 
+      window.print();
       setCurrentOrder(null);
    }
 
@@ -96,6 +97,7 @@ export default function OrderPage() {
             hasActiveOrder={Boolean(currentOrder)}
             filteredProducts={filteredProducts}
             onAddProduct={handleAddProduct}
+            order={currentOrder}
          />
          <Separator orientation="vertical" className="w-px bg-border" />
          {currentOrder && (

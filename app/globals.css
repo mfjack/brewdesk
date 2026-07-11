@@ -131,3 +131,20 @@
       @apply font-sans;
    }
 }
+
+@media print {
+   body * {
+      visibility: hidden;
+   }
+
+   .order-receipt,
+   .order-receipt * {
+      visibility: visible;
+   }
+
+   .order-receipt {
+      position: absolute;
+      top: 0;
+      left: 0;
+   }
+}

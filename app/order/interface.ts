@@ -16,6 +16,7 @@ export interface TOrderPanel {
    hasActiveOrder: boolean;
    filteredProducts: TProduct[] | undefined;
    onAddProduct: (product: TProduct) => void;
+   order: TOrderResponse | null;
 }
 
 export interface TCategory {
@@ -42,7 +43,7 @@ export interface TOrderItem {
 export interface TOrderResponse {
    id: number;
    customerName: string;
-   status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED";
+   status: "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED";
    createdAt: string;
    total: number;
    orderItems: TOrderItem[];

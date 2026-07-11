@@ -19,6 +19,7 @@ export function OrderPanel({
    hasActiveOrder,
    filteredProducts,
    onAddProduct,
+   order,
 }: TOrderPanel) {
    const [isOpenOrderDialogOpen, setIsOpenOrderDialogOpen] = useState(false);
 
@@ -56,10 +57,7 @@ export function OrderPanel({
                      </DialogHeader>
 
                      <DialogFooter>
-                        <DialogClose asChild>
-                           <Button variant="outline">Cancelar</Button>
-                        </DialogClose>
-                        <Button type="button" onClick={handleConfirmOpenOrder}>
+                        <Button type="button" className="w-full" onClick={handleConfirmOpenOrder}>
                            Abrir comanda
                         </Button>
                      </DialogFooter>
@@ -83,16 +81,31 @@ export function OrderPanel({
          </div>
 
          <div className="rounded-xl flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-            <div className="p-4 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-               {filteredProducts?.map((product: TProduct) => (
-                  <Card key={product.id} className="p-4">
-                     <CardTitle className="text-sm font-bold">{product.name}</CardTitle>
-                     <CardContent className="text-sm font-bold p-0">{formatCurrency(product.price)}</CardContent>
-                     <Button size="lg" onClick={() => onAddProduct(product)} disabled={!hasActiveOrder}>
-                        Adicionar
-                     </Button>
-                  </Card>
-               ))}
+            <div className="p-4 grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+               {filteredProducts?.map((product: TProduct) => {
+                  const orderItem = order?.orderItems.find((item) => item.product.id === product.id);
+                  const quantity = orderItem?.quantity ?? 0;
+
+                  return (
+                     <Card key={product.id} className="p-4 relative overflow-visible">
+                        {quantity > 0 && (
+                           <span
+                              className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center
+                    rounded-full bg-primary text-xs font-bold text-primary-foreground shadow"
+                           >
+                              {quantity}
+                           </span>
+                        )}
+                        <div>
+                           <CardTitle className="text-sm font-bold">{product.name}</CardTitle>
+                           <CardContent className="text-xs font-medium p-0">{formatCurrency(product.price)}</CardContent>
+                        </div>
+                        <Button size="lg" onClick={() => onAddProduct(product)} disabled={!hasActiveOrder}>
+                           Adicionar
+                        </Button>
+                     </Card>
+                  );
+               })}
             </div>
          </div>
       </section>

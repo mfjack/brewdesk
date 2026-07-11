@@ -6,10 +6,12 @@ import { Card } from "@/_components/ui/card";
 import { TMenuList, TOrderItem } from "../interface";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Input } from "@/_components/ui/input";
+import { OrderReceipt } from "@/app/order-receipt/order-receipt";
 
 export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovingItem }: TMenuList) {
    return (
       <div className="h-screen w-1/2">
+         {order && <OrderReceipt order={order} />}
          <div className="flex flex-col h-full">
             {!order ? (
                <div className="flex flex-col items-center justify-center gap-2 px-5 text-center h-full">
@@ -37,7 +39,12 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                            {order.orderItems.map((item: TOrderItem) => (
                               <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3">
                                  <div className="flex items-center gap-6">
-                                    <span className="text-sm font-bold">{item.quantity}</span>
+                                    <span
+                                       className="z-10 flex h-6 w-6 items-center justify-center
+                    rounded-full bg-primary text-xs font-bold text-primary-foreground shadow"
+                                    >
+                                       {item.quantity}
+                                    </span>
 
                                     <div className="flex flex-col items-start">
                                        <p className="text-sm font-bold">{item.product.name}</p>
@@ -54,12 +61,12 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                      )}
                   </div>
 
-                  <div className="relative flex items-center w-full px-4">
+                  <div className="relative flex items-center w-full px-4 mt-4">
                      <NotebookPen className="absolute left-7 h-4 w-4 text-muted-foreground" />
                      <Input type="text" placeholder="Adicionar observação..." className="pl-9" />
                   </div>
 
-                  <div className="flex flex-row items-center justify-between p-4 w-full">
+                  <div className="flex flex-row items-center justify-between px-4 py-2 w-full">
                      <p className="px-4 py-2 text-lg font-bold">Total: </p>
                      <span className="px-4 py-2 text-lg font-bold">{formatCurrency(order.total)}</span>
                   </div>

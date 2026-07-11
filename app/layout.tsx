@@ -20,7 +20,7 @@ export default function RootLayout({
    children: React.ReactNode;
 }>) {
    return (
-      <html lang="pt-BR" className={cn("h-full", "antialiased", montserrat.variable)}>
+      <html lang="pt-BR" className={cn("h-full", "antialiased select-none", montserrat.variable)}>
          <body className="min-h-full flex flex-col">
             <ClientProvider>{children}</ClientProvider>
          </body>
