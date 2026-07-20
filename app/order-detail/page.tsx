@@ -3,7 +3,7 @@
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
-import { Plus } from "lucide-react";
+import { HandCoins, Plus } from "lucide-react";
 import Link from "next/link";
 import { useGetOrder } from "../kitchen/query/useGetOrder";
 import { TOrderResponse } from "../order/interface";
@@ -26,8 +26,8 @@ export default function OrderDetailPage() {
           <Header title="Comandas" description="Gerencie as comandas: visualize, abra e feche comandas." />
           <Button asChild size="lg">
             <Link href="/order">
-              <Plus />
-              Nova comanda
+              <HandCoins />
+              <p>PDV</p>
             </Link>
           </Button>
         </div>

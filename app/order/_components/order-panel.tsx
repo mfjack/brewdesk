@@ -7,8 +7,9 @@ import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { formatCurrency } from "@/_lib/format-currency";
 import { TCategory, TOrderPanel, TProduct } from "../interface";
-import { Plus } from "lucide-react";
+import { Plus, ScrollText } from "lucide-react";
 import { Header } from "@/_components/ui/header";
+import Link from "next/link";
 
 export function OrderPanel({
   categories,
@@ -34,10 +35,18 @@ export function OrderPanel({
       <div className="flex flex-col p-4 w-full">
         <div className="flex items-center justify-between">
           <Header title="PDV" description="Gerencie pedidos: crie pedidos, adicione e remova produtos." />
-          <Button size="lg" onClick={() => setIsOpenOrderDialogOpen(true)}>
-            <Plus />
-            Novo pedido
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="secondary" asChild size="lg">
+              <Link href="/order-detail">
+                <ScrollText />
+                Comandas
+              </Link>
+            </Button>
+            <Button size="lg" onClick={() => setIsOpenOrderDialogOpen(true)}>
+              <Plus />
+              Novo pedido
+            </Button>
+          </div>
         </div>
 
         <form>
