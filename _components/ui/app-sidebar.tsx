@@ -20,9 +20,9 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="font-bold text-base">Mañana Cafés y Coisinhas</SidebarGroupLabel>
+          <SidebarGroupLabel className="font-bold text-base pb-6">Mañana Cafés y Coisinhas</SidebarGroupLabel>
 
-          <SidebarGroupContent className="mt-5">
+          <SidebarGroupContent>
             <SidebarMenu className="space-y-3">
               <SidebarMenuItem>
                 <SidebarMenuButton variant="outline" asChild>
