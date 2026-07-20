@@ -19,7 +19,7 @@ export function OrderReceipt({ order }: TOrderReceipt) {
             </div>
             <span className="text-center text-xs w-full">-------------------------------</span>
             <div className="my-4 w-full flex flex-col gap-2">
-               {order.orderItems.map((item) => (
+               {order.orderItems?.map((item) => (
                   <div key={item.id} className="flex justify-between items-center w-full font-bold font-mono mt-2">
                      <span className="text-xl">
                         {item.quantity} {item.product.name}

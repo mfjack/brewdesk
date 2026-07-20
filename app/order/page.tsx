@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MenuList } from "./_components/menu-list";
 import { OrderPanel } from "./_components/order-panel";
 import { Separator } from "@/_components/ui/separator";
@@ -11,8 +11,13 @@ import { useAddOrderItem } from "./mutation/useAddOrderItem";
 import { useRemoveOrderItem } from "./mutation/useRemoveOrderItem";
 import { useUpdateOrderStatus } from "./mutation/useUpdateOrderStatus";
 import { TCategory, TOrderResponse, TProduct } from "./interface";
+import { useSearchParams } from "next/navigation";
+import { useGetOrderById } from "./query/useGetOrderById";
 
 export default function OrderPage() {
+   const searchParams = useSearchParams();
+   const orderId = searchParams.get("orderId");
+
    const [selectedCategory, setSelectedCategory] = useState<TCategory | null>(null);
    const [customerName, setCustomerName] = useState("");
    const [currentOrder, setCurrentOrder] = useState<TOrderResponse | null>(null);
@@ -22,6 +27,13 @@ export default function OrderPage() {
    const addOrderItem = useAddOrderItem();
    const removeOrderItem = useRemoveOrderItem();
    const updateOrderStatus = useUpdateOrderStatus();
+   const { data: existingOrder } = useGetOrderById(orderId ? Number(orderId) : null);
+
+   useEffect(() => {
+      if (existingOrder) {
+         setCurrentOrder(existingOrder);
+      }
+   }, [existingOrder]);
 
    const filteredProducts = selectedCategory
       ? products?.filter((product: TProduct) => product.category.id === selectedCategory.id)

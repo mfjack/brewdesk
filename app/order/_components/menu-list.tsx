@@ -1,4 +1,4 @@
-import { ShoppingBag, Send, Trash2, NotebookPen } from "lucide-react";
+import { ShoppingBag, Trash2, NotebookPen, Printer } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
@@ -30,7 +30,7 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                   <Separator className="h-px bg-border" />
 
                   <div className="flex-1 flex-col gap-4 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-                     {order.orderItems.length === 0 ? (
+                     {(order.orderItems?.length ?? 0) === 0 ? (
                         <p className="flex h-full justify-center items-center text-sm text-muted-foreground">
                            Adicione itens do cardápio à comanda.
                         </p>
@@ -68,17 +68,17 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
 
                   <div className="flex flex-row items-center justify-between px-4 py-2 w-full">
                      <p className="px-4 py-2 text-lg font-bold">Total: </p>
-                     <span className="px-4 py-2 text-lg font-bold">{formatCurrency(order.total)}</span>
+                     <span className="px-4 py-2 text-lg font-bold">{formatCurrency(order.total ?? 0)}</span>{" "}
                   </div>
 
                   <Button
                      className="mx-4 mb-4 flex gap-3"
                      size="lg"
                      onClick={onSendOrder}
-                     disabled={isSending || order.orderItems.length === 0}
+                     disabled={isSending || (order.orderItems?.length ?? 0) === 0}
                   >
-                     <Send />
-                     Finalizar pedido
+                     <Printer />
+                     Imprimir comanda
                   </Button>
                </>
             )}

@@ -23,8 +23,8 @@ export function OrderPanel({
 }: TOrderPanel) {
    const [isOpenOrderDialogOpen, setIsOpenOrderDialogOpen] = useState(false);
 
-   async function handleConfirmOpenOrder() {
-      await onOpenOrder();
+   function handleConfirmOpenOrder() {
+      onOpenOrder();
       setIsOpenOrderDialogOpen(false);
    }
 
@@ -83,11 +83,11 @@ export function OrderPanel({
          <div className="rounded-xl flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
             <div className="p-4 grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                {filteredProducts?.map((product: TProduct) => {
-                  const orderItem = order?.orderItems.find((item) => item.product.id === product.id);
+                  const orderItem = order?.orderItems?.find((item) => item.product.id === product.id);
                   const quantity = orderItem?.quantity ?? 0;
 
                   return (
-                     <Card key={product.id} className="p-4 relative overflow-visible">
+                     <Card key={product.id} className="p-4 relative overflow-visible justify-between">
                         {quantity > 0 && (
                            <span
                               className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center
