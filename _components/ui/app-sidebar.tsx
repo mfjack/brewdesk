@@ -25,7 +25,7 @@ export function AppSidebar() {
           <SidebarGroupContent className="mt-5">
             <SidebarMenu className="space-y-3">
               <SidebarMenuItem>
-                <SidebarMenuButton size="lg" variant="outline" asChild>
+                <SidebarMenuButton variant="outline" asChild>
                   <Link href="/order">
                     <HandCoins />
                     <p>PDV</p>
@@ -34,7 +34,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton size="lg" variant="outline" asChild>
+                <SidebarMenuButton variant="outline" asChild>
                   <Link href="/order-detail">
                     <ScrollText />
                     <p>Comandas</p>
@@ -43,7 +43,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton size="lg" variant="outline" asChild>
+                <SidebarMenuButton variant="outline" asChild>
                   <Link href="/kitchen">
                     <ChefHat />
                     <p>Cozinha</p>
@@ -52,7 +52,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton size="lg" variant="outline" asChild>
+                <SidebarMenuButton variant="outline" asChild>
                   <Link href="/category">
                     <Tags />
                     <p>Categorias</p>
@@ -61,7 +61,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton size="lg" variant="outline" asChild>
+                <SidebarMenuButton variant="outline" asChild>
                   <Link href="/product">
                     <ScanBarcode />
                     <p>Produtos</p>

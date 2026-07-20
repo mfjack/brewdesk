@@ -34,7 +34,7 @@ export function OrderPanel({
     <section className="flex flex-col h-screen w-full">
       <div className="flex flex-col p-4 w-full">
         <div className="flex items-center justify-between">
-          <Header title="PDV" description="Gerencie pedidos: crie pedidos, adicione e remova produtos." />
+          <Header title="PDV" description="Crie pedidos, adicione e remova produtos." />
           <div className="flex gap-3">
             <Button variant="secondary" asChild size="lg">
               <Link href="/order-detail">
