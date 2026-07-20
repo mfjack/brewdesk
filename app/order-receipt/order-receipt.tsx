@@ -22,9 +22,9 @@ export function OrderReceipt({ order }: TOrderReceipt) {
                {order.orderItems.map((item) => (
                   <div key={item.id} className="flex justify-between items-center w-full font-bold font-mono mt-2">
                      <span className="text-xl">
-                        {item.quantity}x {item.product.name}
+                        {item.quantity} {item.product.name}
                      </span>
-                     <span className="text-xs">{formatCurrency(item.subtotal)}</span>
+                     {/* <span className="text-xs">{formatCurrency(item.subtotal)}</span> */}
                   </div>
                ))}
             </div>

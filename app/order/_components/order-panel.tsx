@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Card, CardContent, CardTitle } from "@/_components/ui/card";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { formatCurrency } from "@/_lib/format-currency";
