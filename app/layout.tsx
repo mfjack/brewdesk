@@ -28,12 +28,7 @@ export default function RootLayout({
           <AppSidebar />
           <SidebarInset>
             <ClientProvider>
-              <main>
-                <header className="flex h-14 items-center border-b px-4">
-                  <SidebarTrigger />
-                </header>
-                {children}
-              </main>
+              <main>{children}</main>
             </ClientProvider>
           </SidebarInset>
         </SidebarProvider>
