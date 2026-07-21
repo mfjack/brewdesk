@@ -373,7 +373,7 @@ function SidebarGroupContent({ className, ...props }: React.ComponentProps<"div"
 }
 
 function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
-  return <ul data-slot="sidebar-menu" data-sidebar="menu" className={cn("flex w-full min-w-0 flex-col gap-0", className)} {...props} />;
+  return <ul data-slot="sidebar-menu" data-sidebar="menu" className={cn("flex p-2 w-full min-w-0 flex-col gap-0", className)} {...props} />;
 }
 
 function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
@@ -390,7 +390,7 @@ const sidebarMenuButtonVariants = cva(
           "bg-background rounded shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_var(--sidebar-accent)]",
       },
       size: {
-        default: "h-8 text-xs",
+        default: "h-10 text-xs",
         sm: "h-7 text-xs",
         lg: "h-12 text-xs group-data-[collapsible=icon]:p-0!",
       },

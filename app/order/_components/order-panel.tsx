@@ -94,7 +94,7 @@ export function OrderPanel({
             const quantity = orderItem?.quantity ?? 0;
 
             return (
-              <Card key={product.id} className="p-4 relative overflow-visible justify-between">
+              <Card key={product.id} className="p-3 relative overflow-visible justify-between">
                 {quantity > 0 && (
                   <span
                     className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center

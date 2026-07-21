@@ -44,6 +44,7 @@ export default function OrderDetailPage() {
                 <div className="flex flex-wrap justify-between gap-1">
                   <div className="flex gap-2 items-center">
                     <span className="font-bold text-sm">{order.customerName}</span>
+                    <span className="font-medium text-sm text-foreground">#{order.id}</span>
                   </div>
 
                   <span className="text-foreground text-sm font-bold">{formatCurrency(order.total)}</span>
