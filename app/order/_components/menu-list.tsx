@@ -73,7 +73,7 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
             />
           </div>
 
-          <div className="flex flex-row items-center justify-between px-4 py-2 w-full">
+          <div className="flex flex-row items-center justify-between px-2 py-2 w-full">
             <p className="px-4 py-2 text-lg font-bold">Total: </p>
             <span className="px-4 py-2 text-lg font-bold">{formatCurrency(order.total ?? 0)}</span>{" "}
           </div>

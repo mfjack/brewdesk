@@ -44,10 +44,10 @@ export default function OrderDetailPage() {
                 <div className="flex flex-wrap justify-between gap-1">
                   <div className="flex gap-2 items-center">
                     <span className="font-bold text-sm">{order.customerName}</span>
-                    <span className="font-medium text-sm text-foreground">#{order.id}</span>
+                    <span className="font-medium text-sm text-muted-foreground">#{order.id}</span>
                   </div>
 
-                  <span className="text-foreground text-sm font-bold">{formatCurrency(order.total)}</span>
+                  <span className="text-muted-foreground text-sm font-bold">{formatCurrency(order.total)}</span>
                 </div>
 
                 {order.observation && (
@@ -57,7 +57,7 @@ export default function OrderDetailPage() {
                   </p>
                 )}
 
-                <div className="flex flex-col w-full justify-center items-center gap-3">
+                <div className="flex flex-col w-full justify-center items-center gap-3 mt-2">
                   <Button asChild className="w-full" size="lg" variant="default">
                     <Link href={`/order?orderId=${order.id}`}>Detalhes da comanda</Link>
                   </Button>
