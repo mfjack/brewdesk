@@ -40,7 +40,7 @@ export default function OrderDetailPage() {
         <div className="flex-1 overflow-auto p-4 [&::-webkit-scrollbar]:hidden">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {orders.map((order: TOrderResponse) => (
-              <Card className="flex flex-col gap-8 p-4 " key={order.id}>
+              <Card className="flex flex-col gap-4 p-4 justify-between" key={order.id}>
                 <div className="flex flex-wrap justify-between gap-1">
                   <div className="flex gap-2 items-center">
                     <span className="font-bold text-sm">{order.customerName}</span>
@@ -49,11 +49,19 @@ export default function OrderDetailPage() {
 
                   <span className="text-foreground text-sm font-bold">{formatCurrency(order.total)}</span>
                 </div>
+
+                {order.observation && (
+                  <p className="text-xs font-bold text-destructive">
+                    Observação:
+                    <span className="text-xs font-medium text-foreground"> {order.observation || "Nenhuma observação"}</span>
+                  </p>
+                )}
+
                 <div className="flex flex-col w-full justify-center items-center gap-3">
-                  <Button asChild className="w-full" size="lg" variant="secondary">
+                  <Button asChild className="w-full" size="lg" variant="default">
                     <Link href={`/order?orderId=${order.id}`}>Detalhes da comanda</Link>
                   </Button>
-                  <Button className="w-full" size="lg" variant="destructive" onClick={() => handleDeleteOrder(order.id)}>
+                  <Button className="w-full" size="lg" variant="secondary" onClick={() => handleDeleteOrder(order.id)}>
                     Fechar comanda
                   </Button>
                 </div>
