@@ -21,7 +21,7 @@ export function OrderReceipt({ order, observation }: TOrderReceipt) {
             <>
               <div className="w-full flex gap-2">
                 <p>Observação:</p>
-                <p>{observation}</p>
+                <p className="font-bold">{observation}</p>
               </div>
             </>
           )}

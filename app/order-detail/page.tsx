@@ -24,7 +24,7 @@ export default function OrderDetailPage() {
       <div className="flex flex-col p-4 w-full">
         <div className="flex items-center justify-between">
           <Header title="Comandas" description="Gerencie as comandas: visualize, abra e feche comandas." />
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="w-30">
             <Link href="/order">
               <HandCoins />
               <p>PDV</p>
