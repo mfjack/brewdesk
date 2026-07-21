@@ -97,7 +97,6 @@ export default function OrderPage() {
 
     setCurrentOrder(updatedOrder);
     window.print();
-    // setCurrentOrder(updatedOrder);
   }
 
   return (
