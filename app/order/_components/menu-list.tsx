@@ -41,7 +41,12 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                       </div>
                     </div>
 
-                    <Button size="icon-sm" onClick={() => onRemoveItem(item.id)} disabled={isRemovingItem}>
+                    <Button
+                      size="icon-lg"
+                      className="bg-destructive hover:bg-destructive/90"
+                      onClick={() => onRemoveItem(item.id)}
+                      disabled={isRemovingItem}
+                    >
                       <Trash2 />
                     </Button>
                   </Card>
