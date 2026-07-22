@@ -94,7 +94,14 @@ export function OrderPanel({
                   const quantity = orderItem?.quantity ?? 0;
 
                   return (
-                     <Card key={product.id} className="p-3 relative overflow-visible justify-between">
+                     <Button
+                        size="lg"
+                        variant="secondary"
+                        onClick={() => onAddProduct(product)}
+                        disabled={!hasActiveOrder}
+                        key={product.id}
+                        className="relative h-24"
+                     >
                         {quantity > 0 && (
                            <span
                               className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center
@@ -103,14 +110,11 @@ export function OrderPanel({
                               {quantity}
                            </span>
                         )}
-                        <div>
-                           <CardTitle className="text-sm font-bold">{product.name}</CardTitle>
-                           <CardContent className="text-xs font-medium p-0">{formatCurrency(product.price)}</CardContent>
+                        <div className="flex flex-col items-center gap-1">
+                           <span className="text-center text-sm font-bold whitespace-normal">{product.name}</span>
+                           <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
                         </div>
-                        <Button size="lg" variant="secondary" onClick={() => onAddProduct(product)} disabled={!hasActiveOrder}>
-                           Adicionar
-                        </Button>
-                     </Card>
+                     </Button>
                   );
                })}
             </div>

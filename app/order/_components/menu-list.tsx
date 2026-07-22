@@ -14,9 +14,17 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
          {order && <OrderReceipt order={order} observation={observation} />}
          {order && (
             <div className="flex flex-col h-full">
-               <p className="p-4 text-sm text-muted-foreground">
-                  Comanda de <span className="font-bold">{order.customerName}</span>
-               </p>
+               <div className="p-4 text-sm text-muted-foreground">
+                  <p>
+                     Comanda de <span className="font-bold">{order.customerName}</span>
+                  </p>
+                  {order.observation && (
+                     <p className="text-xs font-bold text-destructive">
+                        Observação:
+                        <span className="text-xs font-medium text-foreground"> {order.observation || "Nenhuma observação"}</span>
+                     </p>
+                  )}
+               </div>
 
                <Separator className="h-px bg-border" />
 
@@ -38,7 +46,7 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                                  </span>
 
                                  <div className="flex flex-col items-start">
-                                    <p className="text-sm font-bold">{item.product.name}</p>
+                                    <p className="text-md font-bold">{item.product.name}</p>
                                     <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
                                  </div>
                               </div>
@@ -56,13 +64,6 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
                      </div>
                   )}
                </div>
-
-               {order.observation && (
-                  <p className="text-xs px-4 font-bold text-destructive">
-                     Observação:
-                     <span className="text-xs font-medium text-foreground"> {order.observation || "Nenhuma observação"}</span>
-                  </p>
-               )}
 
                <div className="relative flex items-center w-full px-4 mt-4">
                   <NotebookPen className="absolute left-7 h-4 w-4 text-muted-foreground" />
