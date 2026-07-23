@@ -1,10 +1,3 @@
-import { Suspense } from "react";
-import OrderPage from "./order/page";
-
-export default function Page() {
-   return (
-      <Suspense>
-         <OrderPage />
-      </Suspense>
-   );
+export default function Home() {
+   return <h1>Home</h1>;
 }
