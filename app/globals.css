@@ -134,6 +134,7 @@
 
 @media print {
    body * {
+      width: 100%;
       visibility: hidden;
    }
 
