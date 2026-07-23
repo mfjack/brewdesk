@@ -1,3 +1,4 @@
+import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface TCreateProduct {
@@ -11,7 +12,7 @@ export function useCreateProduct() {
 
    return useMutation({
       mutationFn: async (data: TCreateProduct) => {
-         const response = await fetch(`http://localhost:8080/products`, {
+         const response = await fetch(`${API_URL}/products`, {
             method: "POST",
             headers: {
                "Content-Type": "application/json",

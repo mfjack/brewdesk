@@ -1,3 +1,4 @@
+import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface TDeleteOrder {
@@ -9,7 +10,7 @@ export function useDeleteOrder() {
 
    return useMutation({
       mutationFn: async ({ orderId }: TDeleteOrder) => {
-         const response = await fetch(`http://localhost:8080/orders/${orderId}`, {
+         const response = await fetch(`${API_URL}/orders/${orderId}`, {
             method: "DELETE",
          });
 

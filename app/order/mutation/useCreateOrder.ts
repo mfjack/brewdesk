@@ -1,3 +1,4 @@
+import { API_URL } from "@/_lib/api-url";
 import { useMutation } from "@tanstack/react-query";
 
 export interface TCreateOrder {
@@ -7,7 +8,7 @@ export interface TCreateOrder {
 export function useCreateOrder() {
    return useMutation({
       mutationFn: async (data: TCreateOrder) => {
-         const response = await fetch("http://localhost:8080/orders", {
+         const response = await fetch(`${API_URL}/orders`, {
             method: "POST",
             headers: {
                "Content-Type": "application/json",

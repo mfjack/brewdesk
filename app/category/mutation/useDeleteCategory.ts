@@ -1,3 +1,4 @@
+import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useDeleteCategory() {
@@ -5,7 +6,7 @@ export function useDeleteCategory() {
 
    return useMutation({
       mutationFn: async (categoryId: number) => {
-         const response = await fetch(`http://localhost:8080/categories/${categoryId}`, {
+         const response = await fetch(`${API_URL}/categories/${categoryId}`, {
             method: "DELETE",
          });
 

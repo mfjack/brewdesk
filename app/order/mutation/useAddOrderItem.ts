@@ -1,3 +1,4 @@
+import { API_URL } from "@/_lib/api-url";
 import { useMutation } from "@tanstack/react-query";
 
 export interface TAddOrderItem {
@@ -10,7 +11,7 @@ export interface TAddOrderItem {
 export function useAddOrderItem() {
    return useMutation({
       mutationFn: async ({ orderId, ...data }: TAddOrderItem) => {
-         const response = await fetch(`http://localhost:8080/orders/${orderId}/items`, {
+         const response = await fetch(`${API_URL}/orders/${orderId}/items`, {
             method: "POST",
             headers: {
                "Content-Type": "application/json",

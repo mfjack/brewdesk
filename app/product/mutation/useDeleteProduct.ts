@@ -1,3 +1,4 @@
+import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useDeleteProduct() {
@@ -5,7 +6,7 @@ export function useDeleteProduct() {
 
    return useMutation({
       mutationFn: async (productId: number) => {
-         const response = await fetch(`http://localhost:8080/products/${productId}`, {
+         const response = await fetch(`${API_URL}/products/${productId}`, {
             method: "DELETE",
          });
 

@@ -1,3 +1,4 @@
+import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useCreateCategory() {
@@ -5,7 +6,7 @@ export function useCreateCategory() {
 
    return useMutation({
       mutationFn: async (name: string) => {
-         const response = await fetch(`http://localhost:8080/categories`, {
+         const response = await fetch(`${API_URL}/categories`, {
             method: "POST",
             headers: {
                "Content-Type": "application/json",
