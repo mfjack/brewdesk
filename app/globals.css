@@ -133,19 +133,8 @@
 }
 
 @media print {
-   body * {
-      width: 100%;
-      visibility: hidden;
-   }
-
-   .order-receipt,
-   .order-receipt * {
-      visibility: visible;
-   }
-
-   .order-receipt {
-      position: absolute;
-      top: 0;
-      left: 0;
+   @page {
+      size: 80mm auto;
+      margin: 0;
    }
 }

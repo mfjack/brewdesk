@@ -13,6 +13,7 @@ import { useUpdateOrderStatus } from "../mutation/useUpdateOrderStatus";
 import { TCategory, TOrderResponse, TProduct } from "../interface";
 import { useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
+import { OrderReceipt } from "@/app/order/_components/order-receipt";
 
 export default function OrderPageContent() {
    const searchParams = useSearchParams();
@@ -108,31 +109,37 @@ export default function OrderPageContent() {
    }
 
    return (
-      <section className="flex flex-row h-full">
-         <OrderPanel
-            categories={categories || []}
-            selectedCategory={selectedCategory}
-            handleCategoryClick={handleCategoryClick}
-            customerName={customerName}
-            onCustomerNameChange={setCustomerName}
-            onOpenOrder={handleOpenOrder}
-            hasActiveOrder={Boolean(currentOrder)}
-            filteredProducts={filteredProducts}
-            onAddProduct={handleAddProduct}
-            order={currentOrder}
-         />
-         <Separator orientation="vertical" className="w-px bg-border" />
-         {currentOrder && (
-            <MenuList
+      <>
+         {currentOrder && <OrderReceipt order={currentOrder} observation={observation} />}
+
+         <section className="app-content flex flex-row h-full">
+            <OrderPanel
+               categories={categories || []}
+               selectedCategory={selectedCategory}
+               handleCategoryClick={handleCategoryClick}
+               customerName={customerName}
+               onCustomerNameChange={setCustomerName}
+               onOpenOrder={handleOpenOrder}
+               hasActiveOrder={Boolean(currentOrder)}
+               filteredProducts={filteredProducts}
+               onAddProduct={handleAddProduct}
                order={currentOrder}
-               onRemoveItem={handleRemoveItem}
-               onSendOrder={handleSendOrder}
-               isSending={updateOrderStatus.isPending}
-               isRemovingItem={removeOrderItem.isPending}
-               observation={observation}
-               onObservationChange={setObservation}
             />
-         )}
-      </section>
+
+            <Separator orientation="vertical" className="w-px bg-border" />
+
+            {currentOrder && (
+               <MenuList
+                  order={currentOrder}
+                  onRemoveItem={handleRemoveItem}
+                  onSendOrder={handleSendOrder}
+                  isSending={updateOrderStatus.isPending}
+                  isRemovingItem={removeOrderItem.isPending}
+                  observation={observation}
+                  onObservationChange={setObservation}
+               />
+            )}
+         </section>
+      </>
    );
 }

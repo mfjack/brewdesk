@@ -6,12 +6,11 @@ import { Card } from "@/_components/ui/card";
 import { TMenuList, TOrderItem } from "../interface";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Input } from "@/_components/ui/input";
-import { OrderReceipt } from "@/app/order-receipt/order-receipt";
+import { OrderReceipt } from "@/app/order/_components/order-receipt";
 
 export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovingItem, observation, onObservationChange }: TMenuList) {
    return (
       <div className="h-screen w-1/2">
-         {order && <OrderReceipt order={order} observation={observation} />}
          {order && (
             <div className="flex flex-col h-full">
                <div className="p-4 text-sm text-muted-foreground">
