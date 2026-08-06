@@ -1,0 +1,79 @@
+import { Badge } from "@/_components/ui/badge";
+import { Card, CardContent } from "@/_components/ui/card";
+import { Header } from "@/_components/ui/header";
+import { Separator } from "@/_components/ui/separator";
+import { ListChecks, LucideIcon, SquarePen, TicketPercent, Wallet } from "lucide-react";
+
+interface CardDetail {
+  title: string;
+  value: string;
+  Icon: LucideIcon;
+}
+
+const cardDetails: CardDetail[] = [
+  {
+    title: "Total de Vendas",
+    value: "R$ 10.000,00",
+    Icon: Wallet,
+  },
+  {
+    title: "Pedidos",
+    value: "47",
+    Icon: SquarePen,
+  },
+  {
+    title: "Ticket Médio",
+    value: "R$ 212,77",
+    Icon: TicketPercent,
+  },
+  {
+    title: "Itens Vendidos",
+    value: "120",
+    Icon: ListChecks,
+  },
+];
+
+export default function ReportPage() {
+  return (
+    <section className="flex flex-col h-screen">
+      <div className="p-4">
+        <Header title="Relatório" description="Relatório de vendas por período" />
+      </div>
+
+      <Separator className="h-px w-full" />
+
+      <div className="p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+        <div className="p-4 flex gap-4 w-full">
+          {cardDetails.map((cardDetail) => (
+            <Card key={cardDetail.title} className="flex-1">
+              <CardContent className="flex flex-col gap-4">
+                <div className="flex justify-between items-center gap-4">
+                  <p className="font-medium">{cardDetail.title}</p>
+                  <cardDetail.Icon size={16} />
+                </div>
+                <p className="mt-3">{cardDetail.value}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="p-4 flex gap-4 w-full">
+          <Card className="flex-1">
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex justify-between items-center gap-4">
+                <div>
+                  <p className="font-medium">Horários de pico</p>
+                  <p className="text-xs text-muted-foreground">Faturamento por horário do dia</p>
+                </div>
+                <Badge variant="secondary" className="ml-2">
+                  Pico às 10h
+                </Badge>
+              </div>
+              {/* Aqui você pode adicionar um gráfico ou tabela para mostrar os horários de pico */}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </section>
+  );
+}

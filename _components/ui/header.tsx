@@ -1,7 +1,5 @@
 import { Separator } from "./separator";
 import { SidebarTrigger } from "./sidebar";
-import { Button } from "./button";
-import Link from "next/link";
 
 interface THeader {
   title: string;
