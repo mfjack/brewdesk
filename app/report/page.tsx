@@ -110,14 +110,9 @@ export default function ReportPage() {
         <div className="p-4 flex gap-4 w-full">
           <Card className="flex-1">
             <CardContent className="flex flex-col gap-4">
-              <div className="flex justify-between items-center gap-4">
-                <div>
-                  <p className="font-medium">Horários de pico</p>
-                  <p className="text-xs text-muted-foreground">Faturamento por horário do dia</p>
-                </div>
-                <Badge variant="secondary" className="ml-2">
-                  Pico às 10h
-                </Badge>
+              <div className="flex flex-col">
+                <p className="font-medium">Horários de pico</p>
+                <p className="text-xs text-muted-foreground">Faturamento por horário do dia</p>
               </div>
               {/* Aqui você pode adicionar um gráfico ou tabela para mostrar os horários de pico */}
             </CardContent>
