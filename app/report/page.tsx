@@ -88,7 +88,7 @@ export default function ReportPage() {
                 </div>
                 <div>
                   <Select defaultValue="produto1">
-                    <SelectTrigger className="w-45 shadow">
+                    <SelectTrigger className="w-100 shadow">
                       <SelectValue placeholder="Selecione um produto" />
                     </SelectTrigger>
                     <SelectContent>
@@ -101,9 +101,9 @@ export default function ReportPage() {
               </div>
               <div className="flex flex-row items-center gap-4">
                 {reportDetails.map((reportDetail) => (
-                  <Badge key={reportDetail.title} variant="outline" className="p-6 flex flex-col rounded-sm">
-                    <p>{reportDetail.title}</p>
-                    <span>{reportDetail.value}</span>
+                  <Badge key={reportDetail.title} variant="default" className="py-10 flex-1 flex flex-col rounded-sm">
+                    <p className="font-medium text-base">{reportDetail.title}</p>
+                    <span className="text-base">{reportDetail.value}</span>
                   </Badge>
                 ))}
               </div>
