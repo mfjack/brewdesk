@@ -25,10 +25,6 @@ const reportDetails: ReportDetail[] = [
     title: "Receita",
     value: "R$ 10",
   },
-  {
-    title: "Pedidos",
-    value: "10",
-  },
 ];
 
 const cardDetails: CardDetail[] = [
