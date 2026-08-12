@@ -112,7 +112,7 @@ export default function OrderPageContent() {
     <>
       {currentOrder && <OrderReceipt order={currentOrder} observation={observation} />}
 
-      <section className="flex flex-row h-full">
+      <section className="flex flex-row h-full print:hidden">
         <OrderPanel
           categories={categories || []}
           selectedCategory={selectedCategory}
