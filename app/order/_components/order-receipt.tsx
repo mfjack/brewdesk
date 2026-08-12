@@ -44,7 +44,7 @@ export function OrderReceipt({ order, observation }: TOrderReceipt) {
         ))}
       </div>
 
-      <div className="border-t mt-3 pt-2 flex justify-between font-bold">
+      <div className="border-t mt-3 pt-2 flex justify-between font-bold text-xs">
         <span>Total</span>
         <span>{formatCurrency(order.total)}</span>
       </div>
