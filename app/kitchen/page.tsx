@@ -106,6 +106,13 @@ export default function KitchenPage() {
                       <Badge className={column.badgeClassName}>{getStatusLabel(order.status)}</Badge>
                     </div>
 
+                    {order.observation && (
+                      <div className="flex gap-1 items-center">
+                        <span className="text-sm font-bold text-red-500">OBSERVAÇÃO:</span>
+                        <span className="text-sm font-medium">{order.observation}</span>
+                      </div>
+                    )}
+
                     {order.orderItems.length > 0 && (
                       <div className="flex flex-col gap-2">
                         {order.orderItems.map((item: TOrderResponse["orderItems"][number]) => (
