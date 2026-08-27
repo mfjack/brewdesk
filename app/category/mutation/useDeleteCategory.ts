@@ -1,22 +1,15 @@
-import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { localStore } from "@/_lib/local-store";
 
 export function useDeleteCategory() {
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-   return useMutation({
-      mutationFn: async (categoryId: number) => {
-         const response = await fetch(`${API_URL}/categories/${categoryId}`, {
-            method: "DELETE",
-         });
+  return useMutation({
+    mutationFn: async (categoryId: number) => localStore.deleteCategory(categoryId),
 
-         if (!response.ok) {
-            throw new Error("Failed to delete category");
-         }
-      },
-
-      onSuccess: () => {
-         queryClient.invalidateQueries({ queryKey: ["categories"] });
-      },
-   });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
 }

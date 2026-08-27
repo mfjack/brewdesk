@@ -1,29 +1,16 @@
-import { API_URL } from "@/_lib/api-url";
 import { useMutation } from "@tanstack/react-query";
+import { localStore } from "@/_lib/local-store";
 
 export interface TAddOrderItem {
-   orderId: number;
-   productId: number;
-   quantity: number;
-   observation?: string;
+  orderId: number;
+  productId: number;
+  quantity: number;
+  observation?: string;
 }
 
 export function useAddOrderItem() {
-   return useMutation({
-      mutationFn: async ({ orderId, ...data }: TAddOrderItem) => {
-         const response = await fetch(`${API_URL}/orders/${orderId}/items`, {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-         });
-
-         if (!response.ok) {
-            throw new Error("Failed to add item to order");
-         }
-
-         return response.json();
-      },
-   });
+  return useMutation({
+    mutationFn: async ({ orderId, productId, quantity, observation }: TAddOrderItem) =>
+      localStore.addOrderItem(orderId, productId, quantity, observation),
+  });
 }

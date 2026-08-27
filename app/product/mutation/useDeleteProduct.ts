@@ -1,22 +1,14 @@
-import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { localStore } from "@/_lib/local-store";
 
 export function useDeleteProduct() {
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-   return useMutation({
-      mutationFn: async (productId: number) => {
-         const response = await fetch(`${API_URL}/products/${productId}`, {
-            method: "DELETE",
-         });
+  return useMutation({
+    mutationFn: async (productId: number) => localStore.deleteProduct(productId),
 
-         if (!response.ok) {
-            throw new Error("Failed to delete product");
-         }
-      },
-
-      onSuccess: () => {
-         queryClient.invalidateQueries({ queryKey: ["products"] });
-      },
-   });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
 }

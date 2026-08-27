@@ -1,34 +1,20 @@
-import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { localStore } from "@/_lib/local-store";
 
 export interface TCreateProduct {
-   name: string;
-   price: number;
-   categoryId: number;
+  name: string;
+  price: number;
+  categoryId: number;
 }
 
 export function useCreateProduct() {
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-   return useMutation({
-      mutationFn: async (data: TCreateProduct) => {
-         const response = await fetch(`${API_URL}/products`, {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-         });
+  return useMutation({
+    mutationFn: async (data: TCreateProduct) => localStore.createProduct(data),
 
-         if (!response.ok) {
-            throw new Error("Failed to create product");
-         }
-
-         return response.json();
-      },
-
-      onSuccess: () => {
-         queryClient.invalidateQueries({ queryKey: ["products"] });
-      },
-   });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
 }

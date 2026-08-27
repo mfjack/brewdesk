@@ -1,34 +1,21 @@
-import { API_URL } from "@/_lib/api-url";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { localStore } from "@/_lib/local-store";
 
 export interface TUpdateOrderStatus {
-   orderId: number;
-   status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED";
-   observation?: string;
+  orderId: number;
+  status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED";
+  observation?: string;
 }
 
 export function useUpdateOrderStatus() {
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-   return useMutation({
-      mutationFn: async ({ orderId, status, observation }: TUpdateOrderStatus) => {
-         const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
-            method: "PATCH",
-            headers: {
-               "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ status, observation }),
-         });
+  return useMutation({
+    mutationFn: async ({ orderId, status, observation }: TUpdateOrderStatus) =>
+      localStore.updateOrderStatus(orderId, status, observation),
 
-         if (!response.ok) {
-            throw new Error("Failed to update order status");
-         }
-
-         return response.json();
-      },
-
-      onSuccess: () => {
-         queryClient.invalidateQueries({ queryKey: ["order"] });
-      },
-   });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order"] });
+    },
+  });
 }

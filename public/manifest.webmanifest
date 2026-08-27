@@ -1,0 +1,10 @@
+{
+  "name": "Mañana Cafés y Coisinhas",
+  "short_name": "Mañana Cafés",
+  "description": "PDV offline para sua cafeteria",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16856b",
+  "lang": "pt-BR"
+}
