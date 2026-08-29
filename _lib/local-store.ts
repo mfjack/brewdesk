@@ -142,7 +142,17 @@ export const localStore = {
     const data = readStore();
     const order = data.orders.find((item) => item.id === orderId);
     if (!order) throw new Error("Pedido não encontrado");
-    order.orderItems = order.orderItems.filter((item) => item.id !== itemId);
+
+    const item = order.orderItems.find((item) => item.id === itemId);
+    if (item) {
+      if (item.quantity > 1) {
+        item.quantity -= 1;
+        item.subtotal = item.quantity * item.unitPrice;
+      } else {
+        order.orderItems = order.orderItems.filter((i) => i.id !== itemId);
+      }
+    }
+
     order.total = order.orderItems.reduce((total, item) => total + item.subtotal, 0);
     writeStore(data);
     return order;

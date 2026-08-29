@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
@@ -23,6 +23,18 @@ export function OrderPanel({
   order,
 }: TOrderPanel) {
   const [isOpenOrderDialogOpen, setIsOpenOrderDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.code === "KeyA") {
+        event.preventDefault();
+        setIsOpenOrderDialogOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   function handleConfirmOpenOrder() {
     onOpenOrder();

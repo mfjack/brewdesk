@@ -1,4 +1,5 @@
 import { Trash2, NotebookPen, Printer } from "lucide-react";
+import { useEffect } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
@@ -7,7 +8,27 @@ import { TMenuList, TOrderItem } from "../interface";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Input } from "@/_components/ui/input";
 
-export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovingItem, observation, onObservationChange }: TMenuList) {
+export function MenuList({
+  order,
+  onRemoveItem,
+  onSendOrder,
+  isSending,
+  isRemovingItem,
+  observation,
+  onObservationChange,
+}: TMenuList) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key === "Enter" && order && (order.orderItems?.length ?? 0) > 0 && !isSending) {
+        event.preventDefault();
+        onSendOrder();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [order, isSending, onSendOrder]);
+
   return (
     <div className="h-screen w-1/2">
       {order && (
@@ -28,7 +49,9 @@ export function MenuList({ order, onRemoveItem, onSendOrder, isSending, isRemovi
 
           <div className="flex-1 flex-col gap-4 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden">
             {(order.orderItems?.length ?? 0) === 0 ? (
-              <p className="flex h-full justify-center items-center text-sm text-muted-foreground">Adicione itens do cardápio à comanda.</p>
+              <p className="flex h-full justify-center items-center text-sm text-muted-foreground">
+                Adicione itens do cardápio à comanda.
+              </p>
             ) : (
               <div className="flex flex-col gap-1">
                 {order.orderItems.map((item: TOrderItem) => (
