@@ -34,6 +34,7 @@ export default function OrderPageContent() {
   useEffect(() => {
     if (existingOrder) {
       setCurrentOrder(existingOrder);
+      setObservation("");
     }
   }, [existingOrder]);
 
@@ -64,6 +65,7 @@ export default function OrderPageContent() {
     const order = await createOrder.mutateAsync({ customerName: trimmedName });
     setCurrentOrder(order);
     setCustomerName("");
+    setObservation("");
   }
 
   async function handleAddProduct(product: TProduct) {
