@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "./sidebar";
-import { ChefHat, HandCoins, Home, ScanBarcode, ScrollText, ShoppingBag, Tags } from "lucide-react";
+import { HandCoins, ScanBarcode, ScrollText, Tags } from "lucide-react";
 
 const navLinks = [
   {
@@ -24,11 +24,11 @@ const navLinks = [
     label: "Comandas",
     href: "/order-detail",
   },
-  {
-    icon: ChefHat,
-    label: "Cozinha",
-    href: "/kitchen",
-  },
+  // {
+  //   icon: ChefHat,
+  //   label: "Cozinha",
+  //   href: "/kitchen",
+  // },
   {
     icon: Tags,
     label: "Categorias",

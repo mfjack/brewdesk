@@ -1,4 +1,4 @@
-import { Trash2, NotebookPen, Printer } from "lucide-react";
+import { Trash2, NotebookPen, Send } from "lucide-react";
 import { useEffect } from "react";
 
 import { Button } from "@/_components/ui/button";
@@ -107,8 +107,8 @@ export function MenuList({
             onClick={onSendOrder}
             disabled={isSending || (order.orderItems?.length ?? 0) === 0}
           >
-            <Printer />
-            Imprimir comanda
+            <Send />
+            Enviar pedido
           </Button>
         </div>
       )}
