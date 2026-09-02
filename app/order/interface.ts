@@ -6,6 +6,13 @@ export interface TMenuList {
   isRemovingItem: boolean;
   observation?: string;
   onObservationChange: (observation: string) => void;
+  printedItemQuantities?: Record<number, number>;
+  onPrintAdditional?: () => void;
+  onOpenPaymentDialog: () => void;
+  onConfirmPayment: () => void;
+  isProcessing: boolean;
+  isPaymentDialogOpen: boolean;
+  onPaymentDialogOpenChange: (open: boolean) => void;
 }
 
 export interface TOrderPanel {

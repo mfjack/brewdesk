@@ -4,8 +4,10 @@ import { localStore } from "@/_lib/local-store";
 export function useGetOrderById(orderId: number | null) {
   return useQuery({
     queryKey: ["order", orderId],
-    queryFn: () => localStore.getOrder(orderId as number),
-
+    queryFn: () => {
+      const order = localStore.getOrder(orderId as number);
+      return order || null;
+    },
     enabled: !!orderId,
   });
 }
