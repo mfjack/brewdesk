@@ -141,7 +141,7 @@ export function MenuList({
           )}
 
           <Dialog open={localPaymentOpen} onOpenChange={onPaymentDialogOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-xl ">
               <DialogHeader>
                 <DialogTitle>Confirmar Pagamento</DialogTitle>
                 <DialogDescription>
@@ -149,7 +149,7 @@ export function MenuList({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="max-h-80 overflow-y-auto space-y-2">
+              <div className="max-h-80 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {order.orderItems?.map((item: TOrderItem) => (
                   <div key={item.id} className="flex justify-between text-sm p-2 border-b">
                     <span>
