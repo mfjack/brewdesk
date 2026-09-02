@@ -131,10 +131,10 @@ export function MenuList({
           ) : order.orderItems.some((item) => (printedItemQuantities[item.id] ?? 0) < item.quantity) ? (
             <Button className="mx-4 mb-4 flex gap-3" size="lg" onClick={onPrintAdditional}>
               <Send />
-              Imprimir pedidos adicional
+              Enviar pedido
             </Button>
           ) : (
-            <Button className="mx-4 mb-4 flex" size="lg" onClick={onOpenPaymentDialog} disabled={isProcessing}>
+            <Button className="mx-4 mb-4 flex gap-3" size="lg" onClick={onOpenPaymentDialog} disabled={isProcessing}>
               <DollarSign />
               Pagamento
             </Button>
