@@ -3,19 +3,22 @@ import { localStore } from "@/_lib/local-store";
 
 export interface TUpdateOrderStatus {
   orderId: number;
-  status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED";
+  status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID";
   observation?: string;
+  customerName?: string;
 }
 
 export function useUpdateOrderStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ orderId, status, observation }: TUpdateOrderStatus) =>
-      localStore.updateOrderStatus(orderId, status, observation),
+    mutationFn: async ({ orderId, status, observation, customerName }: TUpdateOrderStatus) =>
+      localStore.updateOrderStatus(orderId, status, observation, customerName),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["order"] });
+      queryClient.invalidateQueries({
+        queryKey: ["order"],
+      });
     },
   });
 }

@@ -1,8 +1,4 @@
-import { useState, useEffect } from "react";
-
 import { Button } from "@/_components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
-import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { formatCurrency } from "@/_lib/format-currency";
 import { TCategory, TOrderPanel, TProduct } from "../interface";
@@ -14,33 +10,10 @@ export function OrderPanel({
   categories,
   selectedCategory,
   handleCategoryClick,
-  customerName,
-  onCustomerNameChange,
-  onOpenOrder,
-  hasActiveOrder,
   filteredProducts,
   onAddProduct,
   order,
 }: TOrderPanel) {
-  const [isOpenOrderDialogOpen, setIsOpenOrderDialogOpen] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.code === "KeyA") {
-        event.preventDefault();
-        setIsOpenOrderDialogOpen(true);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  function handleConfirmOpenOrder() {
-    onOpenOrder();
-    setIsOpenOrderDialogOpen(false);
-  }
-
   return (
     <section className="flex flex-col h-screen w-full">
       <div className="flex flex-col p-4 w-full">
@@ -53,35 +26,12 @@ export function OrderPanel({
                 Comandas
               </Link>
             </Button>
-            <Button size="lg" onClick={() => setIsOpenOrderDialogOpen(true)}>
+            {/* <Button size="lg" onClick={onNewOrder}>
               <Plus />
               Novo pedido
-            </Button>
+            </Button> */}
           </div>
         </div>
-
-        <form>
-          <Dialog open={isOpenOrderDialogOpen} onOpenChange={setIsOpenOrderDialogOpen}>
-            <DialogContent className="sm:max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Novo pedido</DialogTitle>
-                <DialogDescription>Digite o nome do cliente para iniciar o atendimento.</DialogDescription>
-                <Input
-                  type="text"
-                  placeholder="Nome do cliente"
-                  value={customerName}
-                  onChange={(event) => onCustomerNameChange(event.target.value)}
-                />
-              </DialogHeader>
-
-              <DialogFooter>
-                <Button type="button" className="w-full" onClick={handleConfirmOpenOrder}>
-                  Abrir comanda
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </form>
       </div>
 
       <Separator className="h-px bg-border" />
@@ -109,7 +59,6 @@ export function OrderPanel({
                 size="lg"
                 variant="secondary"
                 onClick={() => onAddProduct(product)}
-                disabled={!hasActiveOrder}
                 key={product.id}
                 className="relative h-24"
               >
