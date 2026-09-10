@@ -98,13 +98,13 @@ export default function ProductPage() {
                       categories={categories}
                       product={product}
                       trigger={
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="icon-sm">
                           <Pencil />
                         </Button>
                       }
                     />
 
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteProduct(product.id)}>
+                    <Button variant="destructive" size="icon-sm" onClick={() => handleDeleteProduct(product.id)}>
                       <Trash2 />
                     </Button>
                   </div>
