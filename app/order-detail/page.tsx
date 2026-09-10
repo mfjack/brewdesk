@@ -16,6 +16,7 @@ import { Header } from "@/_components/ui/header";
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
+import { toTitleCase } from "@/_lib/to-title-case";
 
 export default function OrderDetailPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -145,7 +146,7 @@ export default function OrderDetailPage() {
             <div className="space-y-4">
               <div className="flex gap-1">
                 <p className="text-sm text-muted-foreground">Cliente: </p>
-                <p className="font-bold text-sm">{selectedOrder.customerName}</p>
+                <p className="font-bold text-sm">{toTitleCase(selectedOrder.customerName)}</p>
               </div>
 
               <div className="space-y-1.5">
@@ -153,7 +154,7 @@ export default function OrderDetailPage() {
                   <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
                     <div className="flex gap-2">
                       <span className="font-semibold">{item.quantity}x</span>
-                      <span>{item.product.name}</span>
+                      <span>{toTitleCase(item.product.name)}</span>
                     </div>
 
                     <span className="font-medium">{formatCurrency(item.subtotal)}</span>

@@ -58,17 +58,17 @@ export function MenuList({
     <div className="h-screen w-1/2">
       {order && (
         <div className="flex flex-col h-full">
-          <div className="p-4 text-sm text-muted-foreground">
-            {order.customerName ? (
-              <>
-                Cliente: <span className="font-bold">{order.customerName}</span>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Sem cliente definido</p>
-            )}
-          </div>
+          {order.customerName && (
+            <>
+              <div className="p-4 text-sm text-muted-foreground">
+                <p>
+                  Cliente: <span className="font-bold">{toTitleCase(order.customerName)}</span>
+                </p>
+              </div>
 
-          <Separator className="h-px bg-border" />
+              <Separator className="h-px bg-border" />
+            </>
+          )}
 
           <div className="flex-1 flex-col gap-4 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden">
             {(order.orderItems?.length ?? 0) === 0 ? (
@@ -154,6 +154,12 @@ export function MenuList({
                 <DialogDescription>Digite o nome para identificar essa comanda antes de enviar.</DialogDescription>
               </DialogHeader>
 
+              <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
+                <p className="text-sm font-medium">Para levar</p>
+
+                <Switch checked={isTakeoutDraft} onCheckedChange={onIsTakeoutDraftChange} />
+              </div>
+
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
 
@@ -172,12 +178,6 @@ export function MenuList({
                   }}
                 />
                 {nameError && <p className="text-xs text-center mt-1 text-destructive">{nameError}</p>}
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
-                <p className="text-sm font-medium">Para levar</p>
-
-                <Switch checked={isTakeoutDraft} onCheckedChange={onIsTakeoutDraftChange} />
               </div>
 
               <DialogFooter>

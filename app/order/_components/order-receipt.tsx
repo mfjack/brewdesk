@@ -1,6 +1,7 @@
 import { formatCurrency } from "@/_lib/format-currency";
 
 import { TOrderResponse } from "../interface";
+import { toTitleCase } from "@/_lib/to-title-case";
 
 interface TOrderReceipt {
   order: TOrderResponse;
@@ -63,8 +64,8 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
       <div className="space-y-1">
         {displayItems.map((item) => (
           <div key={item.id} className="flex justify-between text-xs font-semibold">
-            <span>
-              {item.quantity}x {item.product.name}
+            <span className="flex gap-1">
+              {item.quantity}x <p>{toTitleCase(item.product.name)}</p>
             </span>
 
             <span>{formatCurrency(item.quantity * item.unitPrice)}</span>
