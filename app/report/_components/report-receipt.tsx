@@ -78,7 +78,7 @@ export function ReportReceipt({ dateRangeLabel, reportData, selectedProduct, pro
       <ProductTable title="Produtos Menos Vendidos" products={reportData.bottomProducts} />
 
       <div>
-        <h2 className="text-sm font-bold border-b pb-1 mb-1">Horários de Pico</h2>
+        <h2 className="text-xs font-bold border-b pb-1 mb-1">Horários de Pico</h2>
 
         {peaksWithSales.length === 0 ? (
           <p className="text-xs text-muted-foreground">Nenhuma venda neste período.</p>
