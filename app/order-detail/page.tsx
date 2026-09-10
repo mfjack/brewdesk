@@ -103,12 +103,9 @@ export default function OrderDetailPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredOrders.map((order: TOrderResponse) => (
               <Card className="flex flex-col gap-3 p-4 justify-between" key={order.id}>
-                {/* CABEÇALHO DA COMANDA */}
                 <div className="flex flex-wrap justify-between gap-1">
                   <div className="flex gap-2 items-center">
                     <span className="font-bold text-sm">{order.customerName}</span>
-
-                    <span className="font-medium text-sm text-muted-foreground">#{order.id}</span>
                   </div>
 
                   <span className="text-muted-foreground text-sm font-bold">{formatCurrency(order.total)}</span>
@@ -144,25 +141,19 @@ export default function OrderDetailPage() {
         }}
       >
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+          <DialogHeader className="flex flex-col gap-0.5">
             <DialogTitle>Confirmar pagamento</DialogTitle>
             <DialogDescription>Confirme o recebimento do pagamento da comanda.</DialogDescription>
           </DialogHeader>
 
           {selectedOrder && (
             <div className="space-y-4">
-              <div className="rounded-lg border p-3">
-                <div className="flex gap-1">
-                  <p className="text-sm text-muted-foreground">Cliente: </p>
-                  <p className="font-bold text-sm">{selectedOrder.customerName}</p>
-                </div>
-
-                <p className="text-sm text-muted-foreground">Comanda #{selectedOrder.id}</p>
+              <div className="flex gap-1">
+                <p className="text-sm text-muted-foreground">Cliente: </p>
+                <p className="font-bold text-sm">{selectedOrder.customerName}</p>
               </div>
 
               <div className="space-y-1.5">
-                <p className="font-semibold">Itens da comanda</p>
-
                 {selectedOrder.orderItems.map((item) => (
                   <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
                     <div className="flex gap-2">
