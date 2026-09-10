@@ -46,6 +46,8 @@ export default function OrderPageContent() {
 
   const [customerNameDraft, setCustomerNameDraft] = useState("");
 
+  const [isTakeoutDraft, setIsTakeoutDraft] = useState(false);
+
   const [nameError, setNameError] = useState<string | null>(null);
 
   const [stockError, setStockError] = useState<string | null>(null);
@@ -142,6 +144,7 @@ export default function OrderPageContent() {
           total: 0,
           orderItems: [],
           observation: null,
+          isTakeout: false,
         };
 
         const orderItems = mergeOrderItem(base.orderItems, product, 1, () => product.id);
@@ -221,6 +224,7 @@ export default function OrderPageContent() {
 
     setCustomerNameDraft("");
     setNameError(null);
+    setIsTakeoutDraft(false);
     setIsNameDialogOpen(true);
   }
 
@@ -245,10 +249,10 @@ export default function OrderPageContent() {
     setNameError(null);
     setIsNameDialogOpen(false);
 
-    await sendOrder(trimmedName);
+    await sendOrder(trimmedName, isTakeoutDraft);
   }
 
-  async function sendOrder(customerName: string) {
+  async function sendOrder(customerName: string, isTakeout?: boolean) {
     if (!currentOrder || currentOrder.orderItems.length === 0 || sendingOrderRef.current) {
       return;
     }
@@ -278,6 +282,7 @@ export default function OrderPageContent() {
         status: "PENDING",
         observation,
         customerName,
+        isTakeout,
       });
 
       const printedQty: Record<number, number> = {};
@@ -368,6 +373,8 @@ export default function OrderPageContent() {
             onCustomerNameDraftChange={handleCustomerNameDraftChange}
             onConfirmCustomerName={handleConfirmCustomerName}
             nameError={nameError}
+            isTakeoutDraft={isTakeoutDraft}
+            onIsTakeoutDraftChange={setIsTakeoutDraft}
           />
         )}
       </section>

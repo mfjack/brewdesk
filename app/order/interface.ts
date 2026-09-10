@@ -15,6 +15,8 @@ export interface TMenuList {
   onCustomerNameDraftChange: (value: string) => void;
   onConfirmCustomerName: () => void;
   nameError?: string | null;
+  isTakeoutDraft: boolean;
+  onIsTakeoutDraftChange: (value: boolean) => void;
 }
 
 export interface TOrderPanel {
@@ -60,4 +62,5 @@ export interface TOrderResponse {
   orderItems: TOrderItem[];
   observation: string | null;
   printedItemQuantities?: Record<number, number>;
+  isTakeout: boolean;
 }

@@ -39,6 +39,7 @@ export function OrderPanel({
         {categories?.map((category: TCategory) => (
           <Button
             key={category.id}
+            size="lg"
             onClick={() => handleCategoryClick(category.id)}
             variant={selectedCategory?.id === category.id ? "default" : "outline"}
           >

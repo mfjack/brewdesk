@@ -48,8 +48,10 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
         <p>Data: {new Date(order.createdAt).toLocaleString("pt-BR")}</p>
 
         <p>
-          Cliente: <strong className="text-base">{order.customerName || "Sem nome"}</strong>
+          Cliente: <span className="text-base font-medium">{order.customerName || "Sem nome"}</span>
         </p>
+
+        {order.isTakeout && <p className="mt-1 text-center text-base font-bold">*** PARA LEVAR ***</p>}
 
         {receiptObservation && (
           <p>

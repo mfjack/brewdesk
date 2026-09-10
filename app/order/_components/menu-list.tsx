@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Card } from "@/_components/ui/card";
+import { Switch } from "@/_components/ui/switch";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 
@@ -31,6 +32,8 @@ export function MenuList({
   onCustomerNameDraftChange,
   onConfirmCustomerName,
   nameError,
+  isTakeoutDraft,
+  onIsTakeoutDraftChange,
 }: TMenuList) {
   const hasItems = (order?.orderItems?.length ?? 0) > 0;
 
@@ -168,6 +171,12 @@ export function MenuList({
                   }}
                 />
                 {nameError && <p className="text-xs text-center mt-1 text-destructive">{nameError}</p>}
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
+                <p className="text-sm font-medium">Para levar</p>
+
+                <Switch checked={isTakeoutDraft} onCheckedChange={onIsTakeoutDraftChange} />
               </div>
 
               <DialogFooter>

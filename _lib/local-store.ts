@@ -287,6 +287,8 @@ export const localStore = {
       observation: null,
 
       printedItemQuantities: {},
+
+      isTakeout: false,
     };
 
     data.orders.push(order);
@@ -404,6 +406,8 @@ export const localStore = {
     observation?: string,
 
     customerName?: string,
+
+    isTakeout?: boolean,
   ) => {
     const data = readStore();
 
@@ -432,6 +436,14 @@ export const localStore = {
      */
     if (customerName !== undefined) {
       order.customerName = customerName.trim();
+    }
+
+    /**
+     * Atualiza "para levar" somente
+     * quando foi informado.
+     */
+    if (isTakeout !== undefined) {
+      order.isTakeout = isTakeout;
     }
 
     /**
