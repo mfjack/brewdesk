@@ -19,7 +19,7 @@ import { useMarkOrderItemsPrinted } from "../mutation/useMarkOrderItemsPrinted";
 import { TCategory, TOrderItem, TOrderResponse, TProduct } from "../interface";
 import { computeOrderTotal, decrementOrRemoveItem, DRAFT_ORDER_ID, isDraftOrder, mergeOrderItem } from "../order-math";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
 import { OrderReceipt } from "@/app/order/_components/order-receipt";
 
@@ -29,6 +29,7 @@ type PrintJob = {
 };
 
 export default function OrderPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
 
@@ -302,7 +303,7 @@ export default function OrderPageContent() {
 
       setPrintedItemQuantities(printedQty);
 
-      schedulePrint(updatedOrder.id, printedQty);
+      schedulePrint(updatedOrder.id, printedQty, () => router.push("/order-detail"));
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
     } finally {
