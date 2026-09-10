@@ -80,7 +80,7 @@ export default function ReportPage() {
 
       <section className="flex flex-col h-screen print:hidden">
         <div className="p-4 flex items-center justify-between">
-          <Header title="Relatório" description="Relatório de vendas por período" />
+          <Header title="Relatório" />
 
           <Button size="lg" onClick={() => window.print()}>
             <Printer />

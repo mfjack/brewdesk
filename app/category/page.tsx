@@ -34,7 +34,7 @@ export default function CategoryPage() {
   return (
     <section className="flex flex-col h-screen">
       <div className="flex flex-col p-4">
-        <Header title="Categorias" description="Gerencie as categorias: adicione e remova categorias." />
+        <Header title="Categorias" />
       </div>
 
       <Separator className="h-px w-full" />

@@ -69,7 +69,7 @@ export default function KitchenPage() {
   return (
     <section className="flex flex-col h-screen">
       <div className="flex flex-col p-4">
-        <Header title="Cozinha" description="Gerencie os pedidos: visualize, prepare e entregue os pedidos." />
+        <Header title="Cozinha" />
       </div>
 
       <Separator className="h-px w-full" />

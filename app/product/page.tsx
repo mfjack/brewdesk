@@ -26,7 +26,7 @@ export default function ProductPage() {
   return (
     <section className="flex flex-col h-screen">
       <div className="flex items-center justify-between p-4">
-        <Header title="Produtos" description="Gerencie os produtos: adicione, edite e remova produtos." />
+        <Header title="Produtos" />
 
         <ProductFormDialog
           categories={categories}

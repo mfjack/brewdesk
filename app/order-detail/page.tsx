@@ -62,10 +62,9 @@ export default function OrderDetailPage() {
 
   return (
     <section className="flex flex-col h-screen w-full">
-      {/* HEADER */}
       <div className="flex flex-col p-4 w-full">
         <div className="flex items-center justify-between">
-          <Header title="Comandas" description="Gerencie as comandas: visualize, abra e feche comandas." />
+          <Header title="Comandas" />
 
           <Button asChild size="lg" className="w-30">
             <Link href="/order">

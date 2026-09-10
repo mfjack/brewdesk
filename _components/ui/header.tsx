@@ -13,7 +13,7 @@ export function Header({ title, description }: THeader) {
       <Separator orientation="vertical" className="h-8 w-px" />
 
       <div>
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <h1 className="text-lg font-bold">{title}</h1>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
     </header>

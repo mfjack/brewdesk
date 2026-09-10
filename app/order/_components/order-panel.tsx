@@ -19,7 +19,7 @@ export function OrderPanel({
     <section className="flex flex-col h-screen w-full">
       <div className="flex flex-col p-4 w-full">
         <div className="flex items-center justify-between">
-          <Header title="PDV" description="Crie pedidos, adicione e remova produtos." />
+          <Header title="PDV" />
           <div className="flex gap-3">
             <Button variant="secondary" asChild size="lg">
               <Link href="/order-detail">
@@ -33,9 +33,7 @@ export function OrderPanel({
 
       <Separator className="h-px bg-border" />
 
-      {stockError && (
-        <p className="mx-4 mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{stockError}</p>
-      )}
+      {stockError && <p className="mx-4 mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{stockError}</p>}
 
       <div className="flex gap-3 p-4 rounded-xl">
         {categories?.map((category: TCategory) => (
