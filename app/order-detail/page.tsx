@@ -112,7 +112,7 @@ export default function OrderDetailPage() {
                   </p>
                 )}
 
-                <Button asChild className="w-full mt-4" size="lg" variant="default">
+                <Button asChild className="w-full mt-2" size="lg" variant="default">
                   <Link href={`/order?orderId=${order.id}`}>Detalhes da comanda</Link>
                 </Button>
 
