@@ -1,32 +1,20 @@
 "use client";
 
 import { Button } from "@/_components/ui/button";
-import { Card } from "@/_components/ui/card";
-import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
-import { Trash2 } from "lucide-react";
+import { Header } from "@/_components/ui/header";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+
 import { useGetCategories } from "./query/useGetCategories";
 import { useDeleteCategory } from "./mutation/useDeleteCategory";
-import { useCreateCategory } from "./mutation/useCreateCategory";
-import { useForm } from "react-hook-form";
-import { TFormData } from "./interface";
-import { Header } from "@/_components/ui/header";
+import { CategoryFormDialog } from "./_components/category-form-dialog";
+import type { TCategory } from "../order/interface";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 export default function CategoryPage() {
   const { data: categories } = useGetCategories();
   const deleteCategory = useDeleteCategory();
-  const createCategory = useCreateCategory();
-
-  const { register, handleSubmit, reset } = useForm<TFormData>();
-
-  function handleCreateCategory(data: TFormData) {
-    createCategory.mutate(data.name);
-
-    reset({
-      name: "",
-    });
-  }
 
   function handleDeleteCategory(categoryId: number) {
     deleteCategory.mutate(categoryId);
@@ -34,28 +22,59 @@ export default function CategoryPage() {
 
   return (
     <section className="flex flex-col h-screen">
-      <div className="flex flex-col p-4">
+      <div className="flex items-center justify-between p-4">
         <Header title="Categorias" />
+
+        <CategoryFormDialog
+          trigger={
+            <Button size="lg">
+              <Plus />
+              Adicionar categoria
+            </Button>
+          }
+        />
       </div>
 
       <Separator className="h-px w-full" />
 
-      <form className="flex items-center flex-row gap-2 lg:w-1/3 w-full p-4" onSubmit={handleSubmit(handleCreateCategory)}>
-        <Input type="text" placeholder="Nome da categoria" {...register("name")} />
-        <Button size="lg" type="submit">
-          {createCategory.isPending ? "Adicionando..." : "Adicionar categoria"}
-        </Button>
-      </form>
+      <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden">
+        {categories?.length === 0 ? (
+          <p className="p-8 text-center text-sm text-muted-foreground">Nenhuma categoria cadastrada.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
 
-      <div className="p-4 flex gap-2 flex-col">
-        {categories?.map((category: { id: number; name: string }) => (
-          <Card key={category.id} className="flex flex-row justify-between items-center w-full p-4">
-            <span>{toTitleCase(category.name)}</span>
-            <Button variant="destructive" size="sm" onClick={() => handleDeleteCategory(category.id)}>
-              <Trash2 />
-            </Button>
-          </Card>
-        ))}
+            <TableBody>
+              {categories?.map((category: TCategory) => (
+                <TableRow key={category.id}>
+                  <TableCell className="font-medium">{toTitleCase(category.name)}</TableCell>
+
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <CategoryFormDialog
+                        category={category}
+                        trigger={
+                          <Button variant="outline" size="icon-sm">
+                            <Pencil />
+                          </Button>
+                        }
+                      />
+
+                      <Button variant="destructive" size="icon-sm" onClick={() => handleDeleteCategory(category.id)}>
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </section>
   );
