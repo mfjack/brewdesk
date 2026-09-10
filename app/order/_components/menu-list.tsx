@@ -75,12 +75,7 @@ export function MenuList({
                   const isNew = item.quantity > printedQty;
 
                   return (
-                    <Card
-                      key={item.id}
-                      className={`flex flex-row items-center justify-between p-4 mb-3 ${
-                        isNew ? "border-2 border-yellow-400 bg-yellow-50/30" : ""
-                      }`}
-                    >
+                    <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3">
                       <div className="flex items-center gap-6">
                         <span
                           className="z-10 flex h-6 w-6 items-center justify-center
@@ -94,8 +89,6 @@ export function MenuList({
 
                           <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
                         </div>
-
-                        {isNew && <span className="text-xs font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded">NOVO</span>}
                       </div>
 
                       <Button
