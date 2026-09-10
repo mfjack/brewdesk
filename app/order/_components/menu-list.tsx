@@ -70,10 +70,6 @@ export function MenuList({
             ) : (
               <div className="flex flex-col gap-1">
                 {order.orderItems.map((item: TOrderItem) => {
-                  const printedQty = printedItemQuantities[item.id] ?? 0;
-
-                  const isNew = item.quantity > printedQty;
-
                   return (
                     <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3">
                       <div className="flex items-center gap-6">
