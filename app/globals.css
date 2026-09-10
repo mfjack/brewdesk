@@ -134,7 +134,20 @@
 
 @media print {
   @page {
+    margin: 1cm;
+  }
+
+  /**
+   * O recibo de pedidos usa uma bobina térmica (80mm).
+   * Qualquer outra impressão (ex: relatório) usa o
+   * tamanho de página padrão definido acima.
+   */
+  @page receipt {
     size: 80mm auto;
     margin: 0;
+  }
+
+  .order-receipt {
+    page: receipt;
   }
 }

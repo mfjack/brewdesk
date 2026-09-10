@@ -43,7 +43,7 @@ const navLinks = [
 
 export function AppSidebar() {
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar collapsible="offcanvas" className="print:hidden">
       <SidebarHeader />
 
       <SidebarContent>

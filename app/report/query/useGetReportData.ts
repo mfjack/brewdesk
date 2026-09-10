@@ -4,19 +4,19 @@ import { TOrderResponse } from "@/app/order/interface";
 
 export type DateRange = "day" | "week" | "month";
 
-interface ProductStat {
+export interface ProductStat {
   name: string;
   quantity: number;
   revenue: number;
 }
 
-interface HourlyPeak {
+export interface HourlyPeak {
   hour: string;
   revenue: number;
   orders: number;
 }
 
-interface ReportStats {
+export interface ReportStats {
   totalRevenue: number;
   ordersCount: number;
   averageTicket: number;
@@ -27,7 +27,7 @@ interface ReportStats {
   allProducts: ProductStat[];
 }
 
-interface ProductReportStats {
+export interface ProductReportStats {
   totalRevenue: number;
   ordersCount: number;
   averageTicket: number;
