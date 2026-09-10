@@ -11,6 +11,7 @@ import { useCreateCategory } from "./mutation/useCreateCategory";
 import { useForm } from "react-hook-form";
 import { TFormData } from "./interface";
 import { Header } from "@/_components/ui/header";
+import { toTitleCase } from "@/_lib/to-title-case";
 
 export default function CategoryPage() {
   const { data: categories } = useGetCategories();
@@ -49,7 +50,7 @@ export default function CategoryPage() {
       <div className="p-4 flex gap-2 flex-col">
         {categories?.map((category: { id: number; name: string }) => (
           <Card key={category.id} className="flex flex-row justify-between items-center w-full p-4">
-            <span>{category.name}</span>
+            <span>{toTitleCase(category.name)}</span>
             <Button variant="destructive" size="sm" onClick={() => handleDeleteCategory(category.id)}>
               <Trash2 />
             </Button>

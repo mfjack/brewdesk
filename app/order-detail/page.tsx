@@ -104,7 +104,7 @@ export default function OrderDetailPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredOrders.map((order: TOrderResponse) => (
               <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
-                <span className="font-bold text-lg text-center">{order.customerName}</span>
+                <span className="font-bold text-lg text-center uppercase">{order.customerName}</span>
 
                 {order.observation && (
                   <p className="text-xs font-bold text-destructive">

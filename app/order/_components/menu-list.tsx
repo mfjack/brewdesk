@@ -14,6 +14,7 @@ import { TMenuList, TOrderItem } from "../interface";
 import { formatCurrency } from "@/_lib/format-currency";
 
 import { Input } from "@/_components/ui/input";
+import { toTitleCase } from "@/_lib/to-title-case";
 
 export function MenuList({
   order,
@@ -88,7 +89,7 @@ export function MenuList({
                         </span>
 
                         <div className="flex flex-col items-start">
-                          <p className="text-md font-bold">{item.product.name}</p>
+                          <p className="text-md font-bold">{toTitleCase(item.product.name)}</p>
 
                           <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
                         </div>

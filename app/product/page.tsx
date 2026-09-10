@@ -12,6 +12,7 @@ import { useDeleteProduct } from "./mutation/useDeleteProduct";
 import { ProductFormDialog } from "./_components/product-form-dialog";
 import type { TProduct } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
+import { toTitleCase } from "@/_lib/to-title-case";
 import Image from "next/image";
 
 export default function ProductPage() {
@@ -77,13 +78,13 @@ export default function ProductPage() {
                   </TableCell>
 
                   <TableCell>
-                    <p className="font-medium">{product.name}</p>
+                    <p className="font-medium whitespace-normal">{toTitleCase(product.name)}</p>
                     {product.description && (
                       <p className="max-w-60 truncate text-xs text-muted-foreground">{product.description}</p>
                     )}
                   </TableCell>
 
-                  <TableCell className="text-muted-foreground">{product.category.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{toTitleCase(product.category.name)}</TableCell>
 
                   <TableCell>{formatCurrency(product.price)}</TableCell>
 

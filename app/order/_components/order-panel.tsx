@@ -1,6 +1,7 @@
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { formatCurrency } from "@/_lib/format-currency";
+import { toTitleCase } from "@/_lib/to-title-case";
 import { TCategory, TOrderPanel, TProduct } from "../interface";
 import { ScrollText } from "lucide-react";
 import { Header } from "@/_components/ui/header";
@@ -43,7 +44,7 @@ export function OrderPanel({
             onClick={() => handleCategoryClick(category.id)}
             variant={selectedCategory?.id === category.id ? "default" : "outline"}
           >
-            {category.name}
+            {toTitleCase(category.name)}
           </Button>
         ))}
       </div>
@@ -77,7 +78,7 @@ export function OrderPanel({
                     </span>
                   )}
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-center text-sm font-bold whitespace-normal">{product.name}</span>
+                    <span className="text-center text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
                     <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
                     {available !== null && (
                       <span className={`text-[10px] ${outOfStock ? "font-semibold text-destructive" : "text-muted-foreground"}`}>

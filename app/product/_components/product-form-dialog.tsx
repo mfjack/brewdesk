@@ -23,6 +23,7 @@ import {
 import { useCreateProduct } from "../mutation/useCreateProduct";
 import { useUpdateProduct } from "../mutation/useUpdateProduct";
 import type { TCategory, TProduct } from "../../order/interface";
+import { toTitleCase } from "@/_lib/to-title-case";
 import Image from "next/image";
 
 interface TProductFormValues {
@@ -179,7 +180,7 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
                   <SelectContent>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={String(category.id)}>
-                        {category.name}
+                        {toTitleCase(category.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>
