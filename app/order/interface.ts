@@ -20,7 +20,6 @@ export interface TOrderPanel {
   categories: TCategory[];
   selectedCategory: TCategory | null;
   handleCategoryClick: (categoryId: number) => void;
-  hasActiveOrder: boolean;
   filteredProducts: TProduct[] | undefined;
   onAddProduct: (product: TProduct) => void;
   order: TOrderResponse | null;
@@ -44,7 +43,6 @@ export interface TOrderItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
-  observation: string | null;
 }
 
 export interface TOrderResponse {

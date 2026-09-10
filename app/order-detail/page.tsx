@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
@@ -26,17 +26,14 @@ export default function OrderDetailPage() {
 
   const updateOrderStatus = useUpdateOrderStatus();
 
-  /**
-   * Mostra somente comandas que ainda não foram pagas.
-   *
-   * IMPORTANTE:
-   * A comanda PAID continua armazenada no localStore.
-   * Apenas deixa de aparecer nesta tela.
-   */
-  const filteredOrders = [...orders]
-    .filter((order) => order.status !== "PAID")
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredOrders = useMemo(
+    () =>
+      orders
+        .filter((order) => order.status !== "PAID")
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase())),
+    [orders, searchTerm],
+  );
 
   function handleOpenPayment(order: TOrderResponse) {
     setSelectedOrder(order);
@@ -60,14 +57,6 @@ export default function OrderDetailPage() {
       status: "PAID",
     });
 
-    /**
-     * Não deletamos a comanda.
-     *
-     * Apenas fechamos o diálogo.
-     *
-     * Como o filtro acima remove status PAID,
-     * ela desaparecerá automaticamente da tela.
-     */
     setSelectedOrder(null);
   }
 
@@ -89,7 +78,6 @@ export default function OrderDetailPage() {
 
       <Separator className="h-px bg-border" />
 
-      {/* FILTRO */}
       <div className="p-4 flex gap-2 w-100">
         <Input
           type="text"
@@ -106,7 +94,6 @@ export default function OrderDetailPage() {
         )}
       </div>
 
-      {/* COMANDAS */}
       {filteredOrders.length === 0 ? (
         <p className="p-4 text-base text-muted-foreground">
           {searchTerm ? "Nenhuma comanda encontrada com esse nome." : "Nenhuma comanda em aberto."}
@@ -127,7 +114,6 @@ export default function OrderDetailPage() {
                   <span className="text-muted-foreground text-sm font-bold">{formatCurrency(order.total)}</span>
                 </div>
 
-                {/* OBSERVAÇÃO */}
                 {order.observation && (
                   <p className="text-xs font-bold text-destructive">
                     Observação:
@@ -135,12 +121,10 @@ export default function OrderDetailPage() {
                   </p>
                 )}
 
-                {/* DETALHES */}
                 <Button asChild className="w-full mt-4" size="lg" variant="default">
                   <Link href={`/order?orderId=${order.id}`}>Detalhes da comanda</Link>
                 </Button>
 
-                {/* PAGAMENTO */}
                 <Button type="button" className="w-full" size="lg" variant="outline" onClick={() => handleOpenPayment(order)}>
                   <DollarSign />
                   Pagamento
@@ -151,7 +135,6 @@ export default function OrderDetailPage() {
         </div>
       )}
 
-      {/* DIÁLOGO DE PAGAMENTO */}
       <Dialog
         open={Boolean(selectedOrder)}
         onOpenChange={(open) => {

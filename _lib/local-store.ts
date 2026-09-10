@@ -1,4 +1,5 @@
 import type { TCategory, TOrderResponse, TProduct } from "@/app/order/interface";
+import { computeOrderTotal, decrementOrRemoveItem, mergeOrderItem } from "@/app/order/order-math";
 
 const STORAGE_KEY = "brewdesk.data.v1";
 
@@ -226,7 +227,7 @@ export const localStore = {
   /**
    * ADICIONAR ITEM À COMANDA
    */
-  addOrderItem: (orderId: number, productId: number, quantity: number, observation?: string) => {
+  addOrderItem: (orderId: number, productId: number, quantity: number) => {
     const data = readStore();
 
     const order = data.orders.find((item) => item.id === orderId);
@@ -237,32 +238,9 @@ export const localStore = {
       throw new Error("Pedido ou produto não encontrado");
     }
 
-    const existingItem = order.orderItems.find((item) => item.product.id === productId);
+    order.orderItems = mergeOrderItem(order.orderItems, product, quantity, () => data.nextIds.item++);
 
-    if (existingItem) {
-      existingItem.quantity += quantity;
-
-      existingItem.subtotal = existingItem.quantity * existingItem.unitPrice;
-    } else {
-      order.orderItems.push({
-        id: data.nextIds.item++,
-
-        product,
-
-        quantity,
-
-        unitPrice: product.price,
-
-        subtotal: product.price * quantity,
-
-        observation: observation ?? null,
-      });
-    }
-
-    /**
-     * Recalcula o total da comanda.
-     */
-    order.total = order.orderItems.reduce((total, item) => total + item.subtotal, 0);
+    order.total = computeOrderTotal(order.orderItems);
 
     writeStore(data);
 
@@ -281,22 +259,9 @@ export const localStore = {
       throw new Error("Pedido não encontrado");
     }
 
-    const item = order.orderItems.find((item) => item.id === itemId);
+    order.orderItems = decrementOrRemoveItem(order.orderItems, itemId);
 
-    if (item) {
-      if (item.quantity > 1) {
-        item.quantity -= 1;
-
-        item.subtotal = item.quantity * item.unitPrice;
-      } else {
-        order.orderItems = order.orderItems.filter((i) => i.id !== itemId);
-      }
-    }
-
-    /**
-     * Recalcula o total.
-     */
-    order.total = order.orderItems.reduce((total, item) => total + item.subtotal, 0);
+    order.total = computeOrderTotal(order.orderItems);
 
     /**
      * Corrige a quantidade impressa.

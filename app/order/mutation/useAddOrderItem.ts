@@ -5,12 +5,10 @@ export interface TAddOrderItem {
   orderId: number;
   productId: number;
   quantity: number;
-  observation?: string;
 }
 
 export function useAddOrderItem() {
   return useMutation({
-    mutationFn: async ({ orderId, productId, quantity, observation }: TAddOrderItem) =>
-      localStore.addOrderItem(orderId, productId, quantity, observation),
+    mutationFn: async ({ orderId, productId, quantity }: TAddOrderItem) => localStore.addOrderItem(orderId, productId, quantity),
   });
 }

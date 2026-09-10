@@ -8,7 +8,7 @@ import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import { ListChecks, LucideIcon, SquarePen, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import { useGetReportData, useGetProductReportData } from "./query/useGetReportData";
+import { useGetReportData, useGetProductReportData, type DateRange } from "./query/useGetReportData";
 import { formatCurrency } from "@/_lib/format-currency";
 
 interface CardDetail {
@@ -16,8 +16,6 @@ interface CardDetail {
   value: string;
   Icon: LucideIcon;
 }
-
-type DateRange = "day" | "week" | "month";
 
 const dateRangeLabels: Record<DateRange, string> = {
   day: "Dia",
@@ -42,6 +40,9 @@ export default function ReportPage() {
       </section>
     );
   }
+
+  const maxHourlyRevenue = Math.max(...reportData.hourlyPeaks.map((p) => p.revenue));
+  const productMaxHourlyRevenue = productReportData ? Math.max(...productReportData.hourlyPeaks.map((p) => p.revenue)) : 0;
 
   const cardDetails: CardDetail[] = [
     {
@@ -91,7 +92,6 @@ export default function ReportPage() {
 
         {(Object.keys(dateRangeLabels) as DateRange[]).map((range) => (
           <TabsContent key={range} value={range} className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden p-4">
-            {/* Cards de Estatísticas */}
             <div className="flex gap-4 w-full mb-4 flex-wrap">
               {cardDetails.map((cardDetail) => (
                 <Card key={cardDetail.title} className="flex-1 min-w-50">
@@ -106,7 +106,6 @@ export default function ReportPage() {
               ))}
             </div>
 
-            {/* Consulta por Produto */}
             <div className="mb-4">
               <Card>
                 <CardContent className="flex flex-col gap-4">
@@ -156,8 +155,8 @@ export default function ReportPage() {
                               .filter((peak) => peak.orders > 0)
                               .sort((a, b) => b.revenue - a.revenue)
                               .map((peak) => {
-                                const maxRevenue = Math.max(...productReportData.hourlyPeaks.map((p) => p.revenue));
-                                const percentage = maxRevenue > 0 ? (peak.revenue / maxRevenue) * 100 : 0;
+                                const percentage =
+                                  productMaxHourlyRevenue > 0 ? (peak.revenue / productMaxHourlyRevenue) * 100 : 0;
                                 return (
                                   <div key={peak.hour} className="space-y-1">
                                     <div className="flex justify-between items-center">
@@ -231,7 +230,6 @@ export default function ReportPage() {
                 </Card>
               </div>
 
-              {/* Produtos Menos Vendidos */}
               <div className="mb-4 w-full">
                 <Card>
                   <CardContent className="flex flex-col gap-4 pt-4">
@@ -273,7 +271,6 @@ export default function ReportPage() {
               </div>
             </div>
 
-            {/* Horários de Pico */}
             <div>
               <Card>
                 <CardContent className="flex flex-col gap-4 pt-4">
@@ -286,8 +283,7 @@ export default function ReportPage() {
                       .filter((peak) => peak.orders > 0)
                       .sort((a, b) => b.revenue - a.revenue)
                       .map((peak) => {
-                        const maxRevenue = Math.max(...reportData.hourlyPeaks.map((p) => p.revenue));
-                        const percentage = maxRevenue > 0 ? (peak.revenue / maxRevenue) * 100 : 0;
+                        const percentage = maxHourlyRevenue > 0 ? (peak.revenue / maxHourlyRevenue) * 100 : 0;
                         return (
                           <div key={peak.hour} className="space-y-1">
                             <div className="flex justify-between items-center">

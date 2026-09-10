@@ -1,6 +1,6 @@
 import { Trash2, NotebookPen, Send, User } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
@@ -31,11 +31,11 @@ export function MenuList({
   onCustomerNameDraftChange,
   onConfirmCustomerName,
 }: TMenuList) {
-  const [localNameOpen, setLocalNameOpen] = useState(false);
+  const hasItems = (order?.orderItems?.length ?? 0) > 0;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key === "Enter" && order && (order.orderItems?.length ?? 0) > 0 && !isSending) {
+      if (event.ctrlKey && event.key === "Enter" && hasItems && !isSending) {
         event.preventDefault();
 
         onSendOrder();
@@ -47,11 +47,7 @@ export function MenuList({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [order, isSending, onSendOrder]);
-
-  useEffect(() => {
-    setLocalNameOpen(isNameDialogOpen);
-  }, [isNameDialogOpen]);
+  }, [hasItems, isSending, onSendOrder]);
 
   return (
     <div className="h-screen w-1/2">
@@ -156,7 +152,7 @@ export function MenuList({
               DIALOG NOME DO CLIENTE
           ========================= */}
 
-          <Dialog open={localNameOpen} onOpenChange={onNameDialogOpenChange}>
+          <Dialog open={isNameDialogOpen} onOpenChange={onNameDialogOpenChange}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Quem é o cliente?</DialogTitle>

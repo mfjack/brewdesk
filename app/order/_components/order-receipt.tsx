@@ -24,10 +24,6 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
         .filter((item) => item.quantity > 0)
     : order.orderItems;
 
-  if (isAdditional && displayItems.length === 0) {
-    return null;
-  }
-
   const shouldDisplay = printMode === "full" || (printMode === "additional" && displayItems.length > 0);
 
   if (!shouldDisplay) {
@@ -37,7 +33,7 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
   const receiptObservation = order.observation ?? observation;
 
   return (
-    <div className={`order-receipt hidden px-2 h-fit ${shouldDisplay ? "print:block" : "print:hidden"}`}>
+    <div className="order-receipt hidden px-2 h-fit print:block">
       <h1 className="text-base font-bold text-center my-2">Mañana Café y Coisinhas</h1>
 
       <div className="border-b pb-2 mb-2 text-start">

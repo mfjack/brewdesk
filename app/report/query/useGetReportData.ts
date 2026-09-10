@@ -2,17 +2,37 @@ import { useQuery } from "@tanstack/react-query";
 import { localStore } from "@/_lib/local-store";
 import { TOrderResponse } from "@/app/order/interface";
 
-type DateRange = "day" | "week" | "month";
+export type DateRange = "day" | "week" | "month";
+
+interface ProductStat {
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
+interface HourlyPeak {
+  hour: string;
+  revenue: number;
+  orders: number;
+}
 
 interface ReportStats {
   totalRevenue: number;
   ordersCount: number;
   averageTicket: number;
   totalItemsSold: number;
-  topProducts: Array<{ name: string; quantity: number; revenue: number }>;
-  bottomProducts: Array<{ name: string; quantity: number; revenue: number }>;
-  hourlyPeaks: Array<{ hour: string; revenue: number; orders: number }>;
-  allProducts: Array<{ name: string; quantity: number; revenue: number }>;
+  topProducts: ProductStat[];
+  bottomProducts: ProductStat[];
+  hourlyPeaks: HourlyPeak[];
+  allProducts: ProductStat[];
+}
+
+interface ProductReportStats {
+  totalRevenue: number;
+  ordersCount: number;
+  averageTicket: number;
+  totalItemsSold: number;
+  hourlyPeaks: HourlyPeak[];
 }
 
 function getDateRange(dateRange: DateRange): { start: Date; end: Date } {
@@ -41,12 +61,36 @@ function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange)
   });
 }
 
+function buildHourlyPeaks(orders: TOrderResponse[], getRevenue: (order: TOrderResponse) => number): HourlyPeak[] {
+  const hourlyMap = new Map<number, { revenue: number; orders: number }>();
+
+  orders.forEach((order) => {
+    const hour = new Date(order.createdAt).getHours();
+    const current = hourlyMap.get(hour) || { revenue: 0, orders: 0 };
+    hourlyMap.set(hour, {
+      revenue: current.revenue + getRevenue(order),
+      orders: current.orders + 1,
+    });
+  });
+
+  const hourlyPeaks: HourlyPeak[] = [];
+  for (let i = 0; i < 24; i++) {
+    const stats = hourlyMap.get(i) || { revenue: 0, orders: 0 };
+    hourlyPeaks.push({
+      hour: `${String(i).padStart(2, "0")}:00`,
+      revenue: stats.revenue,
+      orders: stats.orders,
+    });
+  }
+
+  return hourlyPeaks;
+}
+
 function calculateReportStats(orders: TOrderResponse[]): ReportStats {
   const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
   const ordersCount = orders.length;
   const averageTicket = ordersCount > 0 ? totalRevenue / ordersCount : 0;
 
-  // Calculate items sold
   const productSalesMap = new Map<string, { quantity: number; revenue: number }>();
   let totalItemsSold = 0;
 
@@ -62,7 +106,6 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
     });
   });
 
-  // Top and bottom products
   const sortedProducts = Array.from(productSalesMap.entries())
     .map(([name, stats]) => ({
       name,
@@ -74,26 +117,7 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
   const topProducts = sortedProducts.slice(0, 5);
   const bottomProducts = sortedProducts.slice(-5).reverse();
 
-  // Hourly peaks
-  const hourlyMap = new Map<number, { revenue: number; orders: number }>();
-  orders.forEach((order) => {
-    const hour = new Date(order.createdAt).getHours();
-    const current = hourlyMap.get(hour) || { revenue: 0, orders: 0 };
-    hourlyMap.set(hour, {
-      revenue: current.revenue + order.total,
-      orders: current.orders + 1,
-    });
-  });
-
-  const hourlyPeaks: Array<{ hour: string; revenue: number; orders: number }> = [];
-  for (let i = 0; i < 24; i++) {
-    const stats = hourlyMap.get(i) || { revenue: 0, orders: 0 };
-    hourlyPeaks.push({
-      hour: `${String(i).padStart(2, "0")}:00`,
-      revenue: stats.revenue,
-      orders: stats.orders,
-    });
-  }
+  const hourlyPeaks = buildHourlyPeaks(orders, (order) => order.total);
 
   return {
     totalRevenue,
@@ -121,13 +145,12 @@ export function useGetReportData(dateRange: DateRange = "day") {
 export function useGetProductReportData(dateRange: DateRange = "day", productName: string | null) {
   return useQuery({
     queryKey: ["report", dateRange, "product", productName],
-    queryFn: () => {
+    queryFn: (): ProductReportStats | null => {
       if (!productName) return null;
 
       const allOrders = localStore.getOrders();
       const filteredOrders = filterOrdersByDateRange(allOrders, dateRange);
 
-      // Filter orders to only include items with the selected product
       const productOrders = filteredOrders
         .map((order) => ({
           ...order,
@@ -146,37 +169,14 @@ export function useGetProductReportData(dateRange: DateRange = "day", productNam
       const ordersCount = productOrders.length;
       const averageTicket = ordersCount > 0 ? totalRevenue / ordersCount : 0;
 
-      // Hourly peaks for this product
-      const hourlyMap = new Map<number, { revenue: number; orders: number }>();
-      productOrders.forEach((order) => {
-        const hour = new Date(order.createdAt).getHours();
-        const orderRevenue = order.orderItems.reduce((sum, item) => sum + item.subtotal, 0);
-        const current = hourlyMap.get(hour) || { revenue: 0, orders: 0 };
-        hourlyMap.set(hour, {
-          revenue: current.revenue + orderRevenue,
-          orders: current.orders + 1,
-        });
-      });
-
-      const hourlyPeaks: Array<{ hour: string; revenue: number; orders: number }> = [];
-      for (let i = 0; i < 24; i++) {
-        const stats = hourlyMap.get(i) || { revenue: 0, orders: 0 };
-        hourlyPeaks.push({
-          hour: `${String(i).padStart(2, "0")}:00`,
-          revenue: stats.revenue,
-          orders: stats.orders,
-        });
-      }
+      const hourlyPeaks = buildHourlyPeaks(productOrders, (order) => order.orderItems.reduce((sum, item) => sum + item.subtotal, 0));
 
       return {
         totalRevenue,
         ordersCount,
         averageTicket,
         totalItemsSold,
-        topProducts: [],
-        bottomProducts: [],
         hourlyPeaks,
-        allProducts: [],
       };
     },
     enabled: !!productName,

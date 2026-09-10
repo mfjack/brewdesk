@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDeleteProduct } from "./mutation/useDeleteProduct";
 import type { TCategory, TProduct } from "../order/interface";
 import { Header } from "@/_components/ui/header";
+import { formatCurrency } from "@/_lib/format-currency";
 
 export default function ProductPage() {
    const createProduct = useCreateProduct();
@@ -74,7 +75,7 @@ export default function ProductPage() {
                <Card key={product.id} className="flex flex-row justify-between items-center w-full p-4">
                   <div className="flex flex-col">
                      <span>{product.name}</span>
-                     <span>R$ {product.price.toFixed(2)}</span>
+                     <span>{formatCurrency(product.price)}</span>
                      <span className="text-sm text-muted-foreground">{product.category.name}</span>
                   </div>
                   <Button variant="destructive" size="sm" onClick={() => handleDeleteProduct(product.id)}>

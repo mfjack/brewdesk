@@ -1,6 +1,5 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
 import { useGetOrder } from "./query/useGetOrder";
@@ -12,7 +11,6 @@ import { Check, HandPlatter, Play } from "lucide-react";
 import { Header } from "@/_components/ui/header";
 
 export default function KitchenPage() {
-  const queryClient = useQueryClient();
   const { data: orders = [] } = useGetOrder();
   const updateOrderStatus = useUpdateOrderStatus();
 
@@ -56,10 +54,6 @@ export default function KitchenPage() {
       return "Preparando";
     }
 
-    if (status === "DELIVERED") {
-      return "Entregue";
-    }
-
     return "Pronto";
   }
 
@@ -70,8 +64,6 @@ export default function KitchenPage() {
       orderId: order.id,
       status: nextStatus,
     });
-
-    await queryClient.invalidateQueries({ queryKey: ["order"] });
   }
 
   return (

@@ -3,7 +3,7 @@ import "./globals.css";
 import { ClientProvider } from "./client-provider";
 import { cn } from "@/_lib/utils";
 import { Montserrat } from "next/font/google";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/_components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/_components/ui/sidebar";
 import { AppSidebar } from "@/_components/ui/app-sidebar";
 
 const montserrat = Montserrat({

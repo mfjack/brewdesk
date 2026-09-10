@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { localStore } from "@/_lib/local-store";
 
 export interface TUpdateOrderStatus {
@@ -9,16 +9,8 @@ export interface TUpdateOrderStatus {
 }
 
 export function useUpdateOrderStatus() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ orderId, status, observation, customerName }: TUpdateOrderStatus) =>
       localStore.updateOrderStatus(orderId, status, observation, customerName),
-
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["order"],
-      });
-    },
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MenuList } from "./menu-list";
 import { OrderPanel } from "./order-panel";
@@ -16,10 +16,16 @@ import { useUpdateOrderStatus } from "../mutation/useUpdateOrderStatus";
 import { useMarkOrderItemsPrinted } from "../mutation/useMarkOrderItemsPrinted";
 
 import { TCategory, TOrderItem, TOrderResponse, TProduct } from "../interface";
+import { computeOrderTotal, decrementOrRemoveItem, DRAFT_ORDER_ID, isDraftOrder, mergeOrderItem } from "../order-math";
 
 import { useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
 import { OrderReceipt } from "@/app/order/_components/order-receipt";
+
+type PrintJob = {
+  order: TOrderResponse;
+  mode: "full" | "additional";
+};
 
 export default function OrderPageContent() {
   const searchParams = useSearchParams();
@@ -29,13 +35,11 @@ export default function OrderPageContent() {
 
   const [currentOrder, setCurrentOrder] = useState<TOrderResponse | null>(null);
 
-  const [printOrder, setPrintOrder] = useState<TOrderResponse | null>(null);
+  const [printJob, setPrintJob] = useState<PrintJob | null>(null);
 
   const [observation, setObservation] = useState("");
 
   const [printedItemQuantities, setPrintedItemQuantities] = useState<Record<number, number>>({});
-
-  const [printMode, setPrintMode] = useState<"full" | "additional" | null>(null);
 
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
 
@@ -43,10 +47,6 @@ export default function OrderPageContent() {
 
   const [isSendingOrder, setIsSendingOrder] = useState(false);
 
-  /**
-   * Evita criar duas comandas simultaneamente
-   * em caso de duplo clique/duplo Enter no envio.
-   */
   const sendingOrderRef = useRef(false);
 
   const { data: categories } = useGetCategories();
@@ -60,10 +60,6 @@ export default function OrderPageContent() {
 
   const { data: existingOrder } = useGetOrderById(orderId ? Number(orderId) : null);
 
-  /**
-   * Se abrimos uma comanda existente,
-   * recuperamos os dados dela.
-   */
   useEffect(() => {
     if (!existingOrder) {
       return;
@@ -74,12 +70,10 @@ export default function OrderPageContent() {
     setPrintedItemQuantities(existingOrder.printedItemQuantities ?? {});
   }, [existingOrder]);
 
-  /**
-   * Categorias
-   */
-  const filteredProducts = selectedCategory
-    ? products?.filter((product: TProduct) => product.category.id === selectedCategory.id)
-    : products;
+  const filteredProducts = useMemo(
+    () => (selectedCategory ? products?.filter((product: TProduct) => product.category.id === selectedCategory.id) : products),
+    [products, selectedCategory],
+  );
 
   function handleCategoryClick(categoryId: number) {
     const category = categories?.find((cat: TCategory) => cat.id === categoryId);
@@ -97,51 +91,39 @@ export default function OrderPageContent() {
     setSelectedCategory(defaultCategory);
   }, [categories, selectedCategory]);
 
-  /**
-   * Adiciona produto.
-   *
-   * Enquanto a comanda ainda não tiver nome (id === 0,
-   * rascunho local que nunca foi criado no store), o item
-   * fica só em memória — nada é persistido ainda.
-   */
+  function schedulePrint(orderIdToMark: number, printedQty: Record<number, number>, onAfterPrint?: () => void) {
+    setTimeout(async () => {
+      window.print();
+
+      await markOrderItemsPrinted.mutateAsync({
+        orderId: orderIdToMark,
+        printedItemQuantities: printedQty,
+      });
+
+      onAfterPrint?.();
+      setPrintJob(null);
+    }, 100);
+  }
+
   async function handleAddProduct(product: TProduct) {
-    if (!currentOrder || currentOrder.id === 0) {
+    if (!currentOrder || isDraftOrder(currentOrder)) {
       setCurrentOrder((prev) => {
-        const base: TOrderResponse =
-          prev ?? {
-            id: 0,
-            customerName: "",
-            status: "OPEN",
-            createdAt: new Date().toISOString(),
-            total: 0,
-            orderItems: [],
-            observation: null,
-          };
+        const base: TOrderResponse = prev ?? {
+          id: DRAFT_ORDER_ID,
+          customerName: "",
+          status: "OPEN",
+          createdAt: new Date().toISOString(),
+          total: 0,
+          orderItems: [],
+          observation: null,
+        };
 
-        const existingItem = base.orderItems.find((item) => item.product.id === product.id);
-
-        const orderItems = existingItem
-          ? base.orderItems.map((item) =>
-              item.id === existingItem.id
-                ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.unitPrice }
-                : item,
-            )
-          : [
-              ...base.orderItems,
-              {
-                id: product.id,
-                product,
-                quantity: 1,
-                unitPrice: product.price,
-                subtotal: product.price,
-                observation: null,
-              },
-            ];
+        const orderItems = mergeOrderItem(base.orderItems, product, 1, () => product.id);
 
         return {
           ...base,
           orderItems,
-          total: orderItems.reduce((sum, item) => sum + item.subtotal, 0),
+          total: computeOrderTotal(orderItems),
         };
       });
 
@@ -168,19 +150,8 @@ export default function OrderPageContent() {
       return;
     }
 
-    if (currentOrder.id === 0) {
-      const item = currentOrder.orderItems.find((item) => item.id === itemId);
-
-      if (!item) {
-        return;
-      }
-
-      const orderItems =
-        item.quantity > 1
-          ? currentOrder.orderItems.map((i) =>
-              i.id === itemId ? { ...i, quantity: i.quantity - 1, subtotal: (i.quantity - 1) * i.unitPrice } : i,
-            )
-          : currentOrder.orderItems.filter((i) => i.id !== itemId);
+    if (isDraftOrder(currentOrder)) {
+      const orderItems = decrementOrRemoveItem(currentOrder.orderItems, itemId);
 
       if (orderItems.length === 0) {
         setCurrentOrder(null);
@@ -188,7 +159,7 @@ export default function OrderPageContent() {
         setCurrentOrder({
           ...currentOrder,
           orderItems,
-          total: orderItems.reduce((sum, i) => sum + i.subtotal, 0),
+          total: computeOrderTotal(orderItems),
         });
       }
 
@@ -201,24 +172,7 @@ export default function OrderPageContent() {
     });
 
     setCurrentOrder(updatedOrder);
-
-    const updatedPrintedQty = {
-      ...printedItemQuantities,
-    };
-
-    const itemStillExists = updatedOrder.orderItems.some((item: TOrderItem) => item.id === itemId);
-
-    if (itemStillExists) {
-      const item = updatedOrder.orderItems.find((item: TOrderItem) => item.id === itemId);
-
-      if (item) {
-        updatedPrintedQty[itemId] = Math.min(updatedPrintedQty[itemId] ?? 0, item.quantity);
-      }
-    } else {
-      delete updatedPrintedQty[itemId];
-    }
-
-    setPrintedItemQuantities(updatedPrintedQty);
+    setPrintedItemQuantities(updatedOrder.printedItemQuantities ?? {});
   }
 
   /**
@@ -257,10 +211,10 @@ export default function OrderPageContent() {
   /**
    * Envia pedido.
    *
-   * Se a comanda ainda é um rascunho local (id === 0,
-   * nunca criada no store), ela é criada agora — só neste
-   * momento, com o nome informado — junto com os itens que
-   * já tinham sido adicionados em memória.
+   * Se a comanda ainda é um rascunho local (nunca criada no
+   * store), ela é criada agora — só neste momento, com o
+   * nome informado — junto com os itens que já tinham sido
+   * adicionados em memória.
    *
    * Se a comanda já existe, ela continua sendo a comanda
    * atual para permitir adicionais (não cria outra).
@@ -276,7 +230,7 @@ export default function OrderPageContent() {
     try {
       let order = currentOrder;
 
-      if (order.id === 0) {
+      if (isDraftOrder(order)) {
         const created = await createOrder.mutateAsync({ customerName });
 
         order = created;
@@ -310,23 +264,11 @@ export default function OrderPageContent() {
 
       setCurrentOrder(orderWithPrintedItems);
 
-      setPrintOrder(orderWithPrintedItems);
+      setPrintJob({ order: orderWithPrintedItems, mode: "full" });
 
       setPrintedItemQuantities(printedQty);
 
-      setPrintMode("full");
-
-      setTimeout(async () => {
-        window.print();
-
-        await markOrderItemsPrinted.mutateAsync({
-          orderId: updatedOrder.id,
-          printedItemQuantities: printedQty,
-        });
-
-        setPrintMode(null);
-        setPrintOrder(null);
-      }, 100);
+      schedulePrint(updatedOrder.id, printedQty);
     } finally {
       sendingOrderRef.current = false;
       setIsSendingOrder(false);
@@ -349,36 +291,21 @@ export default function OrderPageContent() {
       printedQty[item.id] = item.quantity;
     });
 
-    const orderToPrint: TOrderResponse = {
-      ...currentOrder,
-      printedItemQuantities: printedItemQuantities,
-    };
+    setPrintJob({
+      order: { ...currentOrder, printedItemQuantities: printedItemQuantities },
+      mode: "additional",
+    });
 
-    setPrintOrder(orderToPrint);
-    setPrintMode("additional");
-
-    setTimeout(async () => {
-      window.print();
-
-      await markOrderItemsPrinted.mutateAsync({
-        orderId: currentOrder.id,
-        printedItemQuantities: printedQty,
-      });
-
-      setPrintedItemQuantities(printedQty);
-
-      setPrintMode(null);
-      setPrintOrder(null);
-    }, 100);
+    schedulePrint(currentOrder.id, printedQty, () => setPrintedItemQuantities(printedQty));
   }
 
   return (
     <>
-      {printOrder && (
+      {printJob && (
         <OrderReceipt
-          order={printOrder}
-          observation={printOrder.observation ?? observation}
-          printMode={printMode}
+          order={printJob.order}
+          observation={observation}
+          printMode={printJob.mode}
           printedItemQuantities={printedItemQuantities}
         />
       )}
@@ -388,7 +315,6 @@ export default function OrderPageContent() {
           categories={categories || []}
           selectedCategory={selectedCategory}
           handleCategoryClick={handleCategoryClick}
-          hasActiveOrder={Boolean(currentOrder)}
           filteredProducts={filteredProducts}
           onAddProduct={handleAddProduct}
           order={currentOrder}
@@ -401,7 +327,7 @@ export default function OrderPageContent() {
             order={currentOrder}
             onRemoveItem={handleRemoveItem}
             onSendOrder={handleRequestSendOrder}
-            isSending={isSendingOrder || updateOrderStatus.isPending}
+            isSending={isSendingOrder}
             isRemovingItem={removeOrderItem.isPending}
             observation={observation}
             onObservationChange={setObservation}

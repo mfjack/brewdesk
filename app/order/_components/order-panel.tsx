@@ -2,7 +2,7 @@ import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { formatCurrency } from "@/_lib/format-currency";
 import { TCategory, TOrderPanel, TProduct } from "../interface";
-import { Plus, ScrollText } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import { Header } from "@/_components/ui/header";
 import Link from "next/link";
 
@@ -26,10 +26,6 @@ export function OrderPanel({
                 Comandas
               </Link>
             </Button>
-            {/* <Button size="lg" onClick={onNewOrder}>
-              <Plus />
-              Novo pedido
-            </Button> */}
           </div>
         </div>
       </div>
