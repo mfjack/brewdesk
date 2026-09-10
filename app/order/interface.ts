@@ -24,6 +24,7 @@ export interface TOrderPanel {
   filteredProducts: TProduct[] | undefined;
   onAddProduct: (product: TProduct) => void;
   order: TOrderResponse | null;
+  stockError?: string | null;
 }
 
 export interface TCategory {
@@ -34,7 +35,11 @@ export interface TCategory {
 export interface TProduct {
   id: number;
   name: string;
+  description: string | null;
+  photoUrl: string | null;
   price: number;
+  quantity: number;
+  trackStock: boolean;
   category: TCategory;
 }
 

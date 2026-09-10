@@ -13,6 +13,7 @@ export function OrderPanel({
   filteredProducts,
   onAddProduct,
   order,
+  stockError,
 }: TOrderPanel) {
   return (
     <section className="flex flex-col h-screen w-full">
@@ -32,6 +33,10 @@ export function OrderPanel({
 
       <Separator className="h-px bg-border" />
 
+      {stockError && (
+        <p className="mx-4 mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{stockError}</p>
+      )}
+
       <div className="flex gap-3 p-4 rounded-xl">
         {categories?.map((category: TCategory) => (
           <Button
@@ -49,6 +54,8 @@ export function OrderPanel({
           {filteredProducts?.map((product: TProduct) => {
             const orderItem = order?.orderItems?.find((item) => item.product.id === product.id);
             const quantity = orderItem?.quantity ?? 0;
+            const available = product.trackStock ? product.quantity - quantity : null;
+            const outOfStock = available !== null && available <= 0;
 
             return (
               <Button
@@ -56,6 +63,7 @@ export function OrderPanel({
                 variant="secondary"
                 onClick={() => onAddProduct(product)}
                 key={product.id}
+                disabled={outOfStock}
                 className="relative h-24"
               >
                 {quantity > 0 && (
@@ -69,6 +77,11 @@ export function OrderPanel({
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-center text-sm font-bold whitespace-normal">{product.name}</span>
                   <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
+                  {available !== null && (
+                    <span className={`text-[10px] ${outOfStock ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
+                      {outOfStock ? "Esgotado" : `Restam ${available}`}
+                    </span>
+                  )}
                 </div>
               </Button>
             );

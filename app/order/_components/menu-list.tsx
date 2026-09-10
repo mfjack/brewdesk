@@ -55,9 +55,13 @@ export function MenuList({
       {order && (
         <div className="flex flex-col h-full">
           <div className="p-4 text-sm text-muted-foreground">
-            <p>
-              Comanda de <span className="font-bold">{order.customerName || "Sem nome"}</span>
-            </p>
+            {order.customerName ? (
+              <>
+                Cliente: <span className="font-bold">{order.customerName}</span>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Sem cliente definido</p>
+            )}
           </div>
 
           <Separator className="h-px bg-border" />

@@ -48,6 +48,8 @@ export default function OrderPageContent() {
 
   const [nameError, setNameError] = useState<string | null>(null);
 
+  const [stockError, setStockError] = useState<string | null>(null);
+
   const [isSendingOrder, setIsSendingOrder] = useState(false);
 
   const sendingOrderRef = useRef(false);
@@ -109,7 +111,27 @@ export default function OrderPageContent() {
     }, 100);
   }
 
+  function getAvailableStock(product: TProduct) {
+    if (!product.trackStock) {
+      return null;
+    }
+
+    const inCart = currentOrder?.orderItems.find((item) => item.product.id === product.id)?.quantity ?? 0;
+
+    return product.quantity - inCart;
+  }
+
   async function handleAddProduct(product: TProduct) {
+    const available = getAvailableStock(product);
+
+    if (available !== null && available <= 0) {
+      setStockError(`Estoque insuficiente para "${product.name}".`);
+
+      return;
+    }
+
+    setStockError(null);
+
     if (!currentOrder || isDraftOrder(currentOrder)) {
       setCurrentOrder((prev) => {
         const base: TOrderResponse = prev ?? {
@@ -134,13 +156,17 @@ export default function OrderPageContent() {
       return;
     }
 
-    const updatedOrder = await addOrderItem.mutateAsync({
-      orderId: currentOrder.id,
-      productId: product.id,
-      quantity: 1,
-    });
+    try {
+      const updatedOrder = await addOrderItem.mutateAsync({
+        orderId: currentOrder.id,
+        productId: product.id,
+        quantity: 1,
+      });
 
-    setCurrentOrder(updatedOrder);
+      setCurrentOrder(updatedOrder);
+    } catch (error) {
+      setStockError(error instanceof Error ? error.message : "Não foi possível adicionar o item.");
+    }
   }
 
   async function handleRemoveItem(itemId: number) {
@@ -222,17 +248,6 @@ export default function OrderPageContent() {
     await sendOrder(trimmedName);
   }
 
-  /**
-   * Envia pedido.
-   *
-   * Se a comanda ainda é um rascunho local (nunca criada no
-   * store), ela é criada agora — só neste momento, com o
-   * nome informado — junto com os itens que já tinham sido
-   * adicionados em memória.
-   *
-   * Se a comanda já existe, ela continua sendo a comanda
-   * atual para permitir adicionais (não cria outra).
-   */
   async function sendOrder(customerName: string) {
     if (!currentOrder || currentOrder.orderItems.length === 0 || sendingOrderRef.current) {
       return;
@@ -283,6 +298,8 @@ export default function OrderPageContent() {
       setPrintedItemQuantities(printedQty);
 
       schedulePrint(updatedOrder.id, printedQty);
+    } catch (error) {
+      setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
     } finally {
       sendingOrderRef.current = false;
       setIsSendingOrder(false);
@@ -329,6 +346,7 @@ export default function OrderPageContent() {
           filteredProducts={filteredProducts}
           onAddProduct={handleAddProduct}
           order={currentOrder}
+          stockError={stockError}
         />
 
         <Separator orientation="vertical" className="w-px bg-border" />

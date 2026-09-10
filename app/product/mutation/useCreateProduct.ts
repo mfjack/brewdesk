@@ -3,7 +3,11 @@ import { localStore } from "@/_lib/local-store";
 
 export interface TCreateProduct {
   name: string;
+  description?: string | null;
+  photoUrl?: string | null;
   price: number;
+  quantity?: number;
+  trackStock?: boolean;
   categoryId: number;
 }
 

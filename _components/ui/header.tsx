@@ -3,7 +3,7 @@ import { SidebarTrigger } from "./sidebar";
 
 interface THeader {
   title: string;
-  description: string;
+  description?: string;
 }
 
 export function Header({ title, description }: THeader) {
