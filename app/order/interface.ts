@@ -14,6 +14,7 @@ export interface TMenuList {
   customerNameDraft: string;
   onCustomerNameDraftChange: (value: string) => void;
   onConfirmCustomerName: () => void;
+  nameError?: string | null;
 }
 
 export interface TOrderPanel {

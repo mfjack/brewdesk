@@ -30,6 +30,7 @@ export function MenuList({
   customerNameDraft,
   onCustomerNameDraftChange,
   onConfirmCustomerName,
+  nameError,
 }: TMenuList) {
   const hasItems = (order?.orderItems?.length ?? 0) > 0;
 
@@ -148,10 +149,6 @@ export function MenuList({
             </Button>
           ) : null}
 
-          {/* =========================
-              DIALOG NOME DO CLIENTE
-          ========================= */}
-
           <Dialog open={isNameDialogOpen} onOpenChange={onNameDialogOpenChange}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -177,6 +174,7 @@ export function MenuList({
                     }
                   }}
                 />
+                {nameError && <p className="text-xs text-center mt-1 text-destructive">{nameError}</p>}
               </div>
 
               <DialogFooter>

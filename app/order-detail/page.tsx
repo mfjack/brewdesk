@@ -102,14 +102,8 @@ export default function OrderDetailPage() {
         <div className="flex-1 overflow-auto p-4 [&::-webkit-scrollbar]:hidden">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredOrders.map((order: TOrderResponse) => (
-              <Card className="flex flex-col gap-3 p-4 justify-between" key={order.id}>
-                <div className="flex flex-wrap justify-between gap-1">
-                  <div className="flex gap-2 items-center">
-                    <span className="font-bold text-sm">{order.customerName}</span>
-                  </div>
-
-                  <span className="text-muted-foreground text-sm font-bold">{formatCurrency(order.total)}</span>
-                </div>
+              <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
+                <span className="font-bold text-lg text-center">{order.customerName}</span>
 
                 {order.observation && (
                   <p className="text-xs font-bold text-destructive">

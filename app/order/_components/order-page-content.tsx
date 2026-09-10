@@ -8,6 +8,7 @@ import { Separator } from "@/_components/ui/separator";
 
 import { useGetCategories } from "../../category/query/useGetCategories";
 import { useGetProducts } from "../../product/query/useGetProducts";
+import { useGetOrder } from "../../kitchen/query/useGetOrder";
 
 import { useCreateOrder } from "../mutation/useCreateOrder";
 import { useAddOrderItem } from "../mutation/useAddOrderItem";
@@ -45,12 +46,15 @@ export default function OrderPageContent() {
 
   const [customerNameDraft, setCustomerNameDraft] = useState("");
 
+  const [nameError, setNameError] = useState<string | null>(null);
+
   const [isSendingOrder, setIsSendingOrder] = useState(false);
 
   const sendingOrderRef = useRef(false);
 
   const { data: categories } = useGetCategories();
   const { data: products } = useGetProducts();
+  const { data: orders = [] } = useGetOrder();
 
   const createOrder = useCreateOrder();
   const addOrderItem = useAddOrderItem();
@@ -139,12 +143,6 @@ export default function OrderPageContent() {
     setCurrentOrder(updatedOrder);
   }
 
-  /**
-   * Remove item.
-   *
-   * Mesma lógica: se a comanda ainda é um rascunho local,
-   * a remoção só acontece em memória.
-   */
   async function handleRemoveItem(itemId: number) {
     if (!currentOrder) {
       return;
@@ -175,9 +173,15 @@ export default function OrderPageContent() {
     setPrintedItemQuantities(updatedOrder.printedItemQuantities ?? {});
   }
 
-  /**
-   * Usuário clicou em "Enviar pedido".
-   */
+  function isNameTaken(name: string) {
+    const normalized = name.trim().toLowerCase();
+
+    return orders.some(
+      (order) =>
+        order.id !== currentOrder?.id && order.status !== "PAID" && order.customerName.trim().toLowerCase() === normalized,
+    );
+  }
+
   function handleRequestSendOrder() {
     if (!currentOrder || currentOrder.orderItems.length === 0 || isSendingOrder) {
       return;
@@ -190,12 +194,15 @@ export default function OrderPageContent() {
     }
 
     setCustomerNameDraft("");
+    setNameError(null);
     setIsNameDialogOpen(true);
   }
 
-  /**
-   * Confirma nome do cliente.
-   */
+  function handleCustomerNameDraftChange(value: string) {
+    setCustomerNameDraft(value);
+    setNameError(null);
+  }
+
   async function handleConfirmCustomerName() {
     const trimmedName = customerNameDraft.trim();
 
@@ -203,6 +210,13 @@ export default function OrderPageContent() {
       return;
     }
 
+    if (isNameTaken(trimmedName)) {
+      setNameError("Já existe uma comanda aberta com esse nome.");
+
+      return;
+    }
+
+    setNameError(null);
     setIsNameDialogOpen(false);
 
     await sendOrder(trimmedName);
@@ -275,9 +289,6 @@ export default function OrderPageContent() {
     }
   }
 
-  /**
-   * Imprime somente os adicionais.
-   */
   function handlePrintAdditional() {
     if (!currentOrder) {
       return;
@@ -336,8 +347,9 @@ export default function OrderPageContent() {
             isNameDialogOpen={isNameDialogOpen}
             onNameDialogOpenChange={setIsNameDialogOpen}
             customerNameDraft={customerNameDraft}
-            onCustomerNameDraftChange={setCustomerNameDraft}
+            onCustomerNameDraftChange={handleCustomerNameDraftChange}
             onConfirmCustomerName={handleConfirmCustomerName}
+            nameError={nameError}
           />
         )}
       </section>
