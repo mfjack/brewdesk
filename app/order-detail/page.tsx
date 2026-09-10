@@ -77,24 +77,26 @@ export default function OrderDetailPage() {
 
       <Separator className="h-px bg-border" />
 
-      <div className="p-4 flex gap-2 w-100">
-        <Input
-          type="text"
-          placeholder="Filtrar por nome do cliente..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1"
-        />
+      {filteredOrders.length > 0 && (
+        <div className="p-4 flex gap-2 w-100">
+          <Input
+            type="text"
+            placeholder="Filtrar por nome do cliente..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1"
+          />
 
-        {searchTerm && (
-          <Button size="icon" variant="ghost" onClick={() => setSearchTerm("")} className="h-10 w-10">
-            <X size={16} />
-          </Button>
-        )}
-      </div>
+          {searchTerm && (
+            <Button size="icon" variant="ghost" onClick={() => setSearchTerm("")} className="h-10 w-10">
+              <X size={16} />
+            </Button>
+          )}
+        </div>
+      )}
 
       {filteredOrders.length === 0 ? (
-        <p className="p-4 text-base text-muted-foreground">
+        <p className="p-12 text-sm text-center text-muted-foreground">
           {searchTerm ? "Nenhuma comanda encontrada com esse nome." : "Nenhuma comanda em aberto."}
         </p>
       ) : (

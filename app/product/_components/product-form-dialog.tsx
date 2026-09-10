@@ -81,16 +81,10 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
     reader.readAsDataURL(file);
   }
 
-  /**
-   * Reflete os dados atuais do produto (ou os campos em
-   * branco, na criação) no formulário — chamado sempre que
-   * o dialog abre, pra nunca mostrar dados desatualizados
-   * de uma edição anterior.
-   */
   function syncFormToProduct() {
     reset(buildDefaultValues(product));
     setPhotoUrl(product?.photoUrl ?? null);
-    setTrackStock(product?.trackStock ?? true);
+    setTrackStock(product?.trackStock ?? false);
     setFileInputKey((key) => key + 1);
   }
 

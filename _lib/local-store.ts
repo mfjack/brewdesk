@@ -16,70 +16,15 @@ interface StoreData {
 }
 
 const initialData: StoreData = {
-  categories: [
-    { id: 1, name: "Cafés" },
-    { id: 2, name: "Bebidas" },
-    { id: 3, name: "Comidas" },
-  ],
+  categories: [],
 
-  products: [
-    {
-      id: 1,
-      name: "Espresso",
-      description: null,
-      photoUrl: null,
-      price: 6,
-      quantity: 20,
-      trackStock: true,
-      category: { id: 1, name: "Cafés" },
-    },
-    {
-      id: 2,
-      name: "Latte",
-      description: null,
-      photoUrl: null,
-      price: 10,
-      quantity: 20,
-      trackStock: true,
-      category: { id: 1, name: "Cafés" },
-    },
-    {
-      id: 3,
-      name: "Mocha",
-      description: null,
-      photoUrl: null,
-      price: 12,
-      quantity: 20,
-      trackStock: true,
-      category: { id: 1, name: "Cafés" },
-    },
-    {
-      id: 4,
-      name: "Chá gelado",
-      description: null,
-      photoUrl: null,
-      price: 8,
-      quantity: 20,
-      trackStock: true,
-      category: { id: 2, name: "Bebidas" },
-    },
-    {
-      id: 5,
-      name: "Bolo do dia",
-      description: null,
-      photoUrl: null,
-      price: 9,
-      quantity: 20,
-      trackStock: true,
-      category: { id: 3, name: "Comidas" },
-    },
-  ],
+  products: [],
 
   orders: [],
 
   nextIds: {
-    category: 4,
-    product: 6,
+    category: 1,
+    product: 1,
     order: 1,
     item: 1,
   },
@@ -133,11 +78,6 @@ interface TProductInput {
   categoryId: number;
 }
 
-/**
- * Monta os campos de um produto (menos o `id`) a partir do
- * input do formulário — usado tanto na criação quanto na
- * edição, pra manter as duas em sincronia.
- */
 function buildProductFields(input: TProductInput, category: TCategory): Omit<TProduct, "id"> {
   const trackStock = input.trackStock ?? true;
 
@@ -153,23 +93,14 @@ function buildProductFields(input: TProductInput, category: TCategory): Omit<TPr
 }
 
 export const localStore = {
-  /**
-   * CATEGORIAS
-   */
   getCategories: () => {
     return readStore().categories;
   },
 
-  /**
-   * PRODUTOS
-   */
   getProducts: () => {
     return readStore().products;
   },
 
-  /**
-   * COMANDAS
-   */
   getOrders: () => {
     return readStore().orders;
   },
@@ -178,9 +109,6 @@ export const localStore = {
     return readStore().orders.find((order) => order.id === orderId);
   },
 
-  /**
-   * CRIAR CATEGORIA
-   */
   createCategory: (name: string) => {
     const category = {
       id: 0,
@@ -196,9 +124,6 @@ export const localStore = {
     return category;
   },
 
-  /**
-   * EXCLUIR CATEGORIA
-   */
   deleteCategory: (categoryId: number) => {
     updateStore((data) => {
       data.categories = data.categories.filter((category) => category.id !== categoryId);
@@ -207,9 +132,6 @@ export const localStore = {
     });
   },
 
-  /**
-   * CRIAR PRODUTO
-   */
   createProduct: (input: TProductInput) => {
     const data = readStore();
 
@@ -231,9 +153,6 @@ export const localStore = {
     return product;
   },
 
-  /**
-   * ATUALIZAR PRODUTO
-   */
   updateProduct: (productId: number, input: TProductInput) => {
     const data = readStore();
 
@@ -256,18 +175,12 @@ export const localStore = {
     return product;
   },
 
-  /**
-   * EXCLUIR PRODUTO
-   */
   deleteProduct: (productId: number) => {
     updateStore((data) => {
       data.products = data.products.filter((product) => product.id !== productId);
     });
   },
 
-  /**
-   * CRIAR COMANDA
-   */
   createOrder: (customerName: string) => {
     const data = readStore();
 
@@ -298,13 +211,6 @@ export const localStore = {
     return order;
   },
 
-  /**
-   * ADICIONAR ITEM À COMANDA
-   *
-   * Produtos com `trackStock` têm o estoque validado
-   * e decrementado aqui — esse é o momento em que o
-   * item de fato "reserva" o estoque.
-   */
   addOrderItem: (orderId: number, productId: number, quantity: number) => {
     const data = readStore();
 
@@ -333,13 +239,6 @@ export const localStore = {
     return order;
   },
 
-  /**
-   * REMOVER ITEM DA COMANDA
-   *
-   * Devolve 1 unidade ao estoque do produto (se ele
-   * controlar estoque), já que a remoção sempre tira
-   * 1 unidade do item.
-   */
   removeOrderItem: (orderId: number, itemId: number) => {
     const data = readStore();
 
@@ -363,9 +262,6 @@ export const localStore = {
       }
     }
 
-    /**
-     * Corrige a quantidade impressa.
-     */
     if (order.printedItemQuantities) {
       const printed = order.printedItemQuantities[itemId] ?? 0;
 
@@ -383,21 +279,6 @@ export const localStore = {
     return order;
   },
 
-  /**
-   * ATUALIZAR STATUS DA COMANDA
-   *
-   * PAID significa que a comanda foi paga.
-   *
-   * IMPORTANTE:
-   * A comanda NÃO é excluída.
-   *
-   * Ela permanece em:
-   *
-   * data.orders
-   *
-   * para posteriormente ser utilizada
-   * no Relatório de Vendas.
-   */
   updateOrderStatus: (
     orderId: number,
 
@@ -417,49 +298,25 @@ export const localStore = {
       throw new Error("Comanda não encontrada.");
     }
 
-    /**
-     * Atualiza o status.
-     */
     order.status = status;
 
-    /**
-     * Atualiza observação somente
-     * quando ela foi informada.
-     */
     if (observation !== undefined) {
       order.observation = observation || null;
     }
 
-    /**
-     * Atualiza nome do cliente somente
-     * quando foi informado.
-     */
     if (customerName !== undefined) {
       order.customerName = customerName.trim();
     }
 
-    /**
-     * Atualiza "para levar" somente
-     * quando foi informado.
-     */
     if (isTakeout !== undefined) {
       order.isTakeout = isTakeout;
     }
 
-    /**
-     * Salva a comanda.
-     *
-     * Mesmo quando status = PAID,
-     * ela continua dentro de data.orders.
-     */
     writeStore(data);
 
     return order;
   },
 
-  /**
-   * MARCAR ITENS COMO IMPRESSOS
-   */
   markOrderItemsPrinted: (orderId: number, printedItemQuantities: Record<number, number>) => {
     const data = readStore();
 
@@ -478,14 +335,6 @@ export const localStore = {
     return order;
   },
 
-  /**
-   * EXCLUIR COMANDA
-   *
-   * Esta função continua existindo
-   * para uma eventual exclusão manual.
-   *
-   * O pagamento NÃO utiliza esta função.
-   */
   deleteOrder: (orderId: number) => {
     updateStore((data) => {
       const order = data.orders.find((item) => item.id === orderId);
