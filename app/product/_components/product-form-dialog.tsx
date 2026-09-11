@@ -24,6 +24,7 @@ import { useCreateProduct } from "../mutation/useCreateProduct";
 import { useUpdateProduct } from "../mutation/useUpdateProduct";
 import type { TCategory, TProduct } from "../../order/interface";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { resizeImage } from "@/_lib/resize-image";
 import Image from "next/image";
 
 interface TProductFormValues {
@@ -73,17 +74,14 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
 
   const isPending = createProduct.isPending || updateProduct.isPending;
 
-  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
-    const reader = new FileReader();
-
-    reader.onload = () => setPhotoUrl(typeof reader.result === "string" ? reader.result : null);
-    reader.readAsDataURL(file);
+    setPhotoUrl(await resizeImage(file));
   }
 
   function syncFormToProduct() {

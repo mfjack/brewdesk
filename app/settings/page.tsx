@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/_components/ui/theme-toggle";
 import { Card } from "@/_components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { resizeImage } from "@/_lib/resize-image";
 
 import { useGetSettings } from "./query/useGetSettings";
 import { useUpdateSettings } from "./mutation/useUpdateSettings";
@@ -226,17 +227,14 @@ export default function SettingsPage() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(event) => {
+                    onChange={async (event) => {
                       const file = event.target.files?.[0];
 
                       if (!file) {
                         return;
                       }
 
-                      const reader = new FileReader();
-
-                      reader.onload = () => field.onChange(typeof reader.result === "string" ? reader.result : null);
-                      reader.readAsDataURL(file);
+                      field.onChange(await resizeImage(file));
                     }}
                   />
                 </div>
@@ -296,17 +294,14 @@ export default function SettingsPage() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(event) => {
+                    onChange={async (event) => {
                       const file = event.target.files?.[0];
 
                       if (!file) {
                         return;
                       }
 
-                      const reader = new FileReader();
-
-                      reader.onload = () => field.onChange(typeof reader.result === "string" ? reader.result : null);
-                      reader.readAsDataURL(file);
+                      field.onChange(await resizeImage(file, 600, "image/png"));
                     }}
                   />
                 </div>

@@ -25,7 +25,10 @@ export default function ProductPage() {
     deleteProduct.mutate(productId);
   }
 
-  const lowStockProducts = products?.filter((product) => product.trackStock && product.quantity > 0 && product.quantity <= (product.lowStockThreshold ?? 5)) ?? [];
+  const lowStockProducts =
+    products?.filter(
+      (product) => product.trackStock && product.quantity > 0 && product.quantity <= (product.lowStockThreshold ?? 5),
+    ) ?? [];
 
   return (
     <section className="flex flex-col h-screen">
@@ -59,6 +62,7 @@ export default function ProductPage() {
                 <TableHead>Produto</TableHead>
                 <TableHead>Categoria</TableHead>
                 <TableHead>Preço</TableHead>
+                <TableHead>CMV %</TableHead>
                 <TableHead>Margem</TableHead>
                 <TableHead>Estoque</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -96,11 +100,23 @@ export default function ProductPage() {
                   <TableCell>{formatCurrency(product.price)}</TableCell>
 
                   <TableCell>
+                    {product.costPrice > 0 && product.price > 0 ? (
+                      <span
+                        className={`text-sm font-medium ${
+                          (product.costPrice / product.price) * 100 > 40 ? "text-destructive" : ""
+                        }`}
+                      >
+                        {((product.costPrice / product.price) * 100).toFixed(0)}%
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
                     {product.costPrice > 0 ? (
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {formatCurrency(product.price - product.costPrice)}
-                        </span>
+                        <span className="text-sm font-medium">{formatCurrency(product.price - product.costPrice)}</span>
                         <span className="text-xs text-muted-foreground">
                           {product.price > 0 ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : 0}%
                         </span>
