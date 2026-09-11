@@ -33,7 +33,7 @@ export function mergeOrderItem(
       product: { id: product.id, name: product.name },
       quantity,
       unitPrice: product.price,
-      costPrice: product.costPrice,
+      costPrice: product.costPrice ?? 0,
       subtotal: product.price * quantity,
     },
   ];

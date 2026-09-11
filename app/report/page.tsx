@@ -27,6 +27,7 @@ import {
 import type { TPaymentMethod } from "../order/interface";
 import { useGetReportData, useGetProductReportData, type CustomDateRange, type DateRange } from "./query/useGetReportData";
 import { ReportReceipt } from "./_components/report-receipt";
+import { HourlyBarChart } from "./_components/hourly-bar-chart";
 import { formatCurrency } from "@/_lib/format-currency";
 import { buildCsv, downloadCsv } from "@/_lib/csv";
 
@@ -72,7 +73,6 @@ export default function ReportPage() {
     );
   }
 
-  const maxHourlyRevenue = Math.max(...reportData.hourlyPeaks.map((p) => p.revenue));
   const productMaxHourlyRevenue = productReportData ? Math.max(...productReportData.hourlyPeaks.map((p) => p.revenue)) : 0;
 
   const closingStats =
@@ -115,12 +115,13 @@ export default function ReportPage() {
     );
 
     const productsSection = buildCsv(
-      ["Produto", "Quantidade Vendida", "Faturamento", "Custo", "Lucro", "Margem"],
+      ["Produto", "Quantidade Vendida", "Faturamento", "Custo", "CMV %", "Lucro", "Margem"],
       reportData.allProducts.map((product) => [
         product.name,
         product.quantity,
         formatCurrency(product.revenue),
         formatCurrency(product.cost),
+        `${product.cmvPercent.toFixed(1)}%`,
         formatCurrency(product.profit),
         `${product.marginPercent.toFixed(1)}%`,
       ]),
@@ -295,7 +296,9 @@ export default function ReportPage() {
                     <CardContent className="flex flex-col gap-4 pt-4">
                       <div>
                         <p className="font-medium">Custo e Margem por Produto</p>
-                        <p className="text-xs text-muted-foreground">CMV = custo de aquisição × quantidade vendida no período</p>
+                        <p className="text-xs text-muted-foreground">
+                          CMV % = quanto do preço de venda foi consumido pelo custo — quanto menor, melhor o preço
+                        </p>
                       </div>
 
                       <div className="space-y-2">
@@ -311,6 +314,14 @@ export default function ReportPage() {
                                 <div>
                                   <p className="text-sm font-semibold">{formatCurrency(product.cost)}</p>
                                   <p className="text-xs text-muted-foreground">custo</p>
+                                </div>
+                                <div>
+                                  <p
+                                    className={`text-sm font-semibold ${product.cmvPercent > 50 ? "text-destructive" : ""}`}
+                                  >
+                                    {product.cmvPercent.toFixed(0)}%
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">CMV %</p>
                                 </div>
                                 <div>
                                   <p className="text-sm font-semibold">{formatCurrency(product.profit)}</p>
@@ -620,36 +631,10 @@ export default function ReportPage() {
                     <CardContent className="flex flex-col gap-4 pt-4">
                       <div>
                         <p className="font-medium">Horários de Pico</p>
-                        <p className="text-xs text-muted-foreground">Faturamento e quantidade de pedidos por hora</p>
+                        <p className="text-xs text-muted-foreground">Faturamento por hora do dia</p>
                       </div>
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {reportData.hourlyPeaks
-                          .filter((peak) => peak.orders > 0)
-                          .sort((a, b) => b.revenue - a.revenue)
-                          .map((peak) => {
-                            const percentage = maxHourlyRevenue > 0 ? (peak.revenue / maxHourlyRevenue) * 100 : 0;
-                            return (
-                              <div key={peak.hour} className="space-y-1">
-                                <div className="flex justify-between items-center">
-                                  <span className="font-medium text-sm">{peak.hour}</span>
-                                  <div className="flex gap-2 text-right">
-                                    <span className="text-sm">{peak.orders} ped.</span>
-                                    <span className="text-sm font-semibold">{formatCurrency(peak.revenue)}</span>
-                                  </div>
-                                </div>
-                                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                                  <div
-                                    className="h-full bg-foreground/70 rounded-full transition-all"
-                                    style={{ width: `${percentage}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        {reportData.hourlyPeaks.filter((peak) => peak.orders > 0).length === 0 && (
-                          <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda neste período</p>
-                        )}
-                      </div>
+
+                      <HourlyBarChart data={reportData.hourlyPeaks} />
                     </CardContent>
                   </Card>
                 </div>

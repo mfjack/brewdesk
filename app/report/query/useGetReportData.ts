@@ -16,6 +16,7 @@ export interface ProductStat {
   cost: number;
   profit: number;
   marginPercent: number;
+  cmvPercent: number;
 }
 
 export interface HourlyPeak {
@@ -101,7 +102,7 @@ function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange,
 
   return orders.filter((order) => {
     const orderDate = new Date(order.createdAt);
-    return orderDate >= start && orderDate <= end && order.status !== "OPEN";
+    return orderDate >= start && orderDate <= end && order.status === "PAID";
   });
 }
 
@@ -174,7 +175,7 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
     order.orderItems.forEach((item) => {
       totalItemsSold += item.quantity;
 
-      const itemCost = item.quantity * item.costPrice;
+      const itemCost = item.quantity * (item.costPrice ?? 0);
       totalCost += itemCost;
 
       const productKey = item.product.name;
@@ -195,6 +196,7 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
       cost: stats.cost,
       profit: stats.revenue - stats.cost,
       marginPercent: stats.revenue > 0 ? ((stats.revenue - stats.cost) / stats.revenue) * 100 : 0,
+      cmvPercent: stats.revenue > 0 ? (stats.cost / stats.revenue) * 100 : 0,
     }))
     .sort((a, b) => b.quantity - a.quantity);
 
