@@ -3,13 +3,13 @@ import "./globals.css";
 import { ClientProvider } from "./client-provider";
 import { ThemeProvider } from "./theme-provider";
 import { cn } from "@/_lib/utils";
-import { Montserrat } from "next/font/google";
+import { Saira } from "next/font/google";
 import { SidebarInset, SidebarProvider } from "@/_components/ui/sidebar";
 import { AppSidebar } from "@/_components/ui/app-sidebar";
 
-const montserrat = Montserrat({
+const saira = Saira({
   subsets: ["latin"],
-  variable: "--font-montserrat",
+  variable: "--font-saira",
 });
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={cn("antialiased select-none", montserrat.variable)} suppressHydrationWarning>
+    <html lang="pt-BR" className={cn("antialiased select-none", saira.variable)} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClientProvider>
