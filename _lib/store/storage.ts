@@ -1,4 +1,4 @@
-import type { TCategory, TOrderResponse, TProduct, TStoreSettings } from "@/app/order/interface";
+import type { TCategory, TOrderResponse, TProduct, TStoreSettings, TSupplier } from "@/app/order/interface";
 import { isOrderPaid } from "@/app/order/order-math";
 
 export const STORAGE_KEY = "brewdesk.data.v1";
@@ -8,12 +8,14 @@ export interface StoreData {
   products: TProduct[];
   orders: TOrderResponse[];
   settings: TStoreSettings;
+  suppliers: TSupplier[];
   nextIds: {
     category: number;
     product: number;
     order: number;
     item: number;
     operator: number;
+    supplier: number;
   };
 }
 
@@ -37,12 +39,15 @@ export const initialData: StoreData = {
 
   settings: defaultSettings,
 
+  suppliers: [],
+
   nextIds: {
     category: 1,
     product: 1,
     order: 1,
     item: 1,
     operator: 1,
+    supplier: 1,
   },
 };
 

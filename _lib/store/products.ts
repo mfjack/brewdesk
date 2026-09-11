@@ -11,6 +11,7 @@ export interface TProductInput {
   trackStock?: boolean;
   lowStockThreshold?: number;
   categoryId: number;
+  supplierId?: number | null;
 }
 
 function buildProductFields(input: TProductInput, category: TCategory): Omit<TProduct, "id"> {
@@ -26,6 +27,7 @@ function buildProductFields(input: TProductInput, category: TCategory): Omit<TPr
     trackStock,
     lowStockThreshold: trackStock ? Number(input.lowStockThreshold ?? 5) : 0,
     category,
+    supplierId: input.supplierId ?? null,
   };
 }
 

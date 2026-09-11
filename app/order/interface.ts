@@ -55,6 +55,17 @@ export interface TProduct {
   trackStock: boolean;
   lowStockThreshold: number;
   category: TCategory;
+  supplierId: number | null;
+}
+
+export interface TSupplier {
+  id: number;
+  companyName: string;
+  whatsapp: string | null;
+  suppliesDescription: string | null;
+  paymentTerms: string | null;
+  deliveryDays: string[];
+  deliveryPeriod: string | null;
 }
 
 export interface TOrderItemProduct {

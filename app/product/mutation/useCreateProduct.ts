@@ -11,6 +11,7 @@ export interface TCreateProduct {
   trackStock?: boolean;
   lowStockThreshold?: number;
   categoryId: number;
+  supplierId?: number | null;
 }
 
 export function useCreateProduct() {

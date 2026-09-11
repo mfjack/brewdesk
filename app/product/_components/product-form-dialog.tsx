@@ -22,7 +22,7 @@ import {
 
 import { useCreateProduct } from "../mutation/useCreateProduct";
 import { useUpdateProduct } from "../mutation/useUpdateProduct";
-import type { TCategory, TProduct } from "../../order/interface";
+import type { TCategory, TProduct, TSupplier } from "../../order/interface";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { resizeImage } from "@/_lib/resize-image";
 import Image from "next/image";
@@ -35,10 +35,12 @@ interface TProductFormValues {
   quantity: number;
   lowStockThreshold: number;
   categoryId: number;
+  supplierId: number;
 }
 
 interface TProductFormDialog {
   categories: TCategory[] | undefined;
+  suppliers?: TSupplier[];
   trigger: ReactNode;
   /** Quando informado, o dialog edita esse produto em vez de criar um novo. */
   product?: TProduct;
@@ -53,10 +55,11 @@ function buildDefaultValues(product?: TProduct): TProductFormValues {
     quantity: product?.quantity ?? 0,
     lowStockThreshold: product?.lowStockThreshold ?? 5,
     categoryId: product?.category.id ?? 0,
+    supplierId: product?.supplierId ?? 0,
   };
 }
 
-export function ProductFormDialog({ categories, trigger, product }: TProductFormDialog) {
+export function ProductFormDialog({ categories, suppliers, trigger, product }: TProductFormDialog) {
   const isEditing = Boolean(product);
 
   const [open, setOpen] = useState(false);
@@ -102,6 +105,7 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
       trackStock,
       lowStockThreshold: trackStock ? data.lowStockThreshold : 0,
       categoryId: data.categoryId,
+      supplierId: data.supplierId || null,
     };
 
     if (product) {
@@ -212,6 +216,32 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={String(category.id)}>
                         {toTitleCase(category.name)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Fornecedor</label>
+            <Controller
+              control={control}
+              name="supplierId"
+              render={({ field }) => (
+                <Select
+                  value={field.value ? String(field.value) : "0"}
+                  onValueChange={(value) => field.onChange(Number(value))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Nenhum" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Nenhum</SelectItem>
+                    {suppliers?.map((supplier) => (
+                      <SelectItem key={supplier.id} value={String(supplier.id)}>
+                        {toTitleCase(supplier.companyName)}
                       </SelectItem>
                     ))}
                   </SelectContent>

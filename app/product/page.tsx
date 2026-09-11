@@ -9,6 +9,7 @@ import { AlertTriangle, ImageOff, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { useGetProducts } from "./query/useGetProducts";
 import { useGetCategories } from "../category/query/useGetCategories";
+import { useGetSuppliers } from "../supplier/query/useGetSuppliers";
 import { useDeleteProduct } from "./mutation/useDeleteProduct";
 import { ProductFormDialog } from "./_components/product-form-dialog";
 import type { TProduct } from "../order/interface";
@@ -19,6 +20,7 @@ import Image from "next/image";
 export default function ProductPage() {
   const { data: products } = useGetProducts();
   const { data: categories } = useGetCategories();
+  const { data: suppliers } = useGetSuppliers();
   const deleteProduct = useDeleteProduct();
 
   function handleDeleteProduct(productId: number) {
@@ -40,6 +42,7 @@ export default function ProductPage() {
 
         <ProductFormDialog
           categories={categories}
+          suppliers={suppliers}
           trigger={
             <Button size="lg">
               <Plus />
@@ -151,6 +154,7 @@ export default function ProductPage() {
                     <div className="flex justify-end gap-2">
                       <ProductFormDialog
                         categories={categories}
+                        suppliers={suppliers}
                         product={product}
                         trigger={
                           <Button variant="outline" size="icon-sm">
