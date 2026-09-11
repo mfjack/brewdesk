@@ -16,6 +16,7 @@ import {
   Landmark,
   ListChecks,
   LucideIcon,
+  Percent,
   Printer,
   QrCode,
   SquarePen,
@@ -107,12 +108,22 @@ export default function ReportPage() {
         ["Pedidos", reportData.ordersCount],
         ["Ticket Médio", formatCurrency(reportData.averageTicket)],
         ["Itens Vendidos", reportData.totalItemsSold],
+        ["CMV", formatCurrency(reportData.totalCost)],
+        ["Lucro Bruto", formatCurrency(reportData.grossProfit)],
+        ["Margem Bruta", `${reportData.grossMarginPercent.toFixed(1)}%`],
       ],
     );
 
     const productsSection = buildCsv(
-      ["Produto", "Quantidade Vendida", "Faturamento"],
-      reportData.allProducts.map((product) => [product.name, product.quantity, formatCurrency(product.revenue)]),
+      ["Produto", "Quantidade Vendida", "Faturamento", "Custo", "Lucro", "Margem"],
+      reportData.allProducts.map((product) => [
+        product.name,
+        product.quantity,
+        formatCurrency(product.revenue),
+        formatCurrency(product.cost),
+        formatCurrency(product.profit),
+        `${product.marginPercent.toFixed(1)}%`,
+      ]),
     );
 
     const paymentSection = buildCsv(
@@ -245,6 +256,79 @@ export default function ReportPage() {
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+
+                <div className="flex gap-4 w-full mb-4 flex-wrap">
+                  <Card className="flex-1 min-w-50">
+                    <CardContent className="flex flex-col gap-4">
+                      <div className="flex justify-between items-center gap-4">
+                        <p className="font-medium text-sm">CMV</p>
+                        <Wallet size={16} />
+                      </div>
+                      <p className="text-lg font-semibold">{formatCurrency(reportData.totalCost)}</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="flex-1 min-w-50">
+                    <CardContent className="flex flex-col gap-4">
+                      <div className="flex justify-between items-center gap-4">
+                        <p className="font-medium text-sm">Lucro Bruto</p>
+                        <TrendingUp size={16} />
+                      </div>
+                      <p className="text-lg font-semibold">{formatCurrency(reportData.grossProfit)}</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="flex-1 min-w-50">
+                    <CardContent className="flex flex-col gap-4">
+                      <div className="flex justify-between items-center gap-4">
+                        <p className="font-medium text-sm">Margem Bruta</p>
+                        <Percent size={16} />
+                      </div>
+                      <p className="text-lg font-semibold">{reportData.grossMarginPercent.toFixed(1)}%</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="mb-4">
+                  <Card>
+                    <CardContent className="flex flex-col gap-4 pt-4">
+                      <div>
+                        <p className="font-medium">Custo e Margem por Produto</p>
+                        <p className="text-xs text-muted-foreground">CMV = custo de aquisição × quantidade vendida no período</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {reportData.allProducts.length > 0 ? (
+                          reportData.allProducts.map((product) => (
+                            <div
+                              key={product.name}
+                              className="flex justify-between items-center p-2 bg-muted rounded-md gap-4"
+                            >
+                              <span className="font-medium text-sm">{product.name}</span>
+
+                              <div className="flex gap-4 text-right">
+                                <div>
+                                  <p className="text-sm font-semibold">{formatCurrency(product.cost)}</p>
+                                  <p className="text-xs text-muted-foreground">custo</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold">{formatCurrency(product.profit)}</p>
+                                  <p className="text-xs text-muted-foreground">lucro</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold">{product.marginPercent.toFixed(0)}%</p>
+                                  <p className="text-xs text-muted-foreground">margem</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda neste período</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
 
                 <div className="mb-4">

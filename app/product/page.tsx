@@ -59,6 +59,7 @@ export default function ProductPage() {
                 <TableHead>Produto</TableHead>
                 <TableHead>Categoria</TableHead>
                 <TableHead>Preço</TableHead>
+                <TableHead>Margem</TableHead>
                 <TableHead>Estoque</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -93,6 +94,21 @@ export default function ProductPage() {
                   <TableCell className="text-muted-foreground">{toTitleCase(product.category.name)}</TableCell>
 
                   <TableCell>{formatCurrency(product.price)}</TableCell>
+
+                  <TableCell>
+                    {product.costPrice > 0 ? (
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {formatCurrency(product.price - product.costPrice)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {product.price > 0 ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : 0}%
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sem custo</span>
+                    )}
+                  </TableCell>
 
                   <TableCell>
                     {product.trackStock ? (

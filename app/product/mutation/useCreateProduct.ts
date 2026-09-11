@@ -6,6 +6,7 @@ export interface TCreateProduct {
   description?: string | null;
   photoUrl?: string | null;
   price: number;
+  costPrice?: number;
   quantity?: number;
   trackStock?: boolean;
   lowStockThreshold?: number;

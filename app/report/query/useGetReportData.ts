@@ -13,6 +13,9 @@ export interface ProductStat {
   name: string;
   quantity: number;
   revenue: number;
+  cost: number;
+  profit: number;
+  marginPercent: number;
 }
 
 export interface HourlyPeak {
@@ -45,6 +48,9 @@ export interface ReportStats {
   allProducts: ProductStat[];
   paymentMethodStats: PaymentMethodStat[];
   operatorStats: OperatorStat[];
+  totalCost: number;
+  grossProfit: number;
+  grossMarginPercent: number;
 }
 
 export interface ProductReportStats {
@@ -160,17 +166,23 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
   const ordersCount = orders.length;
   const averageTicket = ordersCount > 0 ? totalRevenue / ordersCount : 0;
 
-  const productSalesMap = new Map<string, { quantity: number; revenue: number }>();
+  const productSalesMap = new Map<string, { quantity: number; revenue: number; cost: number }>();
   let totalItemsSold = 0;
+  let totalCost = 0;
 
   orders.forEach((order) => {
     order.orderItems.forEach((item) => {
       totalItemsSold += item.quantity;
+
+      const itemCost = item.quantity * item.costPrice;
+      totalCost += itemCost;
+
       const productKey = item.product.name;
-      const current = productSalesMap.get(productKey) || { quantity: 0, revenue: 0 };
+      const current = productSalesMap.get(productKey) || { quantity: 0, revenue: 0, cost: 0 };
       productSalesMap.set(productKey, {
         quantity: current.quantity + item.quantity,
         revenue: current.revenue + item.subtotal,
+        cost: current.cost + itemCost,
       });
     });
   });
@@ -180,6 +192,9 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
       name,
       quantity: stats.quantity,
       revenue: stats.revenue,
+      cost: stats.cost,
+      profit: stats.revenue - stats.cost,
+      marginPercent: stats.revenue > 0 ? ((stats.revenue - stats.cost) / stats.revenue) * 100 : 0,
     }))
     .sort((a, b) => b.quantity - a.quantity);
 
@@ -187,6 +202,9 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
   const bottomProducts = sortedProducts.slice(-5).reverse();
 
   const hourlyPeaks = buildHourlyPeaks(orders, (order) => order.total);
+
+  const grossProfit = totalRevenue - totalCost;
+  const grossMarginPercent = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   return {
     totalRevenue,
@@ -199,6 +217,9 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
     allProducts: sortedProducts,
     paymentMethodStats: buildPaymentMethodStats(orders),
     operatorStats: buildOperatorStats(orders),
+    totalCost,
+    grossProfit,
+    grossMarginPercent,
   };
 }
 

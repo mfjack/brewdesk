@@ -40,6 +40,7 @@ export interface TProduct {
   description: string | null;
   photoUrl: string | null;
   price: number;
+  costPrice: number;
   quantity: number;
   trackStock: boolean;
   lowStockThreshold: number;
@@ -56,6 +57,7 @@ export interface TOrderItem {
   product: TOrderItemProduct;
   quantity: number;
   unitPrice: number;
+  costPrice: number;
   subtotal: number;
 }
 

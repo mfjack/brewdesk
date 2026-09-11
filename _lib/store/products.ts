@@ -6,6 +6,7 @@ export interface TProductInput {
   description?: string | null;
   photoUrl?: string | null;
   price: number;
+  costPrice?: number;
   quantity?: number;
   trackStock?: boolean;
   lowStockThreshold?: number;
@@ -20,6 +21,7 @@ function buildProductFields(input: TProductInput, category: TCategory): Omit<TPr
     description: input.description?.trim() || null,
     photoUrl: input.photoUrl || null,
     price: Number(input.price),
+    costPrice: Number(input.costPrice ?? 0),
     quantity: trackStock ? Number(input.quantity ?? 0) : 0,
     trackStock,
     lowStockThreshold: trackStock ? Number(input.lowStockThreshold ?? 5) : 0,

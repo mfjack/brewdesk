@@ -30,6 +30,7 @@ interface TProductFormValues {
   name: string;
   description: string;
   price: number;
+  costPrice: number;
   quantity: number;
   lowStockThreshold: number;
   categoryId: number;
@@ -47,6 +48,7 @@ function buildDefaultValues(product?: TProduct): TProductFormValues {
     name: product?.name ?? "",
     description: product?.description ?? "",
     price: product?.price ?? 0,
+    costPrice: product?.costPrice ?? 0,
     quantity: product?.quantity ?? 0,
     lowStockThreshold: product?.lowStockThreshold ?? 5,
     categoryId: product?.category.id ?? 0,
@@ -97,6 +99,7 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
       description: data.description || null,
       photoUrl,
       price: data.price,
+      costPrice: data.costPrice,
       quantity: trackStock ? data.quantity : 0,
       trackStock,
       lowStockThreshold: trackStock ? data.lowStockThreshold : 0,
@@ -132,53 +135,80 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
         </DialogHeader>
 
         <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitProduct)}>
-          <Input placeholder="Nome do produto" {...register("name", { required: true })} />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Nome do produto</label>
+            <Input {...register("name", { required: true })} />
+          </div>
 
-          <Textarea placeholder="Descrição (opcional)" rows={3} {...register("description")} />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Descrição</label>
+            <Textarea placeholder="Opcional" rows={3} {...register("description")} />
+          </div>
 
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-              <Upload />
-              {photoUrl ? "Trocar foto" : "Adicionar foto"}
-            </Button>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Foto</label>
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload />
+                {photoUrl ? "Trocar foto" : "Adicionar foto"}
+              </Button>
 
-            {photoUrl && (
-              <Image
-                src={photoUrl}
-                alt=""
-                className="h-12 w-12 rounded-md object-cover ring-1 ring-foreground/10"
-                width={48}
-                height={48}
+              {photoUrl && (
+                <Image
+                  src={photoUrl}
+                  alt=""
+                  className="h-12 w-12 rounded-md object-cover ring-1 ring-foreground/10"
+                  width={48}
+                  height={48}
+                />
+              )}
+
+              <input
+                key={fileInputKey}
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
               />
-            )}
-
-            <input
-              key={fileInputKey}
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handlePhotoChange}
-            />
+            </div>
           </div>
 
           <div className="flex gap-2">
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Preço"
-              {...register("price", { required: true, valueAsNumber: true })}
-            />
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="text-sm font-medium">Preço de venda</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Quanto o cliente paga"
+                {...register("price", { required: true, valueAsNumber: true })}
+              />
+            </div>
 
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="text-sm font-medium">Preço de custo</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Quanto custou pra você"
+                title="Usado no relatório de CMV e margem"
+                {...register("costPrice", { valueAsNumber: true })}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Categoria</label>
             <Controller
               control={control}
               name="categoryId"
               rules={{ required: true }}
               render={({ field }) => (
-                <Select value={String(field.value ?? "")} onValueChange={(value) => field.onChange(Number(value))}>
+                <Select value={field.value ? String(field.value) : ""} onValueChange={(value) => field.onChange(Number(value))}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Categoria" />
+                    <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories?.map((category) => (
@@ -203,20 +233,21 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
 
           {trackStock && (
             <div className="flex gap-2">
-              <Input
-                type="number"
-                min="0"
-                placeholder="Quantidade em estoque"
-                {...register("quantity", { valueAsNumber: true })}
-              />
+              <div className="flex flex-1 flex-col gap-1">
+                <label className="text-sm font-medium">Quantidade em estoque</label>
+                <Input type="number" min="0" placeholder="0" {...register("quantity", { valueAsNumber: true })} />
+              </div>
 
-              <Input
-                type="number"
-                min="0"
-                placeholder="Alertar com estoque baixo"
-                title="Alertar quando o estoque ficar menor ou igual a esse valor"
-                {...register("lowStockThreshold", { valueAsNumber: true })}
-              />
+              <div className="flex flex-1 flex-col gap-1">
+                <label className="text-sm font-medium">Alertar com estoque baixo</label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="Ex.: 5"
+                  title="Alertar quando o estoque ficar menor ou igual a esse valor"
+                  {...register("lowStockThreshold", { valueAsNumber: true })}
+                />
+              </div>
             </div>
           )}
 
