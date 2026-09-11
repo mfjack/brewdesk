@@ -30,7 +30,7 @@ export function mergeOrderItem(
     ...items,
     {
       id: getNewItemId(),
-      product,
+      product: { id: product.id, name: product.name },
       quantity,
       unitPrice: product.price,
       subtotal: product.price * quantity,

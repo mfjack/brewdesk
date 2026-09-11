@@ -46,9 +46,14 @@ export interface TProduct {
   category: TCategory;
 }
 
+export interface TOrderItemProduct {
+  id: number;
+  name: string;
+}
+
 export interface TOrderItem {
   id: number;
-  product: TProduct;
+  product: TOrderItemProduct;
   quantity: number;
   unitPrice: number;
   subtotal: number;

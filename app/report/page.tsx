@@ -5,6 +5,7 @@ import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { Card, CardContent } from "@/_components/ui/card";
 import { Header } from "@/_components/ui/header";
+import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
@@ -50,6 +51,8 @@ const paymentMethodLabels: Record<TPaymentMethod, { label: string; Icon: LucideI
 export default function ReportPage() {
   const [dateRange, setDateRange] = useState<DateRange>("day");
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [closingOperator, setClosingOperator] = useState("ALL");
+  const [countedCash, setCountedCash] = useState("");
   const { data: reportData, isLoading } = useGetReportData(dateRange);
   const { data: productReportData } = useGetProductReportData(dateRange, selectedProduct);
 
@@ -67,6 +70,22 @@ export default function ReportPage() {
 
   const maxHourlyRevenue = Math.max(...reportData.hourlyPeaks.map((p) => p.revenue));
   const productMaxHourlyRevenue = productReportData ? Math.max(...productReportData.hourlyPeaks.map((p) => p.revenue)) : 0;
+
+  const closingStats =
+    closingOperator === "ALL"
+      ? {
+          ordersCount: reportData.ordersCount,
+          totalRevenue: reportData.totalRevenue,
+          paymentMethodStats: reportData.paymentMethodStats,
+        }
+      : (reportData.operatorStats.find((stat) => stat.operatorName === closingOperator) ?? {
+          ordersCount: 0,
+          totalRevenue: 0,
+          paymentMethodStats: reportData.paymentMethodStats.map((stat) => ({ ...stat, count: 0, total: 0 })),
+        });
+
+  const expectedCash = closingStats.paymentMethodStats.find((stat) => stat.method === "CASH")?.total ?? 0;
+  const cashDifference = countedCash ? (Number(countedCash) || 0) - expectedCash : null;
 
   function handleExportCsv() {
     if (!reportData) {
@@ -93,7 +112,19 @@ export default function ReportPage() {
       reportData.paymentMethodStats.map((stat) => [paymentMethodLabels[stat.method].label, stat.count, formatCurrency(stat.total)]),
     );
 
-    const csv = [summarySection, "", productsSection, "", paymentSection].join("\n");
+    const closingSection = buildCsv(
+      ["Operador", "Forma de Pagamento", "Pedidos", "Total"],
+      reportData.operatorStats.flatMap((operatorStat) =>
+        operatorStat.paymentMethodStats.map((stat) => [
+          operatorStat.operatorName,
+          paymentMethodLabels[stat.method].label,
+          stat.count,
+          formatCurrency(stat.total),
+        ]),
+      ),
+    );
+
+    const csv = [summarySection, "", productsSection, "", paymentSection, "", closingSection].join("\n");
 
     downloadCsv(`brewdesk-relatorio-${dateRange}-${new Date().toISOString().slice(0, 10)}.csv`, csv);
   }
@@ -285,6 +316,98 @@ export default function ReportPage() {
                           </div>
                         );
                       })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="mb-4">
+                <Card>
+                  <CardContent className="flex flex-col gap-4 pt-4">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div>
+                        <p className="font-medium">Fechamento de Caixa</p>
+                        <p className="text-xs text-muted-foreground">
+                          Confira o valor recebido por operador e forma de pagamento no período selecionado
+                        </p>
+                      </div>
+
+                      <Select value={closingOperator} onValueChange={setClosingOperator}>
+                        <SelectTrigger className="w-full sm:w-60">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ALL">Todos os operadores</SelectItem>
+                          {reportData.operatorStats.map((stat) => (
+                            <SelectItem key={stat.operatorName} value={stat.operatorName}>
+                              {stat.operatorName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {closingStats.paymentMethodStats.map(({ method, count, total }) => {
+                        const { label, Icon } = paymentMethodLabels[method];
+
+                        return (
+                          <div key={method} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                            <div className="flex items-center gap-2">
+                              <Icon size={16} />
+                              <span className="text-sm font-medium">{label}</span>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-semibold">{formatCurrency(total)}</p>
+                              <p className="text-xs text-muted-foreground">{count} pedido(s)</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-border pt-3">
+                      <span className="text-sm font-medium">Total do período</span>
+                      <span className="text-base font-bold">{formatCurrency(closingStats.totalRevenue)}</span>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Conferência de dinheiro em espécie</p>
+
+                      <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground">Esperado (vendas em dinheiro)</p>
+                          <p className="text-sm font-semibold">{formatCurrency(expectedCash)}</p>
+                        </div>
+
+                        <div className="flex-1 flex flex-col gap-1">
+                          <label className="text-xs text-muted-foreground">Contado na gaveta</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0,00"
+                            value={countedCash}
+                            onChange={(e) => setCountedCash(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {cashDifference !== null && (
+                        <p
+                          className={`text-sm font-medium ${
+                            cashDifference === 0 ? "text-muted-foreground" : cashDifference < 0 ? "text-destructive" : "text-foreground"
+                          }`}
+                        >
+                          {cashDifference === 0
+                            ? "Confere certinho."
+                            : cashDifference < 0
+                              ? `Faltam ${formatCurrency(Math.abs(cashDifference))}`
+                              : `Sobram ${formatCurrency(cashDifference)}`}
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

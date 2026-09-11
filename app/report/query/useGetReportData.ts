@@ -22,6 +22,13 @@ export interface PaymentMethodStat {
   total: number;
 }
 
+export interface OperatorStat {
+  operatorName: string;
+  ordersCount: number;
+  totalRevenue: number;
+  paymentMethodStats: PaymentMethodStat[];
+}
+
 export interface ReportStats {
   totalRevenue: number;
   ordersCount: number;
@@ -32,6 +39,7 @@ export interface ReportStats {
   hourlyPeaks: HourlyPeak[];
   allProducts: ProductStat[];
   paymentMethodStats: PaymentMethodStat[];
+  operatorStats: OperatorStat[];
 }
 
 export interface ProductReportStats {
@@ -80,6 +88,23 @@ function buildPaymentMethodStats(orders: TOrderResponse[]): PaymentMethodStat[] 
       total: ordersWithMethod.reduce((sum, order) => sum + order.total, 0),
     };
   });
+}
+
+function buildOperatorStats(orders: TOrderResponse[]): OperatorStat[] {
+  const operatorNames = Array.from(new Set(orders.map((order) => order.operatorName || "Sem operador")));
+
+  return operatorNames
+    .map((operatorName) => {
+      const operatorOrders = orders.filter((order) => (order.operatorName || "Sem operador") === operatorName);
+
+      return {
+        operatorName,
+        ordersCount: operatorOrders.length,
+        totalRevenue: operatorOrders.reduce((sum, order) => sum + order.total, 0),
+        paymentMethodStats: buildPaymentMethodStats(operatorOrders),
+      };
+    })
+    .sort((a, b) => b.totalRevenue - a.totalRevenue);
 }
 
 function buildHourlyPeaks(orders: TOrderResponse[], getRevenue: (order: TOrderResponse) => number): HourlyPeak[] {
@@ -150,6 +175,7 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
     hourlyPeaks,
     allProducts: sortedProducts,
     paymentMethodStats: buildPaymentMethodStats(orders),
+    operatorStats: buildOperatorStats(orders),
   };
 }
 

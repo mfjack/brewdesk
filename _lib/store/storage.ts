@@ -49,6 +49,17 @@ export function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
+const PAID_ORDER_RETENTION_DAYS = 60;
+
+function pruneOldPaidOrders(data: StoreData): boolean {
+  const cutoff = Date.now() - PAID_ORDER_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const originalCount = data.orders.length;
+
+  data.orders = data.orders.filter((order) => order.status !== "PAID" || new Date(order.createdAt).getTime() >= cutoff);
+
+  return data.orders.length !== originalCount;
+}
+
 export function readStore(): StoreData {
   if (typeof window === "undefined") {
     return clone(initialData);
@@ -64,12 +75,18 @@ export function readStore(): StoreData {
   try {
     const parsed = JSON.parse(stored) as Partial<StoreData>;
 
-    return {
+    const data: StoreData = {
       ...clone(initialData),
       ...parsed,
       settings: { ...defaultSettings, ...parsed.settings },
       nextIds: { ...clone(initialData.nextIds), ...parsed.nextIds },
     };
+
+    if (pruneOldPaidOrders(data)) {
+      writeStore(data);
+    }
+
+    return data;
   } catch {
     writeStore(initialData);
     return clone(initialData);
