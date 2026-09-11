@@ -133,15 +133,18 @@
 }
 
 @media print {
+  :root {
+    color-scheme: light;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.141 0.005 285.823);
+    --border: oklch(0.92 0.004 286.32);
+    --muted-foreground: oklch(0.552 0.016 285.938);
+  }
+
   @page {
     margin: 1cm;
   }
 
-  /**
-   * O recibo de pedidos usa uma bobina térmica (80mm).
-   * Qualquer outra impressão (ex: relatório) usa o
-   * tamanho de página padrão definido acima.
-   */
   @page receipt {
     size: 80mm auto;
     margin: 0;
