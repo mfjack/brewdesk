@@ -64,7 +64,7 @@ export default function OrderDetailPage() {
   return (
     <section className="flex flex-col h-screen w-full">
       <div className="flex flex-col p-4 w-full">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Header title="Comandas" />
 
           <Button asChild size="lg" className="w-30">
@@ -79,7 +79,7 @@ export default function OrderDetailPage() {
       <Separator className="h-px bg-border" />
 
       {filteredOrders.length > 0 && (
-        <div className="p-4 flex gap-2 w-100">
+        <div className="p-4 flex gap-2 w-full max-w-100">
           <Input
             type="text"
             placeholder="Filtrar por nome do cliente..."
@@ -108,9 +108,9 @@ export default function OrderDetailPage() {
                 <span className="font-bold text-lg text-center uppercase">{order.customerName}</span>
 
                 {order.observation && (
-                  <p className="text-xs font-bold text-destructive">
+                  <p className="text-xs font-bold">
                     Observação:
-                    <span className="text-xs font-medium text-foreground"> {order.observation}</span>
+                    <span className="text-xs font-medium text-muted-foreground"> {order.observation}</span>
                   </p>
                 )}
 

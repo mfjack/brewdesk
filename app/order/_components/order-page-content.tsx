@@ -344,7 +344,7 @@ export default function OrderPageContent() {
         />
       )}
 
-      <section className="flex flex-row h-full print:hidden">
+      <section className="flex flex-col md:flex-row md:h-full print:hidden">
         <OrderPanel
           categories={categories || []}
           selectedCategory={selectedCategory}
@@ -355,7 +355,8 @@ export default function OrderPageContent() {
           stockError={stockError}
         />
 
-        <Separator orientation="vertical" className="w-px bg-border" />
+        <Separator className="h-px bg-border md:hidden" />
+        <Separator orientation="vertical" className="hidden md:block w-px bg-border" />
 
         {currentOrder && (
           <MenuList

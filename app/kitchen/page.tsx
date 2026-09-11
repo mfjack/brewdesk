@@ -22,7 +22,7 @@ export default function KitchenPage() {
     {
       title: "Aguardando",
       orders: pendingOrders,
-      badgeClassName: "bg-yellow-500/15 text-yellow-600 border-yellow-500/20",
+      badgeClassName: "bg-transparent text-foreground border-border",
       emptyMessage: "Nenhum pedido pendente.",
       actionLabel: "Iniciar Preparo",
       icon: <Play />,
@@ -30,7 +30,7 @@ export default function KitchenPage() {
     {
       title: "Preparando",
       orders: inProgressOrders,
-      badgeClassName: "bg-blue-500/15 text-blue-500 border-blue-500/20",
+      badgeClassName: "bg-muted text-foreground border-border",
       emptyMessage: "Nenhum pedido em preparo.",
       actionLabel: "Marcar como pronto",
       icon: <Check />,
@@ -38,7 +38,7 @@ export default function KitchenPage() {
     {
       title: "Pronto",
       orders: readyOrders,
-      badgeClassName: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20",
+      badgeClassName: "bg-foreground text-background border-transparent",
       emptyMessage: "Nenhum pedido pronto.",
       actionLabel: "Pronto para Entrega",
       icon: <HandPlatter />,
@@ -74,7 +74,7 @@ export default function KitchenPage() {
 
       <Separator className="h-px w-full" />
 
-      <div className="grid flex-1 grid-cols-3 gap-4 p-4 md:grid-cols-3 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+      <div className="grid flex-1 grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 overflow-y-auto [&::-webkit-scrollbar]:hidden">
         {columns.map((column) => (
           <div key={column.title} className="flex flex-col gap-4 ">
             <div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export default function KitchenPage() {
 
                     {order.observation && (
                       <div className="flex gap-1 items-center">
-                        <span className="text-sm font-bold text-red-500">OBSERVAÇÃO:</span>
+                        <span className="text-sm font-bold">OBSERVAÇÃO:</span>
                         <span className="text-sm font-medium">{order.observation}</span>
                       </div>
                     )}

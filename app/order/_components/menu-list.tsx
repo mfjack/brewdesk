@@ -55,9 +55,9 @@ export function MenuList({
   }, [hasItems, isSending, onSendOrder]);
 
   return (
-    <div className="h-screen w-1/2">
+    <div className="w-full md:h-screen md:w-1/2">
       {order && (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col md:h-full">
           {order.customerName && (
             <>
               <div className="p-4 text-sm text-muted-foreground">
@@ -83,7 +83,7 @@ export function MenuList({
                       <div className="flex items-center gap-6">
                         <span
                           className="z-10 flex h-6 w-6 items-center justify-center
-                            rounded-full bg-white text-xs font-bold text-black shadow"
+                            rounded-full bg-background text-xs font-bold text-foreground shadow"
                         >
                           {item.quantity}
                         </span>
@@ -98,11 +98,11 @@ export function MenuList({
                       <Button
                         size="icon-lg"
                         variant="ghost"
-                        className="bg-white hover:text-white"
+                        className="bg-background"
                         onClick={() => onRemoveItem(item.id)}
                         disabled={isRemovingItem}
                       >
-                        <Trash2 className="text-destructive hover:text-white" />
+                        <Trash2 className="text-destructive" />
                       </Button>
                     </Card>
                   );

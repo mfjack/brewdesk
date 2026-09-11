@@ -26,7 +26,7 @@ export default function ProductPage() {
 
   return (
     <section className="flex flex-col h-screen">
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4 flex-wrap gap-2">
         <Header title="Produtos" />
 
         <ProductFormDialog

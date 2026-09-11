@@ -17,9 +17,9 @@ export function OrderPanel({
   stockError,
 }: TOrderPanel) {
   return (
-    <section className="flex flex-col h-screen w-full">
+    <section className="flex flex-col w-full md:h-screen">
       <div className="flex flex-col p-4 w-full">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Header title="PDV" />
           <div className="flex gap-3">
             <Button variant="secondary" asChild size="lg">
@@ -36,21 +36,22 @@ export function OrderPanel({
 
       {stockError && <p className="mx-4 mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{stockError}</p>}
 
-      <div className="flex gap-3 p-4 rounded-xl">
+      <div className="flex gap-3 p-4 rounded-xl overflow-x-auto [&::-webkit-scrollbar]:hidden">
         {categories?.map((category: TCategory) => (
           <Button
             key={category.id}
             size="lg"
             onClick={() => handleCategoryClick(category.id)}
             variant={selectedCategory?.id === category.id ? "default" : "outline"}
+            className="shrink-0"
           >
             {toTitleCase(category.name)}
           </Button>
         ))}
       </div>
 
-      <div className="rounded-xl flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-        <div className="p-4 grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="rounded-xl md:flex-1 md:overflow-y-auto [&::-webkit-scrollbar]:hidden">
+        <div className="p-4 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {!filteredProducts || filteredProducts.length === 0 ? (
             <p className="col-span-full text-center text-sm text-muted-foreground">Nenhum produto cadastrado.</p>
           ) : (

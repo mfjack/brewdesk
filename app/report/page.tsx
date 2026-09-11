@@ -79,7 +79,7 @@ export default function ReportPage() {
       />
 
       <section className="flex flex-col h-screen print:hidden">
-        <div className="p-4 flex items-center justify-between">
+        <div className="p-4 flex items-center justify-between flex-wrap gap-2">
           <Header title="Relatório" />
 
           <Button size="lg" onClick={() => window.print()}>
@@ -124,13 +124,13 @@ export default function ReportPage() {
               <div className="mb-4">
                 <Card>
                   <CardContent className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
                       <div>
                         <p className="font-medium">Consulta por Produto</p>
                         <p className="text-xs text-muted-foreground">Vendas de um item específico no período selecionado</p>
                       </div>
                       <Select value={selectedProduct || ""} onValueChange={(value) => setSelectedProduct(value || null)}>
-                        <SelectTrigger className="w-60">
+                        <SelectTrigger className="w-full sm:w-60">
                           <SelectValue placeholder="Selecione um produto" />
                         </SelectTrigger>
                         <SelectContent>
@@ -152,7 +152,7 @@ export default function ReportPage() {
                         </div>
                         <div className="flex flex-col p-2 bg-muted rounded-md">
                           <p className="text-xs text-muted-foreground">Faturamento</p>
-                          <p className="text-lg font-semibold text-green-600">{formatCurrency(productReportData.totalRevenue)}</p>
+                          <p className="text-lg font-semibold">{formatCurrency(productReportData.totalRevenue)}</p>
                         </div>
                       </div>
                     )}
@@ -183,7 +183,7 @@ export default function ReportPage() {
                                       </div>
                                       <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                                         <div
-                                          className="h-full bg-linear-to-r from-purple-400 to-purple-600 rounded-full transition-all"
+                                          className="h-full bg-foreground/70 rounded-full transition-all"
                                           style={{ width: `${percentage}%` }}
                                         ></div>
                                       </div>
@@ -204,12 +204,12 @@ export default function ReportPage() {
                 </Card>
               </div>
 
-              <div className="flex w-full gap-4 mb-4">
+              <div className="flex flex-col md:flex-row w-full gap-4 mb-4">
                 <div className="mb-4 w-full">
                   <Card>
                     <CardContent className="flex flex-col gap-4 pt-4">
                       <div className="flex items-center gap-2">
-                        <TrendingUp size={18} className="text-green-500" />
+                        <TrendingUp size={18} />
                         <p className="font-medium">Produtos Mais Vendidos</p>
                       </div>
                       <div className="space-y-2">
@@ -231,7 +231,7 @@ export default function ReportPage() {
                                   <p className="text-xs text-muted-foreground">unidades</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="text-sm font-semibold text-green-600">{formatCurrency(product.revenue)}</p>
+                                  <p className="text-sm font-semibold">{formatCurrency(product.revenue)}</p>
                                   <p className="text-xs text-muted-foreground">faturamento</p>
                                 </div>
                               </div>
@@ -249,7 +249,7 @@ export default function ReportPage() {
                   <Card>
                     <CardContent className="flex flex-col gap-4 pt-4">
                       <div className="flex items-center gap-2">
-                        <TrendingDown size={18} className="text-red-500" />
+                        <TrendingDown size={18} />
                         <p className="font-medium">Produtos Menos Vendidos</p>
                       </div>
                       <div className="space-y-2">
@@ -271,7 +271,7 @@ export default function ReportPage() {
                                   <p className="text-xs text-muted-foreground">unidades</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="text-sm font-semibold text-red-600">{formatCurrency(product.revenue)}</p>
+                                  <p className="text-sm font-semibold">{formatCurrency(product.revenue)}</p>
                                   <p className="text-xs text-muted-foreground">faturamento</p>
                                 </div>
                               </div>
@@ -310,7 +310,7 @@ export default function ReportPage() {
                               </div>
                               <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                                 <div
-                                  className="h-full bg-linear-to-r from-blue-400 to-blue-600 rounded-full transition-all"
+                                  className="h-full bg-foreground/70 rounded-full transition-all"
                                   style={{ width: `${percentage}%` }}
                                 ></div>
                               </div>

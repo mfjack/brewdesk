@@ -136,7 +136,7 @@ export default function SettingsPage() {
             <Input placeholder="Nome do estabelecimento" {...register("name", { required: true })} />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex flex-1 flex-col gap-2">
               <label className="text-sm font-medium">CNPJ</label>
               <Input placeholder="00.000.000/0000-00" {...register("cnpj")} />
