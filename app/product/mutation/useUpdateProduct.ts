@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { localStore } from "@/_lib/local-store";
+import { localStore } from "@/_lib/store";
 import { TCreateProduct } from "./useCreateProduct";
 
 export interface TUpdateProduct extends TCreateProduct {

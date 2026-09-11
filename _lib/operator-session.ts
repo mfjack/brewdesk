@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const OPERATOR_STORAGE_KEY = "brewdesk.operator";
 const OPERATOR_CHANGE_EVENT = "brewdesk-operator-change";
@@ -38,16 +38,32 @@ export function setActiveOperator(operator: TActiveOperator | null) {
   window.dispatchEvent(new Event(OPERATOR_CHANGE_EVENT));
 }
 
+let cachedRaw: string | null = null;
+let cachedSnapshot: TActiveOperator | null = null;
+
+function getSnapshot(): TActiveOperator | null {
+  const raw = window.sessionStorage.getItem(OPERATOR_STORAGE_KEY);
+
+  if (raw === cachedRaw) {
+    return cachedSnapshot;
+  }
+
+  cachedRaw = raw;
+  cachedSnapshot = getActiveOperator();
+
+  return cachedSnapshot;
+}
+
+function getServerSnapshot(): TActiveOperator | null {
+  return null;
+}
+
+function subscribe(callback: () => void) {
+  window.addEventListener(OPERATOR_CHANGE_EVENT, callback);
+
+  return () => window.removeEventListener(OPERATOR_CHANGE_EVENT, callback);
+}
+
 export function useActiveOperator(): TActiveOperator | null {
-  const [active, setActive] = useState<TActiveOperator | null>(getActiveOperator);
-
-  useEffect(() => {
-    const handleChange = () => setActive(getActiveOperator());
-
-    window.addEventListener(OPERATOR_CHANGE_EVENT, handleChange);
-
-    return () => window.removeEventListener(OPERATOR_CHANGE_EVENT, handleChange);
-  }, []);
-
-  return active;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

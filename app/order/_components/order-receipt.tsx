@@ -3,7 +3,6 @@ import { formatCurrency } from "@/_lib/format-currency";
 import { TOrderResponse } from "../interface";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
-import Image from "next/image";
 
 interface TOrderReceipt {
   order: TOrderResponse;

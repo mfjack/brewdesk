@@ -20,7 +20,7 @@ import { useUpdateSettings } from "./mutation/useUpdateSettings";
 import { useAddOperator } from "./mutation/useAddOperator";
 import { useDeleteOperator } from "./mutation/useDeleteOperator";
 import { useImportData } from "./mutation/useImportData";
-import { localStore } from "@/_lib/local-store";
+import { localStore } from "@/_lib/store";
 
 interface TSettingsFormValues {
   name: string;

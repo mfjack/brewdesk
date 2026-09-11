@@ -54,7 +54,7 @@ export interface TOrderItem {
   subtotal: number;
 }
 
-export type TOrderStatus = "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID" | "CANCELLED";
+export type TOrderStatus = "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID";
 
 export type TPaymentMethod = "CASH" | "CREDIT" | "DEBIT" | "PIX";
 
@@ -72,7 +72,6 @@ export interface TOrderResponse {
   paymentMethod: TPaymentMethod | null;
   amountReceived: number | null;
   changeDue: number | null;
-  cancelReason: string | null;
 }
 
 export interface TOperator {

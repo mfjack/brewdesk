@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Banknote,
   CreditCard,
+  Download,
   Landmark,
   ListChecks,
   LucideIcon,
@@ -25,6 +26,7 @@ import type { TPaymentMethod } from "../order/interface";
 import { useGetReportData, useGetProductReportData, type DateRange } from "./query/useGetReportData";
 import { ReportReceipt } from "./_components/report-receipt";
 import { formatCurrency } from "@/_lib/format-currency";
+import { buildCsv, downloadCsv } from "@/_lib/csv";
 
 interface CardDetail {
   title: string;
@@ -66,6 +68,36 @@ export default function ReportPage() {
   const maxHourlyRevenue = Math.max(...reportData.hourlyPeaks.map((p) => p.revenue));
   const productMaxHourlyRevenue = productReportData ? Math.max(...productReportData.hourlyPeaks.map((p) => p.revenue)) : 0;
 
+  function handleExportCsv() {
+    if (!reportData) {
+      return;
+    }
+
+    const summarySection = buildCsv(
+      ["Métrica", "Valor"],
+      [
+        ["Total de Vendas", formatCurrency(reportData.totalRevenue)],
+        ["Pedidos", reportData.ordersCount],
+        ["Ticket Médio", formatCurrency(reportData.averageTicket)],
+        ["Itens Vendidos", reportData.totalItemsSold],
+      ],
+    );
+
+    const productsSection = buildCsv(
+      ["Produto", "Quantidade Vendida", "Faturamento"],
+      reportData.allProducts.map((product) => [product.name, product.quantity, formatCurrency(product.revenue)]),
+    );
+
+    const paymentSection = buildCsv(
+      ["Forma de Pagamento", "Pedidos", "Total"],
+      reportData.paymentMethodStats.map((stat) => [paymentMethodLabels[stat.method].label, stat.count, formatCurrency(stat.total)]),
+    );
+
+    const csv = [summarySection, "", productsSection, "", paymentSection].join("\n");
+
+    downloadCsv(`brewdesk-relatorio-${dateRange}-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  }
+
   const cardDetails: CardDetail[] = [
     {
       title: "Total de Vendas",
@@ -102,10 +134,17 @@ export default function ReportPage() {
         <div className="p-4 flex items-center justify-between flex-wrap gap-2">
           <Header title="Relatório" />
 
-          <Button size="lg" onClick={() => window.print()}>
-            <Printer />
-            Imprimir relatório
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="lg" onClick={handleExportCsv}>
+              <Download />
+              Exportar CSV
+            </Button>
+
+            <Button size="lg" onClick={() => window.print()}>
+              <Printer />
+              Imprimir relatório
+            </Button>
+          </div>
         </div>
 
         <Separator className="h-px w-full" />

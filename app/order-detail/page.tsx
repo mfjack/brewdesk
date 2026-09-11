@@ -4,9 +4,8 @@ import { useMemo, useState } from "react";
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
-import { Textarea } from "@/_components/ui/textarea";
 import { Separator } from "@/_components/ui/separator";
-import { Banknote, CreditCard, DollarSign, HandCoins, Landmark, QrCode, X, XCircle } from "lucide-react";
+import { Banknote, CreditCard, DollarSign, HandCoins, Landmark, QrCode, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -17,9 +16,8 @@ import { Header } from "@/_components/ui/header";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
-import { useCancelOrder } from "./mutation/useCancelOrder";
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 const paymentMethodOptions: { value: TPaymentMethod; label: string; Icon: typeof Banknote }[] = [
@@ -36,19 +34,15 @@ export default function OrderDetailPage() {
   const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CASH");
   const [amountReceived, setAmountReceived] = useState("");
 
-  const [orderToCancel, setOrderToCancel] = useState<TOrderResponse | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
-
   const { data: orders = [] } = useGetOrder();
   const { data: settings } = useGetSettings();
 
   const updateOrderStatus = useUpdateOrderStatus();
-  const cancelOrder = useCancelOrder();
 
   const filteredOrders = useMemo(
     () =>
       orders
-        .filter((order) => order.status !== "PAID" && order.status !== "CANCELLED")
+        .filter((order) => order.status !== "PAID")
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase())),
     [orders, searchTerm],
@@ -85,29 +79,6 @@ export default function OrderDetailPage() {
     });
 
     setSelectedOrder(null);
-  }
-
-  function handleOpenCancel(order: TOrderResponse) {
-    setOrderToCancel(order);
-    setCancelReason("");
-  }
-
-  function handleCloseCancel() {
-    if (cancelOrder.isPending) {
-      return;
-    }
-
-    setOrderToCancel(null);
-  }
-
-  async function handleConfirmCancel() {
-    if (!orderToCancel) {
-      return;
-    }
-
-    await cancelOrder.mutateAsync({ orderId: orderToCancel.id, reason: cancelReason });
-
-    setOrderToCancel(null);
   }
 
   return (
@@ -174,11 +145,6 @@ export default function OrderDetailPage() {
                 <Button type="button" className="w-full" size="lg" variant="outline" onClick={() => handleOpenPayment(order)}>
                   <DollarSign />
                   Pagamento
-                </Button>
-
-                <Button type="button" className="w-full" size="lg" variant="ghost" onClick={() => handleOpenCancel(order)}>
-                  <XCircle />
-                  Cancelar comanda
                 </Button>
               </Card>
             ))}
@@ -302,49 +268,6 @@ export default function OrderDetailPage() {
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(orderToCancel)}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleCloseCancel();
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="flex flex-col gap-0.5">
-            <DialogTitle>Cancelar comanda</DialogTitle>
-            <DialogDescription>Os itens da comanda voltam para o estoque. Essa ação não pode ser desfeita.</DialogDescription>
-          </DialogHeader>
-
-          {orderToCancel && (
-            <div className="space-y-3">
-              <div className="flex gap-1">
-                <p className="text-sm text-muted-foreground">Cliente: </p>
-                <p className="font-bold text-sm">{toTitleCase(orderToCancel.customerName)}</p>
-              </div>
-
-              <Textarea
-                placeholder="Motivo do cancelamento (opcional)"
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                rows={3}
-              />
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="ghost" type="button" onClick={handleCloseCancel} disabled={cancelOrder.isPending}>
-              Voltar
-            </Button>
-
-            <Button variant="destructive" type="button" onClick={handleConfirmCancel} disabled={cancelOrder.isPending}>
-              <XCircle />
-              {cancelOrder.isPending ? "Cancelando..." : "Confirmar cancelamento"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { MenuList } from "./menu-list";
 import { OrderPanel } from "./order-panel";
@@ -37,6 +37,7 @@ export default function OrderPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<TCategory | null>(null);
 
   const [currentOrder, setCurrentOrder] = useState<TOrderResponse | null>(null);
+  const [syncedOrderId, setSyncedOrderId] = useState<number | null>(null);
 
   const [printJob, setPrintJob] = useState<PrintJob | null>(null);
 
@@ -70,15 +71,12 @@ export default function OrderPageContent() {
 
   const { data: existingOrder } = useGetOrderById(orderId ? Number(orderId) : null);
 
-  useEffect(() => {
-    if (!existingOrder) {
-      return;
-    }
-
+  if (existingOrder && existingOrder.id !== syncedOrderId) {
+    setSyncedOrderId(existingOrder.id);
     setCurrentOrder(existingOrder);
     setObservation(existingOrder.observation ?? "");
     setPrintedItemQuantities(existingOrder.printedItemQuantities ?? {});
-  }, [existingOrder]);
+  }
 
   const filteredProducts = useMemo(
     () => (selectedCategory ? products?.filter((product: TProduct) => product.category.id === selectedCategory.id) : products),
@@ -91,15 +89,11 @@ export default function OrderPageContent() {
     setSelectedCategory(category || null);
   }
 
-  useEffect(() => {
-    if (!categories?.length || selectedCategory) {
-      return;
-    }
-
+  if (categories?.length && !selectedCategory) {
     const defaultCategory = categories.find((category: TCategory) => category.id === 1) ?? categories[0];
 
     setSelectedCategory(defaultCategory);
-  }, [categories, selectedCategory]);
+  }
 
   function schedulePrint(orderIdToMark: number, printedQty: Record<number, number>, onAfterPrint?: () => void) {
     setTimeout(async () => {
@@ -151,7 +145,6 @@ export default function OrderPageContent() {
           paymentMethod: null,
           amountReceived: null,
           changeDue: null,
-          cancelReason: null,
         };
 
         const orderItems = mergeOrderItem(base.orderItems, product, 1, () => product.id);

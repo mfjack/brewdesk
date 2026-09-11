@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { localStore } from "@/_lib/local-store";
+import { localStore } from "@/_lib/store";
 import { TOrderResponse, TPaymentMethod } from "@/app/order/interface";
 
 export type DateRange = "day" | "week" | "month";
@@ -64,7 +64,7 @@ function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange)
   const { start, end } = getDateRange(dateRange);
   return orders.filter((order) => {
     const orderDate = new Date(order.createdAt);
-    return orderDate >= start && orderDate <= end && order.status !== "OPEN" && order.status !== "CANCELLED";
+    return orderDate >= start && orderDate <= end && order.status !== "OPEN";
   });
 }
 
