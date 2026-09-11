@@ -1,4 +1,5 @@
 import type { TCategory, TOrderResponse, TProduct, TStoreSettings } from "@/app/order/interface";
+import { isOrderPaid } from "@/app/order/order-math";
 
 export const STORAGE_KEY = "brewdesk.data.v1";
 
@@ -49,13 +50,20 @@ export function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
+function normalizeOrders(orders: TOrderResponse[]): TOrderResponse[] {
+  return orders.map((order) => ({
+    ...order,
+    orderItems: order.orderItems.map((item) => ({ ...item, costPrice: item.costPrice ?? 0 })),
+  }));
+}
+
 const PAID_ORDER_RETENTION_DAYS = 60;
 
 function pruneOldPaidOrders(data: StoreData): boolean {
   const cutoff = Date.now() - PAID_ORDER_RETENTION_DAYS * 24 * 60 * 60 * 1000;
   const originalCount = data.orders.length;
 
-  data.orders = data.orders.filter((order) => order.status !== "PAID" || new Date(order.createdAt).getTime() >= cutoff);
+  data.orders = data.orders.filter((order) => !isOrderPaid(order) || new Date(order.createdAt).getTime() >= cutoff);
 
   return data.orders.length !== originalCount;
 }
@@ -81,6 +89,8 @@ export function readStore(): StoreData {
       settings: { ...defaultSettings, ...parsed.settings },
       nextIds: { ...clone(initialData.nextIds), ...parsed.nextIds },
     };
+
+    data.orders = normalizeOrders(data.orders);
 
     if (pruneOldPaidOrders(data)) {
       writeStore(data);

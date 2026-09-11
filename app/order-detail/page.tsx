@@ -8,11 +8,12 @@ import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
 import { DollarSign, HandCoins, X } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 
 import { useGetOrder } from "../kitchen/query/useGetOrder";
 import { TOrderResponse, TPaymentMethod } from "../order/interface";
-import { paymentMethodOptions, paymentMethodLabels } from "../order/payment-methods";
+import { isOrderPaid } from "../order/order-math";
+import { paymentMethodLabels } from "../order/payment-methods";
+import { PaymentMethodFields } from "../order/_components/payment-method-fields";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Header } from "@/_components/ui/header";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
@@ -47,7 +48,7 @@ export default function OrderDetailPage() {
   const filteredOrders = useMemo(
     () =>
       orders
-        .filter((order) => order.status !== "PAID")
+        .filter((order) => !isOrderPaid(order))
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase())),
     [orders, searchTerm],
@@ -56,7 +57,7 @@ export default function OrderDetailPage() {
   const paidOrders = useMemo(
     () =>
       orders
-        .filter((order) => order.status === "PAID")
+        .filter((order) => isOrderPaid(order))
         .filter((order) => order.customerName.toLowerCase().includes(historySearchTerm.toLowerCase()))
         .filter((order) => !historyDate || toDateInputValue(new Date(order.createdAt)) === historyDate)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
@@ -64,8 +65,6 @@ export default function OrderDetailPage() {
   );
 
   const finalTotal = selectedOrder?.total ?? 0;
-
-  const changeDue = paymentMethod === "CASH" && amountReceived ? Math.max(Number(amountReceived) - finalTotal, 0) : null;
 
   function handleOpenPayment(order: TOrderResponse) {
     setSelectedOrder(order);
@@ -369,79 +368,32 @@ export default function OrderDetailPage() {
 
               <Separator />
 
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Forma de pagamento</p>
+              <PaymentMethodFields
+                paymentMethod={paymentMethod}
+                onPaymentMethodChange={setPaymentMethod}
+                amountReceived={amountReceived}
+                onAmountReceivedChange={setAmountReceived}
+                total={finalTotal}
+                pixQrCodeUrl={settings?.pixQrCodeUrl}
+              />
 
-                <div className="flex gap-2">
-                  {paymentMethodOptions.map(({ value, label, Icon }) => (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant={paymentMethod === value ? "default" : "outline"}
-                      className="flex-1"
-                      onClick={() => setPaymentMethod(value)}
-                    >
-                      <Icon />
-                      {label}
-                    </Button>
-                  ))}
-                </div>
+              <Separator />
 
-                {paymentMethod === "CASH" && (
-                  <div className="space-y-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Valor recebido"
-                      value={amountReceived}
-                      onChange={(e) => setAmountReceived(e.target.value)}
-                    />
+              <Button
+                className="w-full"
+                type="button"
+                size="lg"
+                onClick={handleConfirmPayment}
+                disabled={
+                  updateOrderStatus.isPending ||
+                  !selectedOrder ||
+                  (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)
+                }
+              >
+                <DollarSign />
 
-                    {changeDue !== null && <p className="text-sm text-muted-foreground">Troco: {formatCurrency(changeDue)}</p>}
-                  </div>
-                )}
-
-                {paymentMethod === "PIX" && (
-                  <div className="flex flex-col items-center gap-2 rounded-lg border border-border p-4">
-                    {settings?.pixQrCodeUrl ? (
-                      <>
-                        <Image
-                          src={settings.pixQrCodeUrl}
-                          alt="QR Code Pix"
-                          width={200}
-                          height={200}
-                          className="h-48 w-48 object-contain"
-                        />
-                        <p className="text-xs text-muted-foreground text-center">
-                          Peça pro cliente escanear o QR Code com o app do banco.
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Nenhum QR Code cadastrado. Configure em Configurações.
-                      </p>
-                    )}
-                  </div>
-                )}
-                <Separator />
-
-                <Button
-                  className="w-full mt-4"
-                  type="button"
-                  size="lg"
-                  onClick={handleConfirmPayment}
-                  disabled={
-                    updateOrderStatus.isPending ||
-                    !selectedOrder ||
-                    (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)
-                  }
-                >
-                  <DollarSign />
-
-                  {updateOrderStatus.isPending ? "Processando..." : "Pagamento Recebido"}
-                </Button>
-              </div>
+                {updateOrderStatus.isPending ? "Processando..." : "Pagamento Recebido"}
+              </Button>
             </div>
           )}
         </DialogContent>

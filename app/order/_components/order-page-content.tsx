@@ -17,7 +17,7 @@ import { useUpdateOrderStatus } from "../mutation/useUpdateOrderStatus";
 import { useMarkOrderItemsPrinted } from "../mutation/useMarkOrderItemsPrinted";
 
 import { TCategory, TOrderItem, TOrderResponse, TPaymentMethod, TProduct } from "../interface";
-import { computeOrderTotal, decrementOrRemoveItem, DRAFT_ORDER_ID, isDraftOrder, mergeOrderItem } from "../order-math";
+import { computeOrderTotal, decrementOrRemoveItem, DRAFT_ORDER_ID, isDraftOrder, isOrderPaid, mergeOrderItem } from "../order-math";
 import { getActiveOperator } from "@/_lib/operator-session";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -113,6 +113,22 @@ export default function OrderPageContent() {
       onAfterPrint?.();
       setPrintJob(null);
     }, 100);
+  }
+
+  async function materializeDraftOrder(draftOrder: TOrderResponse, customerName: string): Promise<TOrderResponse> {
+    const created = await createOrder.mutateAsync({ customerName, operatorName: getActiveOperator()?.name });
+
+    let order = created;
+
+    for (const item of draftOrder.orderItems) {
+      order = await addOrderItem.mutateAsync({
+        orderId: created.id,
+        productId: item.product.id,
+        quantity: item.quantity,
+      });
+    }
+
+    return order;
   }
 
   function getAvailableStock(product: TProduct) {
@@ -212,8 +228,7 @@ export default function OrderPageContent() {
     const normalized = name.trim().toLowerCase();
 
     return orders.some(
-      (order) =>
-        order.id !== currentOrder?.id && order.status !== "PAID" && order.customerName.trim().toLowerCase() === normalized,
+      (order) => order.id !== currentOrder?.id && !isOrderPaid(order) && order.customerName.trim().toLowerCase() === normalized,
     );
   }
 
@@ -267,21 +282,7 @@ export default function OrderPageContent() {
     setIsSendingOrder(true);
 
     try {
-      let order = currentOrder;
-
-      if (isDraftOrder(order)) {
-        const created = await createOrder.mutateAsync({ customerName, operatorName: getActiveOperator()?.name });
-
-        order = created;
-
-        for (const item of currentOrder.orderItems) {
-          order = await addOrderItem.mutateAsync({
-            orderId: created.id,
-            productId: item.product.id,
-            quantity: item.quantity,
-          });
-        }
-      }
+      const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, customerName) : currentOrder;
 
       const updatedOrder = await updateOrderStatus.mutateAsync({
         orderId: order.id,
@@ -364,26 +365,10 @@ export default function OrderPageContent() {
     sendingOrderRef.current = true;
     setIsSendingOrder(true);
 
-    const wasDraft = isDraftOrder(currentOrder);
-
     try {
-      let order = currentOrder;
+      const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, "") : currentOrder;
 
-      if (wasDraft) {
-        const created = await createOrder.mutateAsync({ customerName: "", operatorName: getActiveOperator()?.name });
-
-        order = created;
-
-        for (const item of currentOrder.orderItems) {
-          order = await addOrderItem.mutateAsync({
-            orderId: created.id,
-            productId: item.product.id,
-            quantity: item.quantity,
-          });
-        }
-      }
-
-      const updatedOrder = await updateOrderStatus.mutateAsync({
+      await updateOrderStatus.mutateAsync({
         orderId: order.id,
         status: "PAID",
         observation,
@@ -392,18 +377,7 @@ export default function OrderPageContent() {
       });
 
       setIsPaymentDialogOpen(false);
-
-      if (wasDraft) {
-        setPrintJob({ order: updatedOrder, mode: "full" });
-
-        setTimeout(() => {
-          window.print();
-          setPrintJob(null);
-          resetCart();
-        }, 100);
-      } else {
-        resetCart();
-      }
+      resetCart();
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível concluir o pagamento.");
     } finally {

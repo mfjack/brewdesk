@@ -9,23 +9,15 @@ import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
+import { Download, ListChecks, LucideIcon, Percent, Printer, SquarePen, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { paymentMethodOptions } from "../order/payment-methods";
 import {
-  Banknote,
-  CreditCard,
-  Download,
-  Landmark,
-  ListChecks,
-  LucideIcon,
-  Percent,
-  Printer,
-  QrCode,
-  SquarePen,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
-import type { TPaymentMethod } from "../order/interface";
-import { useGetReportData, useGetProductReportData, type CustomDateRange, type DateRange } from "./query/useGetReportData";
+  useGetReportData,
+  useGetProductReportData,
+  type CustomDateRange,
+  type DateRange,
+  type PaymentMethodStat,
+} from "./query/useGetReportData";
 import { ReportReceipt } from "./_components/report-receipt";
 import { HourlyBarChart } from "./_components/hourly-bar-chart";
 import { formatCurrency } from "@/_lib/format-currency";
@@ -44,12 +36,33 @@ const dateRangeLabels: Record<DateRange, string> = {
   custom: "Personalizado",
 };
 
-const paymentMethodLabels: Record<TPaymentMethod, { label: string; Icon: LucideIcon }> = {
-  CASH: { label: "Dinheiro", Icon: Banknote },
-  CREDIT: { label: "Crédito", Icon: CreditCard },
-  DEBIT: { label: "Débito", Icon: Landmark },
-  PIX: { label: "Pix", Icon: QrCode },
-};
+const paymentMethodLabels = Object.fromEntries(paymentMethodOptions.map(({ value, label, Icon }) => [value, { label, Icon }])) as Record<
+  (typeof paymentMethodOptions)[number]["value"],
+  { label: string; Icon: LucideIcon }
+>;
+
+function PaymentMethodStatsGrid({ stats }: { stats: PaymentMethodStat[] }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {stats.map(({ method, count, total }) => {
+        const { label, Icon } = paymentMethodLabels[method];
+
+        return (
+          <div key={method} className="flex items-center justify-between p-2 bg-muted rounded-md">
+            <div className="flex items-center gap-2">
+              <Icon size={16} />
+              <span className="text-sm font-medium">{label}</span>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold">{formatCurrency(total)}</p>
+              <p className="text-xs text-muted-foreground">{count} pedido(s)</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ReportPage() {
   const [dateRange, setDateRange] = useState<DateRange>("day");
@@ -430,24 +443,7 @@ export default function ReportPage() {
                     <CardContent className="flex flex-col gap-4 pt-4">
                       <p className="font-medium">Formas de Pagamento</p>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {reportData.paymentMethodStats.map(({ method, count, total }) => {
-                          const { label, Icon } = paymentMethodLabels[method];
-
-                          return (
-                            <div key={method} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                              <div className="flex items-center gap-2">
-                                <Icon size={16} />
-                                <span className="text-sm font-medium">{label}</span>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-semibold">{formatCurrency(total)}</p>
-                                <p className="text-xs text-muted-foreground">{count} pedido(s)</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <PaymentMethodStatsGrid stats={reportData.paymentMethodStats} />
                     </CardContent>
                   </Card>
                 </div>
@@ -478,24 +474,7 @@ export default function ReportPage() {
                         </Select>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {closingStats.paymentMethodStats.map(({ method, count, total }) => {
-                          const { label, Icon } = paymentMethodLabels[method];
-
-                          return (
-                            <div key={method} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                              <div className="flex items-center gap-2">
-                                <Icon size={16} />
-                                <span className="text-sm font-medium">{label}</span>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-semibold">{formatCurrency(total)}</p>
-                                <p className="text-xs text-muted-foreground">{count} pedido(s)</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <PaymentMethodStatsGrid stats={closingStats.paymentMethodStats} />
 
                       <div className="flex items-center justify-between border-t border-border pt-3">
                         <span className="text-sm font-medium">Total do período</span>

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { localStore } from "@/_lib/store";
 import { TOrderResponse, TPaymentMethod } from "@/app/order/interface";
+import { isOrderPaid } from "@/app/order/order-math";
 
 export type DateRange = "day" | "week" | "month" | "custom";
 
@@ -102,7 +103,7 @@ function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange,
 
   return orders.filter((order) => {
     const orderDate = new Date(order.createdAt);
-    return orderDate >= start && orderDate <= end && order.status === "PAID";
+    return orderDate >= start && orderDate <= end && isOrderPaid(order);
   });
 }
 
@@ -175,7 +176,7 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
     order.orderItems.forEach((item) => {
       totalItemsSold += item.quantity;
 
-      const itemCost = item.quantity * (item.costPrice ?? 0);
+      const itemCost = item.quantity * item.costPrice;
       totalCost += itemCost;
 
       const productKey = item.product.name;
