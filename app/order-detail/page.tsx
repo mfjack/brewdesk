@@ -6,12 +6,13 @@ import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
-import { Banknote, CreditCard, DollarSign, HandCoins, Landmark, QrCode, X } from "lucide-react";
+import { DollarSign, HandCoins, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 import { useGetOrder } from "../kitchen/query/useGetOrder";
 import { TOrderResponse, TPaymentMethod } from "../order/interface";
+import { paymentMethodOptions, paymentMethodLabels } from "../order/payment-methods";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Header } from "@/_components/ui/header";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
@@ -20,20 +21,6 @@ import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
-
-const paymentMethodOptions: { value: TPaymentMethod; label: string; Icon: typeof Banknote }[] = [
-  { value: "CASH", label: "Dinheiro", Icon: Banknote },
-  { value: "CREDIT", label: "Crédito", Icon: CreditCard },
-  { value: "DEBIT", label: "Débito", Icon: Landmark },
-  { value: "PIX", label: "Pix", Icon: QrCode },
-];
-
-const paymentMethodLabels: Record<TPaymentMethod, string> = {
-  CASH: "Dinheiro",
-  CREDIT: "Crédito",
-  DEBIT: "Débito",
-  PIX: "Pix",
-};
 
 function toDateInputValue(date: Date): string {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);

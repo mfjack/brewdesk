@@ -16,7 +16,7 @@ import { useRemoveOrderItem } from "../mutation/useRemoveOrderItem";
 import { useUpdateOrderStatus } from "../mutation/useUpdateOrderStatus";
 import { useMarkOrderItemsPrinted } from "../mutation/useMarkOrderItemsPrinted";
 
-import { TCategory, TOrderItem, TOrderResponse, TProduct } from "../interface";
+import { TCategory, TOrderItem, TOrderResponse, TPaymentMethod, TProduct } from "../interface";
 import { computeOrderTotal, decrementOrRemoveItem, DRAFT_ORDER_ID, isDraftOrder, mergeOrderItem } from "../order-math";
 import { getActiveOperator } from "@/_lib/operator-session";
 
@@ -56,6 +56,12 @@ export default function OrderPageContent() {
   const [stockError, setStockError] = useState<string | null>(null);
 
   const [isSendingOrder, setIsSendingOrder] = useState(false);
+
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+
+  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CASH");
+
+  const [amountReceived, setAmountReceived] = useState("");
 
   const sendingOrderRef = useRef(false);
 
@@ -332,6 +338,80 @@ export default function OrderPageContent() {
     schedulePrint(currentOrder.id, printedQty, () => setPrintedItemQuantities(printedQty));
   }
 
+  function resetCart() {
+    setCurrentOrder(null);
+    setObservation("");
+    setPrintedItemQuantities({});
+    setSyncedOrderId(null);
+    router.replace("/order");
+  }
+
+  function handleRequestPayment() {
+    if (!currentOrder || currentOrder.orderItems.length === 0 || isSendingOrder) {
+      return;
+    }
+
+    setPaymentMethod("CASH");
+    setAmountReceived("");
+    setIsPaymentDialogOpen(true);
+  }
+
+  async function handleConfirmPayment() {
+    if (!currentOrder || currentOrder.orderItems.length === 0 || sendingOrderRef.current) {
+      return;
+    }
+
+    sendingOrderRef.current = true;
+    setIsSendingOrder(true);
+
+    const wasDraft = isDraftOrder(currentOrder);
+
+    try {
+      let order = currentOrder;
+
+      if (wasDraft) {
+        const created = await createOrder.mutateAsync({ customerName: "", operatorName: getActiveOperator()?.name });
+
+        order = created;
+
+        for (const item of currentOrder.orderItems) {
+          order = await addOrderItem.mutateAsync({
+            orderId: created.id,
+            productId: item.product.id,
+            quantity: item.quantity,
+          });
+        }
+      }
+
+      const updatedOrder = await updateOrderStatus.mutateAsync({
+        orderId: order.id,
+        status: "PAID",
+        observation,
+        paymentMethod,
+        amountReceived: paymentMethod === "CASH" ? Number(amountReceived) || 0 : null,
+      });
+
+      setIsPaymentDialogOpen(false);
+
+      if (wasDraft) {
+        setPrintJob({ order: updatedOrder, mode: "full" });
+
+        setTimeout(() => {
+          window.print();
+          setPrintJob(null);
+          resetCart();
+        }, 100);
+      } else {
+        resetCart();
+      }
+    } catch (error) {
+      setStockError(error instanceof Error ? error.message : "Não foi possível concluir o pagamento.");
+    } finally {
+      sendingOrderRef.current = false;
+      setIsSendingOrder(false);
+    }
+  }
+
   return (
     <>
       {printJob && (
@@ -376,6 +456,15 @@ export default function OrderPageContent() {
             nameError={nameError}
             isTakeoutDraft={isTakeoutDraft}
             onIsTakeoutDraftChange={setIsTakeoutDraft}
+            onRequestPayment={handleRequestPayment}
+            isPaymentDialogOpen={isPaymentDialogOpen}
+            onPaymentDialogOpenChange={setIsPaymentDialogOpen}
+            paymentMethod={paymentMethod}
+            onPaymentMethodChange={setPaymentMethod}
+            amountReceived={amountReceived}
+            onAmountReceivedChange={setAmountReceived}
+            onConfirmPayment={handleConfirmPayment}
+            isConfirmingPayment={isSendingOrder}
           />
         )}
       </section>

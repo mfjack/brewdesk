@@ -17,6 +17,16 @@ export interface TMenuList {
   nameError?: string | null;
   isTakeoutDraft: boolean;
   onIsTakeoutDraftChange: (value: boolean) => void;
+
+  onRequestPayment: () => void;
+  isPaymentDialogOpen: boolean;
+  onPaymentDialogOpenChange: (open: boolean) => void;
+  paymentMethod: TPaymentMethod;
+  onPaymentMethodChange: (method: TPaymentMethod) => void;
+  amountReceived: string;
+  onAmountReceivedChange: (value: string) => void;
+  onConfirmPayment: () => void;
+  isConfirmingPayment: boolean;
 }
 
 export interface TOrderPanel {

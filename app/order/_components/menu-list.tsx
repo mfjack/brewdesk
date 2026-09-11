@@ -1,6 +1,7 @@
-import { Trash2, NotebookPen, Send, User } from "lucide-react";
+import { Trash2, NotebookPen, Send, User, DollarSign } from "lucide-react";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
+import Image from "next/image";
 
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
@@ -10,8 +11,10 @@ import { Switch } from "@/_components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 
 import { TMenuList, TOrderItem } from "../interface";
+import { paymentMethodOptions } from "../payment-methods";
 
 import { formatCurrency } from "@/_lib/format-currency";
+import { useGetSettings } from "@/app/settings/query/useGetSettings";
 
 import { Input } from "@/_components/ui/input";
 import { toTitleCase } from "@/_lib/to-title-case";
@@ -35,8 +38,25 @@ export function MenuList({
   nameError,
   isTakeoutDraft,
   onIsTakeoutDraftChange,
+
+  onRequestPayment,
+  isPaymentDialogOpen,
+  onPaymentDialogOpenChange,
+  paymentMethod,
+  onPaymentMethodChange,
+  amountReceived,
+  onAmountReceivedChange,
+  onConfirmPayment,
+  isConfirmingPayment,
 }: TMenuList) {
   const hasItems = (order?.orderItems?.length ?? 0) > 0;
+
+  const { data: settings } = useGetSettings();
+
+  const finalTotal = order?.total ?? 0;
+
+  const changeDue =
+    paymentMethod === "CASH" && amountReceived ? Math.max(Number(amountReceived) - finalTotal, 0) : null;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -129,22 +149,43 @@ export function MenuList({
             <span className="px-4 py-2 text-lg font-bold">{formatCurrency(order.total ?? 0)}</span>
           </div>
 
-          {Object.keys(printedItemQuantities).length === 0 ? (
-            <Button
-              className="mx-4 mb-4 flex gap-3"
-              size="lg"
-              onClick={onSendOrder}
-              disabled={isSending || (order.orderItems?.length ?? 0) === 0}
-            >
-              <Send />
-              Enviar pedido
-            </Button>
-          ) : order.orderItems.some((item) => (printedItemQuantities[item.id] ?? 0) < item.quantity) ? (
-            <Button className="mx-4 mb-4 flex gap-3" size="lg" onClick={onPrintAdditional}>
-              <Send />
-              Enviar pedido
-            </Button>
-          ) : null}
+          {(() => {
+            let sendButton: ReactNode = null;
+
+            if (Object.keys(printedItemQuantities).length === 0) {
+              sendButton = (
+                <Button className="flex-1 flex gap-3" size="lg" onClick={onSendOrder} disabled={isSending || !hasItems}>
+                  <Send />
+                  Enviar pedido
+                </Button>
+              );
+            } else if (order.orderItems.some((item) => (printedItemQuantities[item.id] ?? 0) < item.quantity)) {
+              sendButton = (
+                <Button className="flex-1 flex gap-3" size="lg" onClick={onPrintAdditional}>
+                  <Send />
+                  Enviar pedido
+                </Button>
+              );
+            }
+
+            return (
+              <div className="mx-4 mb-4 flex gap-2">
+                {sendButton}
+
+                <Button
+                  type="button"
+                  className="flex-1 flex gap-3"
+                  size="lg"
+                  variant={sendButton ? "outline" : "default"}
+                  onClick={onRequestPayment}
+                  disabled={isSending || !hasItems}
+                >
+                  <DollarSign />
+                  Pagamento
+                </Button>
+              </div>
+            );
+          })()}
 
           <Dialog open={isNameDialogOpen} onOpenChange={onNameDialogOpenChange}>
             <DialogContent className="sm:max-w-md">
@@ -184,6 +225,92 @@ export function MenuList({
                 <Button onClick={onConfirmCustomerName} disabled={!customerNameDraft.trim() || isSending}>
                   <Send />
                   Enviar pedido
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isPaymentDialogOpen} onOpenChange={onPaymentDialogOpenChange}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader className="flex flex-col gap-0.5">
+                <DialogTitle>Confirmar pagamento</DialogTitle>
+                <DialogDescription>Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda.</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Forma de pagamento</p>
+
+                <div className="flex gap-2">
+                  {paymentMethodOptions.map(({ value, label, Icon }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant={paymentMethod === value ? "default" : "outline"}
+                      className="flex-1"
+                      onClick={() => onPaymentMethodChange(value)}
+                    >
+                      <Icon />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+
+                {paymentMethod === "CASH" && (
+                  <div className="space-y-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Valor recebido"
+                      value={amountReceived}
+                      onChange={(e) => onAmountReceivedChange(e.target.value)}
+                    />
+
+                    {changeDue !== null && <p className="text-sm text-muted-foreground">Troco: {formatCurrency(changeDue)}</p>}
+                  </div>
+                )}
+
+                {paymentMethod === "PIX" && (
+                  <div className="flex flex-col items-center gap-2 rounded-lg border border-border p-4">
+                    {settings?.pixQrCodeUrl ? (
+                      <>
+                        <Image
+                          src={settings.pixQrCodeUrl}
+                          alt="QR Code Pix"
+                          width={200}
+                          height={200}
+                          className="h-48 w-48 object-contain"
+                        />
+                        <p className="text-xs text-muted-foreground text-center">
+                          Peça pro cliente escanear o QR Code com o app do banco.
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Nenhum QR Code cadastrado. Configure em Configurações.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-bold">Total</span>
+                <span className="text-xl font-bold">{formatCurrency(finalTotal)}</span>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  className="w-full"
+                  type="button"
+                  size="lg"
+                  onClick={onConfirmPayment}
+                  disabled={isConfirmingPayment || (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)}
+                >
+                  <DollarSign />
+                  {isConfirmingPayment ? "Processando..." : "Pagamento Recebido"}
                 </Button>
               </DialogFooter>
             </DialogContent>
