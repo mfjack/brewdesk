@@ -10,10 +10,12 @@ import { AlertTriangle, ImageOff, Pencil, Plus, Trash2 } from "lucide-react";
 import { useGetProducts } from "./query/useGetProducts";
 import { useGetCategories } from "../category/query/useGetCategories";
 import { useGetSuppliers } from "../supplier/query/useGetSuppliers";
+import { useGetSupplyItems } from "../stock/query/useGetSupplyItems";
 import { useDeleteProduct } from "./mutation/useDeleteProduct";
 import { ProductFormDialog } from "./_components/product-form-dialog";
 import type { TProduct } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
+import { getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 import { toTitleCase } from "@/_lib/to-title-case";
 import Image from "next/image";
 
@@ -21,6 +23,7 @@ export default function ProductPage() {
   const { data: products } = useGetProducts();
   const { data: categories } = useGetCategories();
   const { data: suppliers } = useGetSuppliers();
+  const { data: supplyItems } = useGetSupplyItems();
   const deleteProduct = useDeleteProduct();
 
   function handleDeleteProduct(productId: number) {
@@ -43,6 +46,7 @@ export default function ProductPage() {
         <ProductFormDialog
           categories={categories}
           suppliers={suppliers}
+          supplyItems={supplyItems}
           trigger={
             <Button size="lg">
               <Plus />
@@ -66,7 +70,7 @@ export default function ProductPage() {
                 <TableHead>Categoria</TableHead>
                 <TableHead>Preço</TableHead>
                 <TableHead>CMV %</TableHead>
-                <TableHead>Margem</TableHead>
+                <TableHead>Lucro</TableHead>
                 <TableHead>Estoque</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -148,6 +152,12 @@ export default function ProductPage() {
                     ) : (
                       <span className="text-muted-foreground">Ilimitado</span>
                     )}
+
+                    {product.recipe.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Via insumos: {getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0}
+                      </p>
+                    )}
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -155,6 +165,7 @@ export default function ProductPage() {
                       <ProductFormDialog
                         categories={categories}
                         suppliers={suppliers}
+                        supplyItems={supplyItems}
                         product={product}
                         trigger={
                           <Button variant="outline" size="icon-sm">

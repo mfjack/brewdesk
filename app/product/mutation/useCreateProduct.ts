@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { localStore } from "@/_lib/store";
+import type { TRecipeItem } from "@/app/order/interface";
 
 export interface TCreateProduct {
   name: string;
@@ -12,6 +13,7 @@ export interface TCreateProduct {
   lowStockThreshold?: number;
   categoryId: number;
   supplierId?: number | null;
+  recipe?: TRecipeItem[];
 }
 
 export function useCreateProduct() {

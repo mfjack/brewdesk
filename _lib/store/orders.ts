@@ -1,6 +1,17 @@
-import type { TOrderResponse, TPaymentMethod } from "@/app/order/interface";
+import type { TOrderResponse, TPaymentMethod, TProduct, TSupplyItem } from "@/app/order/interface";
 import { computeOrderTotal, decrementOrRemoveItem, mergeOrderItem } from "@/app/order/order-math";
 import { readStore, updateStore, writeStore } from "./storage";
+import { adjustSupplyItemStock } from "./supply-items";
+
+function consumeRecipeStock(product: TProduct, supplyItems: TSupplyItem[], quantitySold: number) {
+  product.recipe.forEach((recipeItem) => {
+    const supplyItem = supplyItems.find((item) => item.id === recipeItem.supplyItemId);
+
+    if (supplyItem) {
+      adjustSupplyItemStock(supplyItem, recipeItem.quantity * quantitySold);
+    }
+  });
+}
 
 export const orderStore = {
   getOrders: () => {
@@ -72,6 +83,8 @@ export const orderStore = {
       product.quantity -= quantity;
     }
 
+    consumeRecipeStock(product, data.supplyItems, quantity);
+
     writeStore(data);
 
     return order;
@@ -97,6 +110,10 @@ export const orderStore = {
 
       if (product?.trackStock) {
         product.quantity += 1;
+      }
+
+      if (product) {
+        consumeRecipeStock(product, data.supplyItems, -1);
       }
     }
 
@@ -197,6 +214,10 @@ export const orderStore = {
 
           if (product?.trackStock) {
             product.quantity += item.quantity;
+          }
+
+          if (product) {
+            consumeRecipeStock(product, data.supplyItems, -item.quantity);
           }
         });
       }

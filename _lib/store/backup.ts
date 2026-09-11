@@ -23,6 +23,7 @@ export const backupStore = {
     merged.nextIds.item = maxId(merged.orders.flatMap((order) => order.orderItems.map((item) => item.id)));
     merged.nextIds.operator = maxId(merged.settings.operators.map((item) => item.id));
     merged.nextIds.supplier = maxId(merged.suppliers.map((item) => item.id));
+    merged.nextIds.supplyItem = maxId(merged.supplyItems.map((item) => item.id));
 
     writeStore(merged);
 

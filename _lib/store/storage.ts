@@ -1,4 +1,4 @@
-import type { TCategory, TOrderResponse, TProduct, TStoreSettings, TSupplier } from "@/app/order/interface";
+import type { TCategory, TOrderResponse, TProduct, TStoreSettings, TSupplier, TSupplyItem } from "@/app/order/interface";
 import { isOrderPaid } from "@/app/order/order-math";
 
 export const STORAGE_KEY = "brewdesk.data.v1";
@@ -9,6 +9,7 @@ export interface StoreData {
   orders: TOrderResponse[];
   settings: TStoreSettings;
   suppliers: TSupplier[];
+  supplyItems: TSupplyItem[];
   nextIds: {
     category: number;
     product: number;
@@ -16,6 +17,7 @@ export interface StoreData {
     item: number;
     operator: number;
     supplier: number;
+    supplyItem: number;
   };
 }
 
@@ -41,6 +43,8 @@ export const initialData: StoreData = {
 
   suppliers: [],
 
+  supplyItems: [],
+
   nextIds: {
     category: 1,
     product: 1,
@@ -48,6 +52,7 @@ export const initialData: StoreData = {
     item: 1,
     operator: 1,
     supplier: 1,
+    supplyItem: 1,
   },
 };
 
@@ -60,6 +65,10 @@ function normalizeOrders(orders: TOrderResponse[]): TOrderResponse[] {
     ...order,
     orderItems: order.orderItems.map((item) => ({ ...item, costPrice: item.costPrice ?? 0 })),
   }));
+}
+
+function normalizeProducts(products: TProduct[]): TProduct[] {
+  return products.map((product) => ({ ...product, recipe: product.recipe ?? [] }));
 }
 
 const PAID_ORDER_RETENTION_DAYS = 60;
@@ -96,6 +105,7 @@ export function readStore(): StoreData {
     };
 
     data.orders = normalizeOrders(data.orders);
+    data.products = normalizeProducts(data.products);
 
     if (pruneOldPaidOrders(data)) {
       writeStore(data);

@@ -1,4 +1,4 @@
-import type { TCategory, TProduct } from "@/app/order/interface";
+import type { TCategory, TProduct, TRecipeItem } from "@/app/order/interface";
 import { readStore, updateStore, writeStore } from "./storage";
 
 export interface TProductInput {
@@ -12,6 +12,7 @@ export interface TProductInput {
   lowStockThreshold?: number;
   categoryId: number;
   supplierId?: number | null;
+  recipe?: TRecipeItem[];
 }
 
 function buildProductFields(input: TProductInput, category: TCategory): Omit<TProduct, "id"> {
@@ -28,6 +29,7 @@ function buildProductFields(input: TProductInput, category: TCategory): Omit<TPr
     lowStockThreshold: trackStock ? Number(input.lowStockThreshold ?? 5) : 0,
     category,
     supplierId: input.supplierId ?? null,
+    recipe: input.recipe ?? [],
   };
 }
 

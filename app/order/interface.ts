@@ -44,6 +44,11 @@ export interface TCategory {
   name: string;
 }
 
+export interface TRecipeItem {
+  supplyItemId: number;
+  quantity: number;
+}
+
 export interface TProduct {
   id: number;
   name: string;
@@ -56,6 +61,7 @@ export interface TProduct {
   lowStockThreshold: number;
   category: TCategory;
   supplierId: number | null;
+  recipe: TRecipeItem[];
 }
 
 export interface TSupplier {
@@ -66,6 +72,19 @@ export interface TSupplier {
   paymentTerms: string | null;
   deliveryDays: string[];
   deliveryPeriod: string | null;
+}
+
+export interface TSupplyItem {
+  id: number;
+  name: string;
+  brand: string | null;
+  quantity: number;
+  unitContent: number | null;
+  unit: string;
+  minQuantity: number;
+  costPrice: number;
+  supplierId: number | null;
+  expiresAt: string | null;
 }
 
 export interface TOrderItemProduct {
