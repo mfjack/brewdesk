@@ -14,8 +14,11 @@ import {
   SidebarMenuItem,
 } from "./sidebar";
 import Image from "next/image";
-import { HandCoins, ScanBarcode, ScrollText, Settings, Tags } from "lucide-react";
+import { HandCoins, LogOut, ScanBarcode, ScrollText, Settings, Tags } from "lucide-react";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
+import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
+import { toTitleCase } from "@/_lib/to-title-case";
+import { Button } from "./button";
 
 const navLinks = [
   {
@@ -52,6 +55,7 @@ const navLinks = [
 
 export function AppSidebar() {
   const { data: settings } = useGetSettings();
+  const activeOperator = useActiveOperator();
 
   return (
     <Sidebar collapsible="offcanvas" className="print:hidden">
@@ -90,7 +94,19 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter />
+      <SidebarFooter>
+        {activeOperator && (
+          <div className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-muted-foreground">
+            <span>
+              Operador: <strong className="text-foreground">{toTitleCase(activeOperator.name)}</strong>
+            </span>
+
+            <Button variant="ghost" size="icon-sm" onClick={() => setActiveOperator(null)} title="Trocar operador">
+              <LogOut />
+            </Button>
+          </div>
+        )}
+      </SidebarFooter>
     </Sidebar>
   );
 }

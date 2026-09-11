@@ -6,6 +6,7 @@ import { cn } from "@/_lib/utils";
 import { Saira } from "next/font/google";
 import { SidebarInset, SidebarProvider } from "@/_components/ui/sidebar";
 import { AppSidebar } from "@/_components/ui/app-sidebar";
+import { OperatorGate } from "@/_components/ui/operator-gate";
 
 const saira = Saira({
   subsets: ["latin"],
@@ -28,12 +29,14 @@ export default function RootLayout({
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClientProvider>
-            <SidebarProvider>
-              <AppSidebar />
-              <SidebarInset>
-                <main>{children}</main>
-              </SidebarInset>
-            </SidebarProvider>
+            <OperatorGate>
+              <SidebarProvider>
+                <AppSidebar />
+                <SidebarInset>
+                  <main>{children}</main>
+                </SidebarInset>
+              </SidebarProvider>
+            </OperatorGate>
           </ClientProvider>
         </ThemeProvider>
       </body>

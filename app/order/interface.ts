@@ -42,6 +42,7 @@ export interface TProduct {
   price: number;
   quantity: number;
   trackStock: boolean;
+  lowStockThreshold: number;
   category: TCategory;
 }
 
@@ -53,16 +54,31 @@ export interface TOrderItem {
   subtotal: number;
 }
 
+export type TOrderStatus = "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID" | "CANCELLED";
+
+export type TPaymentMethod = "CASH" | "CREDIT" | "DEBIT" | "PIX";
+
 export interface TOrderResponse {
   id: number;
   customerName: string;
-  status: "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID";
+  status: TOrderStatus;
   createdAt: string;
   total: number;
   orderItems: TOrderItem[];
   observation: string | null;
   printedItemQuantities?: Record<number, number>;
   isTakeout: boolean;
+  operatorName: string | null;
+  paymentMethod: TPaymentMethod | null;
+  amountReceived: number | null;
+  changeDue: number | null;
+  cancelReason: string | null;
+}
+
+export interface TOperator {
+  id: number;
+  name: string;
+  pin: string;
 }
 
 export interface TStoreSettings {
@@ -72,4 +88,6 @@ export interface TStoreSettings {
   phone: string | null;
   logoUrl: string | null;
   receiptFooterMessage: string | null;
+  operators: TOperator[];
+  pixQrCodeUrl: string | null;
 }

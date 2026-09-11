@@ -8,6 +8,7 @@ export interface TCreateProduct {
   price: number;
   quantity?: number;
   trackStock?: boolean;
+  lowStockThreshold?: number;
   categoryId: number;
 }
 

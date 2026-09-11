@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { localStore } from "@/_lib/local-store";
-import { TOrderResponse } from "@/app/order/interface";
+import { TOrderResponse, TPaymentMethod } from "@/app/order/interface";
 
 export type DateRange = "day" | "week" | "month";
 
@@ -16,6 +16,12 @@ export interface HourlyPeak {
   orders: number;
 }
 
+export interface PaymentMethodStat {
+  method: TPaymentMethod;
+  count: number;
+  total: number;
+}
+
 export interface ReportStats {
   totalRevenue: number;
   ordersCount: number;
@@ -25,6 +31,7 @@ export interface ReportStats {
   bottomProducts: ProductStat[];
   hourlyPeaks: HourlyPeak[];
   allProducts: ProductStat[];
+  paymentMethodStats: PaymentMethodStat[];
 }
 
 export interface ProductReportStats {
@@ -57,7 +64,21 @@ function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange)
   const { start, end } = getDateRange(dateRange);
   return orders.filter((order) => {
     const orderDate = new Date(order.createdAt);
-    return orderDate >= start && orderDate <= end && order.status !== "OPEN";
+    return orderDate >= start && orderDate <= end && order.status !== "OPEN" && order.status !== "CANCELLED";
+  });
+}
+
+function buildPaymentMethodStats(orders: TOrderResponse[]): PaymentMethodStat[] {
+  const methods: TPaymentMethod[] = ["CASH", "CREDIT", "DEBIT", "PIX"];
+
+  return methods.map((method) => {
+    const ordersWithMethod = orders.filter((order) => order.paymentMethod === method);
+
+    return {
+      method,
+      count: ordersWithMethod.length,
+      total: ordersWithMethod.reduce((sum, order) => sum + order.total, 0),
+    };
   });
 }
 
@@ -128,6 +149,7 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
     bottomProducts,
     hourlyPeaks,
     allProducts: sortedProducts,
+    paymentMethodStats: buildPaymentMethodStats(orders),
   };
 }
 

@@ -31,6 +31,7 @@ interface TProductFormValues {
   description: string;
   price: number;
   quantity: number;
+  lowStockThreshold: number;
   categoryId: number;
 }
 
@@ -47,6 +48,7 @@ function buildDefaultValues(product?: TProduct): TProductFormValues {
     description: product?.description ?? "",
     price: product?.price ?? 0,
     quantity: product?.quantity ?? 0,
+    lowStockThreshold: product?.lowStockThreshold ?? 5,
     categoryId: product?.category.id ?? 0,
   };
 }
@@ -97,6 +99,7 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
       price: data.price,
       quantity: trackStock ? data.quantity : 0,
       trackStock,
+      lowStockThreshold: trackStock ? data.lowStockThreshold : 0,
       categoryId: data.categoryId,
     };
 
@@ -199,7 +202,22 @@ export function ProductFormDialog({ categories, trigger, product }: TProductForm
           </div>
 
           {trackStock && (
-            <Input type="number" min="0" placeholder="Quantidade em estoque" {...register("quantity", { valueAsNumber: true })} />
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min="0"
+                placeholder="Quantidade em estoque"
+                {...register("quantity", { valueAsNumber: true })}
+              />
+
+              <Input
+                type="number"
+                min="0"
+                placeholder="Alertar com estoque baixo"
+                title="Alertar quando o estoque ficar menor ou igual a esse valor"
+                {...register("lowStockThreshold", { valueAsNumber: true })}
+              />
+            </div>
           )}
 
           <DialogFooter>

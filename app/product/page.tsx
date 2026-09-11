@@ -4,7 +4,8 @@ import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
-import { ImageOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { Badge } from "@/_components/ui/badge";
+import { AlertTriangle, ImageOff, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { useGetProducts } from "./query/useGetProducts";
 import { useGetCategories } from "../category/query/useGetCategories";
@@ -24,10 +25,15 @@ export default function ProductPage() {
     deleteProduct.mutate(productId);
   }
 
+  const lowStockProducts = products?.filter((product) => product.trackStock && product.quantity > 0 && product.quantity <= (product.lowStockThreshold ?? 5)) ?? [];
+
   return (
     <section className="flex flex-col h-screen">
       <div className="flex items-center justify-between p-4 flex-wrap gap-2">
-        <Header title="Produtos" />
+        <Header
+          title="Produtos"
+          description={lowStockProducts.length > 0 ? `${lowStockProducts.length} produto(s) com estoque baixo` : undefined}
+        />
 
         <ProductFormDialog
           categories={categories}
@@ -90,7 +96,20 @@ export default function ProductPage() {
 
                   <TableCell>
                     {product.trackStock ? (
-                      <span className={product.quantity <= 0 ? "font-semibold text-destructive" : ""}>{product.quantity}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={product.quantity <= 0 ? "font-semibold text-destructive" : ""}>{product.quantity}</span>
+
+                        {product.quantity <= 0 ? (
+                          <Badge variant="destructive">Esgotado</Badge>
+                        ) : (
+                          product.quantity <= (product.lowStockThreshold ?? 5) && (
+                            <Badge variant="outline" className="gap-1">
+                              <AlertTriangle />
+                              Estoque baixo
+                            </Badge>
+                          )
+                        )}
+                      </div>
                     ) : (
                       <span className="text-muted-foreground">Ilimitado</span>
                     )}

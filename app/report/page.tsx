@@ -8,7 +8,20 @@ import { Header } from "@/_components/ui/header";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
-import { ListChecks, LucideIcon, Printer, SquarePen, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import {
+  Banknote,
+  CreditCard,
+  Landmark,
+  ListChecks,
+  LucideIcon,
+  Printer,
+  QrCode,
+  SquarePen,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
+import type { TPaymentMethod } from "../order/interface";
 import { useGetReportData, useGetProductReportData, type DateRange } from "./query/useGetReportData";
 import { ReportReceipt } from "./_components/report-receipt";
 import { formatCurrency } from "@/_lib/format-currency";
@@ -23,6 +36,13 @@ const dateRangeLabels: Record<DateRange, string> = {
   day: "Dia",
   week: "Semana",
   month: "Mês",
+};
+
+const paymentMethodLabels: Record<TPaymentMethod, { label: string; Icon: LucideIcon }> = {
+  CASH: { label: "Dinheiro", Icon: Banknote },
+  CREDIT: { label: "Crédito", Icon: CreditCard },
+  DEBIT: { label: "Débito", Icon: Landmark },
+  PIX: { label: "Pix", Icon: QrCode },
 };
 
 export default function ReportPage() {
@@ -200,6 +220,33 @@ export default function ReportPage() {
                         </Card>
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="mb-4">
+                <Card>
+                  <CardContent className="flex flex-col gap-4 pt-4">
+                    <p className="font-medium">Formas de Pagamento</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {reportData.paymentMethodStats.map(({ method, count, total }) => {
+                        const { label, Icon } = paymentMethodLabels[method];
+
+                        return (
+                          <div key={method} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                            <div className="flex items-center gap-2">
+                              <Icon size={16} />
+                              <span className="text-sm font-medium">{label}</span>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-semibold">{formatCurrency(total)}</p>
+                              <p className="text-xs text-muted-foreground">{count} pedido(s)</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </CardContent>
                 </Card>
               </div>

@@ -36,6 +36,18 @@ export function OrderPanel({
 
       {stockError && <p className="mx-4 mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{stockError}</p>}
 
+      {(() => {
+        const lowStockCount =
+          filteredProducts?.filter((product) => product.trackStock && product.quantity > 0 && product.quantity <= (product.lowStockThreshold ?? 5))
+            .length ?? 0;
+
+        return lowStockCount > 0 ? (
+          <p className="mx-4 mt-4 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground">
+            {lowStockCount} produto(s) com estoque baixo.
+          </p>
+        ) : null;
+      })()}
+
       <div className="flex gap-3 p-4 rounded-xl overflow-x-auto [&::-webkit-scrollbar]:hidden">
         {categories?.map((category: TCategory) => (
           <Button
@@ -60,6 +72,7 @@ export function OrderPanel({
               const quantity = orderItem?.quantity ?? 0;
               const available = product.trackStock ? product.quantity - quantity : null;
               const outOfStock = available !== null && available <= 0;
+              const isLowStock = available !== null && available > 0 && available <= (product.lowStockThreshold ?? 5);
 
               return (
                 <Button
@@ -82,7 +95,9 @@ export function OrderPanel({
                     <span className="text-center text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
                     <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
                     {available !== null && (
-                      <span className={`text-[10px] ${outOfStock ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
+                      <span
+                        className={`text-[10px] ${outOfStock || isLowStock ? "font-semibold text-destructive" : "text-muted-foreground"}`}
+                      >
                         {outOfStock ? "Esgotado" : `Restam ${available}`}
                       </span>
                     )}

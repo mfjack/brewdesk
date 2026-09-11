@@ -18,6 +18,7 @@ import { useMarkOrderItemsPrinted } from "../mutation/useMarkOrderItemsPrinted";
 
 import { TCategory, TOrderItem, TOrderResponse, TProduct } from "../interface";
 import { computeOrderTotal, decrementOrRemoveItem, DRAFT_ORDER_ID, isDraftOrder, mergeOrderItem } from "../order-math";
+import { getActiveOperator } from "@/_lib/operator-session";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
@@ -146,6 +147,11 @@ export default function OrderPageContent() {
           orderItems: [],
           observation: null,
           isTakeout: false,
+          operatorName: null,
+          paymentMethod: null,
+          amountReceived: null,
+          changeDue: null,
+          cancelReason: null,
         };
 
         const orderItems = mergeOrderItem(base.orderItems, product, 1, () => product.id);
@@ -265,7 +271,7 @@ export default function OrderPageContent() {
       let order = currentOrder;
 
       if (isDraftOrder(order)) {
-        const created = await createOrder.mutateAsync({ customerName });
+        const created = await createOrder.mutateAsync({ customerName, operatorName: getActiveOperator()?.name });
 
         order = created;
 

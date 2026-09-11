@@ -1,4 +1,4 @@
-import type { TCategory, TOrderResponse, TProduct, TStoreSettings } from "@/app/order/interface";
+import type { TCategory, TOperator, TOrderResponse, TPaymentMethod, TProduct, TStoreSettings } from "@/app/order/interface";
 import { computeOrderTotal, decrementOrRemoveItem, mergeOrderItem } from "@/app/order/order-math";
 
 const STORAGE_KEY = "brewdesk.data.v1";
@@ -13,6 +13,7 @@ interface StoreData {
     product: number;
     order: number;
     item: number;
+    operator: number;
   };
 }
 
@@ -23,6 +24,8 @@ const defaultSettings: TStoreSettings = {
   phone: null,
   logoUrl: null,
   receiptFooterMessage: null,
+  operators: [],
+  pixQrCodeUrl: null,
 };
 
 const initialData: StoreData = {
@@ -39,6 +42,7 @@ const initialData: StoreData = {
     product: 1,
     order: 1,
     item: 1,
+    operator: 1,
   },
 };
 
@@ -65,6 +69,7 @@ function readStore(): StoreData {
       ...clone(initialData),
       ...parsed,
       settings: { ...defaultSettings, ...parsed.settings },
+      nextIds: { ...clone(initialData.nextIds), ...parsed.nextIds },
     };
   } catch {
     writeStore(initialData);
@@ -93,6 +98,7 @@ interface TProductInput {
   price: number;
   quantity?: number;
   trackStock?: boolean;
+  lowStockThreshold?: number;
   categoryId: number;
 }
 
@@ -106,6 +112,7 @@ function buildProductFields(input: TProductInput, category: TCategory): Omit<TPr
     price: Number(input.price),
     quantity: trackStock ? Number(input.quantity ?? 0) : 0,
     trackStock,
+    lowStockThreshold: trackStock ? Number(input.lowStockThreshold ?? 5) : 0,
     category,
   };
 }
@@ -141,11 +148,62 @@ export const localStore = {
       phone: input.phone?.trim() || null,
       logoUrl: input.logoUrl || null,
       receiptFooterMessage: input.receiptFooterMessage?.trim() || null,
+      operators: data.settings.operators,
+      pixQrCodeUrl: input.pixQrCodeUrl || null,
     };
 
     writeStore(data);
 
     return data.settings;
+  },
+
+  addOperator: (name: string, pin: string) => {
+    const operator: TOperator = {
+      id: 0,
+      name: name.trim(),
+      pin: pin.trim(),
+    };
+
+    updateStore((data) => {
+      operator.id = data.nextIds.operator++;
+
+      data.settings.operators.push(operator);
+    });
+
+    return operator;
+  },
+
+  deleteOperator: (operatorId: number) => {
+    updateStore((data) => {
+      data.settings.operators = data.settings.operators.filter((operator) => operator.id !== operatorId);
+    });
+  },
+
+  exportData: (): StoreData => {
+    return readStore();
+  },
+
+  importData: (input: unknown) => {
+    const parsed = input as Partial<StoreData>;
+
+    const merged: StoreData = {
+      ...clone(initialData),
+      ...parsed,
+      settings: { ...defaultSettings, ...parsed.settings },
+      nextIds: { ...clone(initialData.nextIds) },
+    };
+
+    const maxId = (ids: number[]) => (ids.length > 0 ? Math.max(...ids) + 1 : 1);
+
+    merged.nextIds.category = maxId(merged.categories.map((item) => item.id));
+    merged.nextIds.product = maxId(merged.products.map((item) => item.id));
+    merged.nextIds.order = maxId(merged.orders.map((item) => item.id));
+    merged.nextIds.item = maxId(merged.orders.flatMap((order) => order.orderItems.map((item) => item.id)));
+    merged.nextIds.operator = maxId(merged.settings.operators.map((item) => item.id));
+
+    writeStore(merged);
+
+    return merged;
   },
 
   createCategory: (name: string) => {
@@ -242,7 +300,7 @@ export const localStore = {
     });
   },
 
-  createOrder: (customerName: string) => {
+  createOrder: (customerName: string, operatorName?: string | null) => {
     const data = readStore();
 
     const order: TOrderResponse = {
@@ -263,6 +321,16 @@ export const localStore = {
       printedItemQuantities: {},
 
       isTakeout: false,
+
+      operatorName: operatorName?.trim() || null,
+
+      paymentMethod: null,
+
+      amountReceived: null,
+
+      changeDue: null,
+
+      cancelReason: null,
     };
 
     data.orders.push(order);
@@ -350,6 +418,11 @@ export const localStore = {
     customerName?: string,
 
     isTakeout?: boolean,
+
+    payment?: {
+      paymentMethod?: TPaymentMethod;
+      amountReceived?: number | null;
+    },
   ) => {
     const data = readStore();
 
@@ -373,6 +446,15 @@ export const localStore = {
       order.isTakeout = isTakeout;
     }
 
+    if (payment) {
+      order.paymentMethod = payment.paymentMethod ?? null;
+      order.amountReceived = payment.paymentMethod === "CASH" ? payment.amountReceived ?? null : null;
+      order.changeDue =
+        payment.paymentMethod === "CASH" && payment.amountReceived != null
+          ? Math.max(payment.amountReceived - order.total, 0)
+          : null;
+    }
+
     writeStore(data);
 
     return order;
@@ -390,6 +472,31 @@ export const localStore = {
     order.printedItemQuantities = {
       ...printedItemQuantities,
     };
+
+    writeStore(data);
+
+    return order;
+  },
+
+  cancelOrder: (orderId: number, reason: string) => {
+    const data = readStore();
+
+    const order = data.orders.find((item) => item.id === orderId);
+
+    if (!order) {
+      throw new Error("Comanda não encontrada.");
+    }
+
+    order.orderItems.forEach((item) => {
+      const product = data.products.find((p) => p.id === item.product.id);
+
+      if (product?.trackStock) {
+        product.quantity += item.quantity;
+      }
+    });
+
+    order.status = "CANCELLED";
+    order.cancelReason = reason.trim() || null;
 
     writeStore(data);
 

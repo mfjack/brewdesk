@@ -4,40 +4,64 @@ import { useMemo, useState } from "react";
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
+import { Textarea } from "@/_components/ui/textarea";
 import { Separator } from "@/_components/ui/separator";
-import { DollarSign, HandCoins, X } from "lucide-react";
+import { Banknote, CreditCard, DollarSign, HandCoins, Landmark, QrCode, X, XCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { useGetOrder } from "../kitchen/query/useGetOrder";
-import { TOrderResponse } from "../order/interface";
+import { TOrderResponse, TPaymentMethod } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Header } from "@/_components/ui/header";
+import { useGetSettings } from "@/app/settings/query/useGetSettings";
 
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
+import { useCancelOrder } from "./mutation/useCancelOrder";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
+
+const paymentMethodOptions: { value: TPaymentMethod; label: string; Icon: typeof Banknote }[] = [
+  { value: "CASH", label: "Dinheiro", Icon: Banknote },
+  { value: "CREDIT", label: "Crédito", Icon: CreditCard },
+  { value: "DEBIT", label: "Débito", Icon: Landmark },
+  { value: "PIX", label: "Pix", Icon: QrCode },
+];
 
 export default function OrderDetailPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const [selectedOrder, setSelectedOrder] = useState<TOrderResponse | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CASH");
+  const [amountReceived, setAmountReceived] = useState("");
+
+  const [orderToCancel, setOrderToCancel] = useState<TOrderResponse | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   const { data: orders = [] } = useGetOrder();
+  const { data: settings } = useGetSettings();
 
   const updateOrderStatus = useUpdateOrderStatus();
+  const cancelOrder = useCancelOrder();
 
   const filteredOrders = useMemo(
     () =>
       orders
-        .filter((order) => order.status !== "PAID")
+        .filter((order) => order.status !== "PAID" && order.status !== "CANCELLED")
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase())),
     [orders, searchTerm],
   );
 
+  const finalTotal = selectedOrder?.total ?? 0;
+
+  const changeDue = paymentMethod === "CASH" && amountReceived ? Math.max(Number(amountReceived) - finalTotal, 0) : null;
+
   function handleOpenPayment(order: TOrderResponse) {
     setSelectedOrder(order);
+    setPaymentMethod("CASH");
+    setAmountReceived("");
   }
 
   function handleClosePayment() {
@@ -56,9 +80,34 @@ export default function OrderDetailPage() {
     await updateOrderStatus.mutateAsync({
       orderId: selectedOrder.id,
       status: "PAID",
+      paymentMethod,
+      amountReceived: paymentMethod === "CASH" ? Number(amountReceived) || 0 : null,
     });
 
     setSelectedOrder(null);
+  }
+
+  function handleOpenCancel(order: TOrderResponse) {
+    setOrderToCancel(order);
+    setCancelReason("");
+  }
+
+  function handleCloseCancel() {
+    if (cancelOrder.isPending) {
+      return;
+    }
+
+    setOrderToCancel(null);
+  }
+
+  async function handleConfirmCancel() {
+    if (!orderToCancel) {
+      return;
+    }
+
+    await cancelOrder.mutateAsync({ orderId: orderToCancel.id, reason: cancelReason });
+
+    setOrderToCancel(null);
   }
 
   return (
@@ -107,6 +156,10 @@ export default function OrderDetailPage() {
               <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
                 <span className="font-bold text-lg text-center uppercase">{order.customerName}</span>
 
+                {order.operatorName && (
+                  <p className="text-xs text-center text-muted-foreground">Atendente: {toTitleCase(order.operatorName)}</p>
+                )}
+
                 {order.observation && (
                   <p className="text-xs font-bold">
                     Observação:
@@ -121,6 +174,11 @@ export default function OrderDetailPage() {
                 <Button type="button" className="w-full" size="lg" variant="outline" onClick={() => handleOpenPayment(order)}>
                   <DollarSign />
                   Pagamento
+                </Button>
+
+                <Button type="button" className="w-full" size="lg" variant="ghost" onClick={() => handleOpenCancel(order)}>
+                  <XCircle />
+                  Cancelar comanda
                 </Button>
               </Card>
             ))}
@@ -143,45 +201,148 @@ export default function OrderDetailPage() {
           </DialogHeader>
 
           {selectedOrder && (
-            <div className="space-y-4">
-              <div className="flex gap-1">
-                <p className="text-sm text-muted-foreground">Cliente: </p>
-                <p className="font-bold text-sm">{toTitleCase(selectedOrder.customerName)}</p>
-              </div>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex gap-1">
+                  <p className="text-sm text-muted-foreground">Cliente: </p>
+                  <p className="font-bold text-sm">{toTitleCase(selectedOrder.customerName)}</p>
+                </div>
+                <div className="space-y-1.5">
+                  {selectedOrder.orderItems.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
+                      <div className="flex gap-2">
+                        <span className="font-semibold">{item.quantity}x</span>
+                        <span>{toTitleCase(item.product.name)}</span>
+                      </div>
 
-              <div className="space-y-1.5">
-                {selectedOrder.orderItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
-                    <div className="flex gap-2">
-                      <span className="font-semibold">{item.quantity}x</span>
-                      <span>{toTitleCase(item.product.name)}</span>
+                      <span className="font-medium">{formatCurrency(item.subtotal)}</span>
                     </div>
-
-                    <span className="font-medium">{formatCurrency(item.subtotal)}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold">Total</span>
+                  <span className="text-xl font-bold">{formatCurrency(finalTotal)}</span>
+                </div>
               </div>
 
               <Separator />
 
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold">Total</span>
-                <span className="text-xl font-bold">{formatCurrency(selectedOrder.total)}</span>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Forma de pagamento</p>
+
+                <div className="flex gap-2">
+                  {paymentMethodOptions.map(({ value, label, Icon }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant={paymentMethod === value ? "default" : "outline"}
+                      className="flex-1"
+                      onClick={() => setPaymentMethod(value)}
+                    >
+                      <Icon />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+
+                {paymentMethod === "CASH" && (
+                  <div className="space-y-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Valor recebido"
+                      value={amountReceived}
+                      onChange={(e) => setAmountReceived(e.target.value)}
+                    />
+
+                    {changeDue !== null && <p className="text-sm text-muted-foreground">Troco: {formatCurrency(changeDue)}</p>}
+                  </div>
+                )}
+
+                {paymentMethod === "PIX" && (
+                  <div className="flex flex-col items-center gap-2 rounded-lg border border-border p-4">
+                    {settings?.pixQrCodeUrl ? (
+                      <>
+                        <Image
+                          src={settings.pixQrCodeUrl}
+                          alt="QR Code Pix"
+                          width={200}
+                          height={200}
+                          className="h-48 w-48 object-contain"
+                        />
+                        <p className="text-xs text-muted-foreground text-center">
+                          Peça pro cliente escanear o QR Code com o app do banco.
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Nenhum QR Code cadastrado. Configure em Configurações.
+                      </p>
+                    )}
+                  </div>
+                )}
+                <Separator />
+
+                <Button
+                  className="w-full mt-4"
+                  type="button"
+                  size="lg"
+                  onClick={handleConfirmPayment}
+                  disabled={
+                    updateOrderStatus.isPending ||
+                    !selectedOrder ||
+                    (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)
+                  }
+                >
+                  <DollarSign />
+
+                  {updateOrderStatus.isPending ? "Processando..." : "Pagamento Recebido"}
+                </Button>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(orderToCancel)}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseCancel();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="flex flex-col gap-0.5">
+            <DialogTitle>Cancelar comanda</DialogTitle>
+            <DialogDescription>Os itens da comanda voltam para o estoque. Essa ação não pode ser desfeita.</DialogDescription>
+          </DialogHeader>
+
+          {orderToCancel && (
+            <div className="space-y-3">
+              <div className="flex gap-1">
+                <p className="text-sm text-muted-foreground">Cliente: </p>
+                <p className="font-bold text-sm">{toTitleCase(orderToCancel.customerName)}</p>
+              </div>
+
+              <Textarea
+                placeholder="Motivo do cancelamento (opcional)"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={3}
+              />
             </div>
           )}
 
           <DialogFooter>
-            <Button
-              className="w-full"
-              type="button"
-              size="lg"
-              onClick={handleConfirmPayment}
-              disabled={updateOrderStatus.isPending || !selectedOrder}
-            >
-              <DollarSign />
+            <Button variant="ghost" type="button" onClick={handleCloseCancel} disabled={cancelOrder.isPending}>
+              Voltar
+            </Button>
 
-              {updateOrderStatus.isPending ? "Processando..." : "Pagamento Recebido"}
+            <Button variant="destructive" type="button" onClick={handleConfirmCancel} disabled={cancelOrder.isPending}>
+              <XCircle />
+              {cancelOrder.isPending ? "Cancelando..." : "Confirmar cancelamento"}
             </Button>
           </DialogFooter>
         </DialogContent>
