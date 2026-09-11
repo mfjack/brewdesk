@@ -64,3 +64,12 @@ export interface TOrderResponse {
   printedItemQuantities?: Record<number, number>;
   isTakeout: boolean;
 }
+
+export interface TStoreSettings {
+  name: string;
+  cnpj: string | null;
+  address: string | null;
+  phone: string | null;
+  logoUrl: string | null;
+  receiptFooterMessage: string | null;
+}

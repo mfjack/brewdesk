@@ -1,4 +1,4 @@
-import type { TCategory, TOrderResponse, TProduct } from "@/app/order/interface";
+import type { TCategory, TOrderResponse, TProduct, TStoreSettings } from "@/app/order/interface";
 import { computeOrderTotal, decrementOrRemoveItem, mergeOrderItem } from "@/app/order/order-math";
 
 const STORAGE_KEY = "brewdesk.data.v1";
@@ -7,6 +7,7 @@ interface StoreData {
   categories: TCategory[];
   products: TProduct[];
   orders: TOrderResponse[];
+  settings: TStoreSettings;
   nextIds: {
     category: number;
     product: number;
@@ -15,12 +16,23 @@ interface StoreData {
   };
 }
 
+const defaultSettings: TStoreSettings = {
+  name: "Mañana Café y Coisinhas",
+  cnpj: "64.490.426/0001-53",
+  address: "Avenida José Passos de Souza Junior, 3655\nPraia do Pecado - Macaé/RJ",
+  phone: null,
+  logoUrl: null,
+  receiptFooterMessage: null,
+};
+
 const initialData: StoreData = {
   categories: [],
 
   products: [],
 
   orders: [],
+
+  settings: defaultSettings,
 
   nextIds: {
     category: 1,
@@ -47,7 +59,13 @@ function readStore(): StoreData {
   }
 
   try {
-    return JSON.parse(stored) as StoreData;
+    const parsed = JSON.parse(stored) as Partial<StoreData>;
+
+    return {
+      ...clone(initialData),
+      ...parsed,
+      settings: { ...defaultSettings, ...parsed.settings },
+    };
   } catch {
     writeStore(initialData);
     return clone(initialData);
@@ -107,6 +125,27 @@ export const localStore = {
 
   getOrder: (orderId: number) => {
     return readStore().orders.find((order) => order.id === orderId);
+  },
+
+  getSettings: () => {
+    return readStore().settings;
+  },
+
+  updateSettings: (input: TStoreSettings) => {
+    const data = readStore();
+
+    data.settings = {
+      name: input.name.trim(),
+      cnpj: input.cnpj?.trim() || null,
+      address: input.address?.trim() || null,
+      phone: input.phone?.trim() || null,
+      logoUrl: input.logoUrl || null,
+      receiptFooterMessage: input.receiptFooterMessage?.trim() || null,
+    };
+
+    writeStore(data);
+
+    return data.settings;
   },
 
   createCategory: (name: string) => {

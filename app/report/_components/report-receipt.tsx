@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/_lib/format-currency";
 import { ProductReportStats, ProductStat, ReportStats } from "../query/useGetReportData";
+import { useGetSettings } from "@/app/settings/query/useGetSettings";
 
 interface TReportReceipt {
   dateRangeLabel: string;
@@ -33,11 +34,13 @@ function ProductTable({ title, products }: { title: string; products: ProductSta
 }
 
 export function ReportReceipt({ dateRangeLabel, reportData, selectedProduct, productReportData }: TReportReceipt) {
+  const { data: settings } = useGetSettings();
+
   const peaksWithSales = reportData.hourlyPeaks.filter((peak) => peak.orders > 0).sort((a, b) => b.revenue - a.revenue);
 
   return (
     <div className="report-receipt hidden px-6 print:block">
-      <h1 className="text-sm font-bold text-center mt-6">Mañana Café y Coisinhas</h1>
+      <h1 className="text-sm font-bold text-center mt-6">{settings?.name}</h1>
 
       <p className="text-center text-sm text-muted-foreground mb-1 mt-2">Relatório de Vendas — {dateRangeLabel}</p>
 

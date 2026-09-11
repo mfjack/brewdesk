@@ -12,7 +12,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Mañana Cafés y Coisinhas",
+  title: "BrewDesk",
   description: "PDV offline para sua cafeteria",
   manifest: "/manifest.webmanifest",
 };
@@ -25,14 +25,14 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={cn("antialiased select-none", montserrat.variable)}>
       <body>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <ClientProvider>
+        <ClientProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
               <main>{children}</main>
-            </ClientProvider>
-          </SidebarInset>
-        </SidebarProvider>
+            </SidebarInset>
+          </SidebarProvider>
+        </ClientProvider>
       </body>
     </html>
   );

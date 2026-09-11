@@ -2,6 +2,8 @@ import { formatCurrency } from "@/_lib/format-currency";
 
 import { TOrderResponse } from "../interface";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { useGetSettings } from "@/app/settings/query/useGetSettings";
+import Image from "next/image";
 
 interface TOrderReceipt {
   order: TOrderResponse;
@@ -14,6 +16,8 @@ interface TOrderReceipt {
 }
 
 export function OrderReceipt({ order, observation, printMode, printedItemQuantities = {} }: TOrderReceipt) {
+  const { data: settings } = useGetSettings();
+
   const isAdditional = printMode === "additional";
 
   const displayItems = isAdditional
@@ -35,14 +39,18 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
 
   return (
     <div className="order-receipt hidden px-2 h-fit print:block">
-      <h1 className="text-base font-bold text-center my-2">Mañana Café y Coisinhas</h1>
+      <h1 className="text-base font-bold text-center my-2">{settings?.name}</h1>
 
       <div className="border-b pb-2 mb-2 text-start">
-        <p className="text-xs">CNPJ: 64.490.426/0001-53</p>
+        {settings?.cnpj && <p className="text-xs">CNPJ: {settings.cnpj}</p>}
 
-        <p className="text-xs">Avenida José Passos de Souza Junior, 3655</p>
+        {settings?.address?.split("\n").map((line, index) => (
+          <p key={index} className="text-xs">
+            {line}
+          </p>
+        ))}
 
-        <p className="text-xs">Praia do Pecado - Macaé/RJ</p>
+        {settings?.phone && <p className="text-xs">Tel: {settings.phone}</p>}
       </div>
 
       <div className="border-b pb-2 mb-2 text-xs">
@@ -82,6 +90,8 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
           )}
         </span>
       </div>
+
+      {settings?.receiptFooterMessage && <p className="mt-3 text-center text-xs">{settings.receiptFooterMessage}</p>}
     </div>
   );
 }

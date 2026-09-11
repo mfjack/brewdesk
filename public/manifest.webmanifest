@@ -1,6 +1,6 @@
 {
-  "name": "Mañana Cafés y Coisinhas",
-  "short_name": "Mañana Cafés",
+  "name": "BrewDesk",
+  "short_name": "BrewDesk",
   "description": "PDV offline para sua cafeteria",
   "start_url": "/",
   "display": "standalone",
