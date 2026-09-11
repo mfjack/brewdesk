@@ -2,7 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { localStore } from "@/_lib/store";
 import { TOrderResponse, TPaymentMethod } from "@/app/order/interface";
 
-export type DateRange = "day" | "week" | "month";
+export type DateRange = "day" | "week" | "month" | "custom";
+
+export interface CustomDateRange {
+  start: string;
+  end: string;
+}
 
 export interface ProductStat {
   name: string;
@@ -50,7 +55,18 @@ export interface ProductReportStats {
   hourlyPeaks: HourlyPeak[];
 }
 
-function getDateRange(dateRange: DateRange): { start: Date; end: Date } {
+function getDateRange(dateRange: DateRange, customRange?: CustomDateRange): { start: Date; end: Date } | null {
+  if (dateRange === "custom") {
+    if (!customRange?.start || !customRange?.end) {
+      return null;
+    }
+
+    const start = new Date(`${customRange.start}T00:00:00`);
+    const end = new Date(`${customRange.end}T23:59:59.999`);
+
+    return start <= end ? { start, end } : { start: end, end: start };
+  }
+
   const end = new Date();
   end.setHours(23, 59, 59, 999);
 
@@ -68,8 +84,15 @@ function getDateRange(dateRange: DateRange): { start: Date; end: Date } {
   return { start, end };
 }
 
-function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange): TOrderResponse[] {
-  const { start, end } = getDateRange(dateRange);
+function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange, customRange?: CustomDateRange): TOrderResponse[] {
+  const range = getDateRange(dateRange, customRange);
+
+  if (!range) {
+    return [];
+  }
+
+  const { start, end } = range;
+
   return orders.filter((order) => {
     const orderDate = new Date(order.createdAt);
     return orderDate >= start && orderDate <= end && order.status !== "OPEN";
@@ -179,25 +202,29 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
   };
 }
 
-export function useGetReportData(dateRange: DateRange = "day") {
+export function useGetReportData(dateRange: DateRange = "day", customRange?: CustomDateRange) {
   return useQuery({
-    queryKey: ["report", dateRange],
+    queryKey: ["report", dateRange, customRange],
     queryFn: () => {
       const allOrders = localStore.getOrders();
-      const filteredOrders = filterOrdersByDateRange(allOrders, dateRange);
+      const filteredOrders = filterOrdersByDateRange(allOrders, dateRange, customRange);
       return calculateReportStats(filteredOrders);
     },
   });
 }
 
-export function useGetProductReportData(dateRange: DateRange = "day", productName: string | null) {
+export function useGetProductReportData(
+  dateRange: DateRange = "day",
+  productName: string | null,
+  customRange?: CustomDateRange,
+) {
   return useQuery({
-    queryKey: ["report", dateRange, "product", productName],
+    queryKey: ["report", dateRange, customRange, "product", productName],
     queryFn: (): ProductReportStats | null => {
       if (!productName) return null;
 
       const allOrders = localStore.getOrders();
-      const filteredOrders = filterOrdersByDateRange(allOrders, dateRange);
+      const filteredOrders = filterOrdersByDateRange(allOrders, dateRange, customRange);
 
       const productOrders = filteredOrders
         .map((order) => ({
