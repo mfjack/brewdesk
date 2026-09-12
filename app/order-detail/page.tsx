@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs"
 import { DollarSign, HandCoins, X } from "lucide-react";
 import Link from "next/link";
 
-import { useGetOrder } from "../kitchen/query/useGetOrder";
+import { useGetOrder } from "../order/query/useGetOrder";
 import { TOrderResponse, TPaymentMethod } from "../order/interface";
 import { isOrderPaid } from "../order/order-math";
 import { paymentMethodLabels } from "../order/payment-methods";
@@ -22,6 +22,7 @@ import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { formatDateTime } from "@/_lib/format-date";
 
 function toDateInputValue(date: Date): string {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -144,11 +145,11 @@ export default function OrderDetailPage() {
               {searchTerm ? "Nenhuma comanda encontrada com esse nome." : "Nenhuma comanda em aberto."}
             </p>
           ) : (
-            <div className="flex-1 overflow-auto p-4 [&::-webkit-scrollbar]:hidden">
+            <div className="flex-1 overflow-auto p-4 no-scrollbar">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {filteredOrders.map((order: TOrderResponse) => (
                   <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
-                    <span className="font-bold text-lg text-center uppercase">{order.customerName}</span>
+                    <span className="font-bold text-lg text-center">{toTitleCase(order.customerName)}</span>
 
                     {order.operatorName && (
                       <p className="text-xs text-center text-muted-foreground">Atendente: {toTitleCase(order.operatorName)}</p>
@@ -214,14 +215,14 @@ export default function OrderDetailPage() {
                 : "Nenhuma comanda paga ainda."}
             </p>
           ) : (
-            <div className="flex-1 overflow-auto p-4 [&::-webkit-scrollbar]:hidden">
+            <div className="flex-1 overflow-auto p-4 no-scrollbar">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {paidOrders.map((order: TOrderResponse) => (
                   <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
-                    <span className="font-bold text-lg text-center uppercase">{order.customerName}</span>
+                    <span className="font-bold text-lg text-center">{toTitleCase(order.customerName)}</span>
 
                     <p className="text-xs text-center text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleString("pt-BR")}
+                      {formatDateTime(order.createdAt)}
                     </p>
 
                     {order.operatorName && (
@@ -270,7 +271,7 @@ export default function OrderDetailPage() {
 
               <div className="flex gap-1">
                 <p className="text-sm text-muted-foreground">Data: </p>
-                <p className="text-sm font-medium">{new Date(historyOrder.createdAt).toLocaleString("pt-BR")}</p>
+                <p className="text-sm font-medium">{formatDateTime(historyOrder.createdAt)}</p>
               </div>
 
               {historyOrder.operatorName && (

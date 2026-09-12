@@ -1,8 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
-export function useDeleteSupplyItem() {
-  return useMutation({
-    mutationFn: async (supplyItemId: number) => localStore.deleteSupplyItem(supplyItemId),
-  });
-}
+export const useDeleteSupplyItem = createLocalStoreMutation((supplyItemId: number) => localStore.deleteSupplyItem(supplyItemId));

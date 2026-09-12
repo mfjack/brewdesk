@@ -2,16 +2,8 @@ import type { TSupplyItem } from "@/app/order/interface";
 import { readStore, updateStore, writeStore } from "./storage";
 import { roundToAvoidFloatDrift } from "@/_lib/supply-units";
 
-export interface TSupplyItemInput {
-  name: string;
-  brand?: string | null;
-  quantity?: number;
-  unit: string;
-  minQuantity?: number;
-  costPrice?: number;
-  supplierId?: number | null;
-  expiresAt?: string | null;
-}
+export type TSupplyItemInput = Partial<Omit<TSupplyItem, "id" | "initialQuantity" | "name" | "unit">> &
+  Pick<TSupplyItem, "name" | "unit">;
 
 function buildSupplyItemFields(input: TSupplyItemInput): Omit<TSupplyItem, "id" | "initialQuantity"> {
   return {

@@ -5,7 +5,9 @@ import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
 import { Badge } from "@/_components/ui/badge";
-import { AlertTriangle, Pencil, Plus, Trash2 } from "lucide-react";
+import { EmptyState } from "@/_components/ui/empty-state";
+import { RowActions } from "@/_components/ui/row-actions";
+import { AlertTriangle, Pencil, Plus } from "lucide-react";
 
 import { useGetSupplyItems } from "./query/useGetSupplyItems";
 import { useGetSuppliers } from "../supplier/query/useGetSuppliers";
@@ -15,6 +17,7 @@ import type { TSupplyItem } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
 import { formatUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { formatDate } from "@/_lib/format-date";
 
 const EXPIRY_WARNING_DAYS = 7;
 
@@ -71,9 +74,9 @@ export default function StockPage() {
 
       <Separator className="h-px w-full" />
 
-      <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
         {supplyItems?.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Nenhum insumo cadastrado.</p>
+          <EmptyState message="Nenhum insumo cadastrado." />
         ) : (
           <Table>
             <TableHeader>
@@ -132,7 +135,7 @@ export default function StockPage() {
                       {supplyItem.expiresAt ? (
                         <div className="flex items-center gap-2">
                           <span className={expiryStatus ? "font-semibold text-destructive" : "text-muted-foreground"}>
-                            {new Date(`${supplyItem.expiresAt}T00:00:00`).toLocaleDateString("pt-BR")}
+                            {formatDate(`${supplyItem.expiresAt}T00:00:00`)}
                           </span>
 
                           {expiryStatus === "expired" && <Badge variant="destructive">Vencido</Badge>}
@@ -149,21 +152,20 @@ export default function StockPage() {
                     </TableCell>
 
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <StockFormDialog
-                          suppliers={suppliers}
-                          supplyItem={supplyItem}
-                          trigger={
-                            <Button variant="outline" size="icon-sm">
-                              <Pencil />
-                            </Button>
-                          }
-                        />
-
-                        <Button variant="destructive" size="icon-sm" onClick={() => handleDeleteSupplyItem(supplyItem.id)}>
-                          <Trash2 />
-                        </Button>
-                      </div>
+                      <RowActions
+                        editTrigger={
+                          <StockFormDialog
+                            suppliers={suppliers}
+                            supplyItem={supplyItem}
+                            trigger={
+                              <Button variant="outline" size="icon-sm">
+                                <Pencil />
+                              </Button>
+                            }
+                          />
+                        }
+                        onDelete={() => handleDeleteSupplyItem(supplyItem.id)}
+                      />
                     </TableCell>
                   </TableRow>
                 );

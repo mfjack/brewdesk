@@ -1,8 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
-export function useCreateCategory() {
-  return useMutation({
-    mutationFn: async (name: string) => localStore.createCategory(name),
-  });
-}
+export const useCreateCategory = createLocalStoreMutation((name: string) => localStore.createCategory(name));

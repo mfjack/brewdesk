@@ -21,6 +21,7 @@ import {
 import { ReportReceipt } from "./_components/report-receipt";
 import { HourlyBarChart } from "./_components/hourly-bar-chart";
 import { formatCurrency } from "@/_lib/format-currency";
+import { formatDate } from "@/_lib/format-date";
 import { buildCsv, downloadCsv } from "@/_lib/csv";
 
 interface CardDetail {
@@ -106,7 +107,7 @@ export default function ReportPage() {
 
   const activeRangeLabel =
     dateRange === "custom" && hasCustomRange
-      ? `${new Date(`${customRange.start}T00:00:00`).toLocaleDateString("pt-BR")} a ${new Date(`${customRange.end}T00:00:00`).toLocaleDateString("pt-BR")}`
+      ? `${formatDate(`${customRange.start}T00:00:00`)} a ${formatDate(`${customRange.end}T00:00:00`)}`
       : dateRangeLabels[dateRange];
 
   function handleExportCsv() {
@@ -231,7 +232,7 @@ export default function ReportPage() {
           </div>
 
           {(Object.keys(dateRangeLabels) as DateRange[]).map((range) => (
-            <TabsContent key={range} value={range} className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden p-4">
+            <TabsContent key={range} value={range} className="flex-1 overflow-y-auto no-scrollbar p-4">
               {range === "custom" && (
                 <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:items-end">
                   <div className="flex-1 flex flex-col gap-1">
@@ -314,7 +315,7 @@ export default function ReportPage() {
                         </p>
                       </div>
 
-                      <div className="max-h-96 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                      <div className="max-h-96 space-y-2 overflow-y-auto no-scrollbar">
                         {reportData.allProducts.length > 0 ? (
                           reportData.allProducts.map((product) => (
                             <div

@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
 export interface TCreateOrder {
@@ -6,8 +6,6 @@ export interface TCreateOrder {
   operatorName?: string | null;
 }
 
-export function useCreateOrder() {
-  return useMutation({
-    mutationFn: async (data: TCreateOrder) => localStore.createOrder(data.customerName, data.operatorName),
-  });
-}
+export const useCreateOrder = createLocalStoreMutation((data: TCreateOrder) =>
+  localStore.createOrder(data.customerName, data.operatorName),
+);

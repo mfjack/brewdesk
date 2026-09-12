@@ -1,4 +1,4 @@
-import type { TOrderResponse, TPaymentMethod, TProduct, TSupplyItem } from "@/app/order/interface";
+import type { TOrderResponse, TOrderStatus, TPaymentMethod, TProduct, TSupplyItem } from "@/app/order/interface";
 import { computeOrderTotal, decrementOrRemoveItem, mergeOrderItem } from "@/app/order/order-math";
 import { readStore, updateStore, writeStore } from "./storage";
 import { adjustSupplyItemStock } from "./supply-items";
@@ -137,7 +137,7 @@ export const orderStore = {
   updateOrderStatus: (
     orderId: number,
 
-    status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID",
+    status: Exclude<TOrderStatus, "OPEN">,
 
     observation?: string,
 

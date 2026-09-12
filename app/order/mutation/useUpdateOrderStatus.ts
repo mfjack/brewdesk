@@ -1,10 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
-import type { TPaymentMethod } from "@/app/order/interface";
+import type { TOrderStatus, TPaymentMethod } from "@/app/order/interface";
 
 export interface TUpdateOrderStatus {
   orderId: number;
-  status: "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID";
+  status: Exclude<TOrderStatus, "OPEN">;
   observation?: string;
   customerName?: string;
   isTakeout?: boolean;
@@ -12,16 +12,14 @@ export interface TUpdateOrderStatus {
   amountReceived?: number | null;
 }
 
-export function useUpdateOrderStatus() {
-  return useMutation({
-    mutationFn: async ({ orderId, status, observation, customerName, isTakeout, paymentMethod, amountReceived }: TUpdateOrderStatus) =>
-      localStore.updateOrderStatus(
-        orderId,
-        status,
-        observation,
-        customerName,
-        isTakeout,
-        paymentMethod !== undefined ? { paymentMethod, amountReceived } : undefined,
-      ),
-  });
-}
+export const useUpdateOrderStatus = createLocalStoreMutation(
+  ({ orderId, status, observation, customerName, isTakeout, paymentMethod, amountReceived }: TUpdateOrderStatus) =>
+    localStore.updateOrderStatus(
+      orderId,
+      status,
+      observation,
+      customerName,
+      isTakeout,
+      paymentMethod !== undefined ? { paymentMethod, amountReceived } : undefined,
+    ),
+);

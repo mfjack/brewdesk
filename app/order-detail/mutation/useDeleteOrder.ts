@@ -1,12 +1,8 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
 export interface TDeleteOrder {
   orderId: number;
 }
 
-export function useDeleteOrder() {
-  return useMutation({
-    mutationFn: async ({ orderId }: TDeleteOrder) => localStore.deleteOrder(orderId),
-  });
-}
+export const useDeleteOrder = createLocalStoreMutation(({ orderId }: TDeleteOrder) => localStore.deleteOrder(orderId));

@@ -2,7 +2,7 @@
 
 import { Card } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
-import { useGetOrder } from "./query/useGetOrder";
+import { useGetOrder } from "../order/query/useGetOrder";
 import { TOrderResponse } from "../order/interface";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
@@ -45,16 +45,25 @@ export default function KitchenPage() {
     },
   ] as const;
 
-  function getStatusLabel(status: TOrderResponse["status"]) {
-    if (status === "PENDING") {
-      return "Pendente";
+  function getStatusLabel(status: TOrderResponse["status"]): string {
+    switch (status) {
+      case "OPEN":
+        return "Aberta";
+      case "PENDING":
+        return "Pendente";
+      case "IN_PROGRESS":
+        return "Preparando";
+      case "READY":
+        return "Pronto";
+      case "DELIVERED":
+        return "Entregue";
+      case "PAID":
+        return "Paga";
+      default: {
+        const _exhaustive: never = status;
+        return _exhaustive;
+      }
     }
-
-    if (status === "IN_PROGRESS") {
-      return "Preparando";
-    }
-
-    return "Pronto";
   }
 
   async function handleAdvanceStatus(order: TOrderResponse) {
@@ -74,7 +83,7 @@ export default function KitchenPage() {
 
       <Separator className="h-px w-full" />
 
-      <div className="grid flex-1 grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+      <div className="grid flex-1 grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 overflow-y-auto no-scrollbar">
         {columns.map((column) => (
           <div key={column.title} className="flex flex-col gap-4 ">
             <div className="flex items-center gap-2">

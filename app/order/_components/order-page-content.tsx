@@ -8,7 +8,7 @@ import { Separator } from "@/_components/ui/separator";
 
 import { useGetCategories } from "../../category/query/useGetCategories";
 import { useGetProducts } from "../../product/query/useGetProducts";
-import { useGetOrder } from "../../kitchen/query/useGetOrder";
+import { useGetOrder } from "../query/useGetOrder";
 
 import { useCreateOrder } from "../mutation/useCreateOrder";
 import { useAddOrderItem } from "../mutation/useAddOrderItem";
@@ -17,7 +17,14 @@ import { useUpdateOrderStatus } from "../mutation/useUpdateOrderStatus";
 import { useMarkOrderItemsPrinted } from "../mutation/useMarkOrderItemsPrinted";
 
 import { TCategory, TOrderItem, TOrderResponse, TPaymentMethod, TProduct } from "../interface";
-import { computeOrderTotal, decrementOrRemoveItem, DRAFT_ORDER_ID, isDraftOrder, isOrderPaid, mergeOrderItem } from "../order-math";
+import {
+  computeOrderTotal,
+  decrementOrRemoveItem,
+  DRAFT_ORDER_ID,
+  isDraftOrder,
+  isOrderPaid,
+  mergeOrderItem,
+} from "../order-math";
 import { getActiveOperator } from "@/_lib/operator-session";
 
 import { useRouter, useSearchParams } from "next/navigation";

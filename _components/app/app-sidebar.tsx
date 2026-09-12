@@ -12,13 +12,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "./sidebar";
+} from "@/_components/ui/sidebar";
 import Image from "next/image";
 import { BarChart3, Boxes, HandCoins, LogOut, ScanBarcode, ScrollText, Settings, Tags, Truck } from "lucide-react";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
 import { toTitleCase } from "@/_lib/to-title-case";
-import { Button } from "./button";
+import { Button } from "@/_components/ui/button";
 
 const navLinks = [
   {

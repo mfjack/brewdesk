@@ -20,7 +20,7 @@ import {
 import { useCreateSupplyItem } from "../mutation/useCreateSupplyItem";
 import { useUpdateSupplyItem } from "../mutation/useUpdateSupplyItem";
 import type { TSupplier, TSupplyItem } from "../../order/interface";
-import { formatUnit, SUPPLY_UNITS } from "@/_lib/supply-units";
+import { formatUnit, SUPPLY_UNITS, type SupplyUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 interface TStockFormValues {
@@ -75,7 +75,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
       name: data.name,
       brand: data.brand || null,
       quantity: Number(data.quantity) || 0,
-      unit: data.unit,
+      unit: data.unit as SupplyUnit,
       minQuantity: Number(data.minQuantity) || 0,
       costPrice: Number(data.costPrice) || 0,
       supplierId: data.supplierId || null,

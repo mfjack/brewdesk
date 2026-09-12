@@ -86,7 +86,7 @@ export function MenuList({
             </>
           )}
 
-          <div className="flex-1 flex-col gap-4 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 flex-col gap-4 p-4 overflow-y-auto no-scrollbar">
             {(order.orderItems?.length ?? 0) === 0 ? (
               <p className="flex h-full justify-center items-center text-sm text-muted-foreground">
                 Adicione itens do cardápio à comanda.

@@ -1,8 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
-export function useDeleteOperator() {
-  return useMutation({
-    mutationFn: async (operatorId: number) => localStore.deleteOperator(operatorId),
-  });
-}
+export const useDeleteOperator = createLocalStoreMutation((operatorId: number) => localStore.deleteOperator(operatorId));

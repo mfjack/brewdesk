@@ -1,5 +1,6 @@
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
+import { EmptyState } from "@/_components/ui/empty-state";
 import { formatCurrency } from "@/_lib/format-currency";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { TCategory, TOrderPanel, TProduct } from "../interface";
@@ -48,7 +49,7 @@ export function OrderPanel({
         ) : null;
       })()}
 
-      <div className="flex gap-3 p-4 rounded-xl overflow-x-auto [&::-webkit-scrollbar]:hidden">
+      <div className="flex gap-3 p-4 rounded-xl overflow-x-auto no-scrollbar">
         {categories?.map((category: TCategory) => (
           <Button
             key={category.id}
@@ -62,10 +63,10 @@ export function OrderPanel({
         ))}
       </div>
 
-      <div className="rounded-xl md:flex-1 md:overflow-y-auto [&::-webkit-scrollbar]:hidden">
+      <div className="rounded-xl md:flex-1 md:overflow-y-auto no-scrollbar">
         <div className="p-4 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {!filteredProducts || filteredProducts.length === 0 ? (
-            <p className="col-span-full text-center text-sm text-muted-foreground">Nenhum produto cadastrado.</p>
+            <EmptyState message="Nenhum produto cadastrado." className="col-span-full" />
           ) : (
             filteredProducts.map((product: TProduct) => {
               const orderItem = order?.orderItems?.find((item) => item.product.id === product.id);
@@ -96,7 +97,9 @@ export function OrderPanel({
                     <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
                     {available !== null && (
                       <span
-                        className={`text-[10px] ${outOfStock || isLowStock ? "font-semibold text-destructive" : "text-muted-foreground"}`}
+                        className={`text-[10px] font-semibold ${
+                          outOfStock ? "text-destructive" : isLowStock ? "text-amber-600 dark:text-amber-500" : "text-muted-foreground font-medium"
+                        }`}
                       >
                         {outOfStock ? "Esgotado" : `Restam ${available}`}
                       </span>

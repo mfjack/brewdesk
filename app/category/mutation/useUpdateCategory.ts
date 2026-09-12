@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
 export interface TUpdateCategory {
@@ -6,8 +6,4 @@ export interface TUpdateCategory {
   name: string;
 }
 
-export function useUpdateCategory() {
-  return useMutation({
-    mutationFn: async ({ id, name }: TUpdateCategory) => localStore.updateCategory(id, name),
-  });
-}
+export const useUpdateCategory = createLocalStoreMutation(({ id, name }: TUpdateCategory) => localStore.updateCategory(id, name));

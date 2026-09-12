@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
 export interface TAddOperator {
@@ -6,8 +6,4 @@ export interface TAddOperator {
   pin: string;
 }
 
-export function useAddOperator() {
-  return useMutation({
-    mutationFn: async ({ name, pin }: TAddOperator) => localStore.addOperator(name, pin),
-  });
-}
+export const useAddOperator = createLocalStoreMutation(({ name, pin }: TAddOperator) => localStore.addOperator(name, pin));

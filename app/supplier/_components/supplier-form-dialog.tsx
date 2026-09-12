@@ -20,7 +20,7 @@ import {
 import { useCreateSupplier } from "../mutation/useCreateSupplier";
 import { useUpdateSupplier } from "../mutation/useUpdateSupplier";
 import type { TSupplier } from "../../order/interface";
-import { DELIVERY_PERIODS, WEEKDAYS } from "@/_lib/delivery-schedule";
+import { DELIVERY_PERIODS, WEEKDAYS, type DeliveryPeriod, type Weekday } from "@/_lib/delivery-schedule";
 
 interface TSupplierFormValues {
   companyName: string;
@@ -68,8 +68,8 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
       whatsapp: data.whatsapp || null,
       suppliesDescription: data.suppliesDescription || null,
       paymentTerms: data.paymentTerms || null,
-      deliveryDays: data.deliveryDays,
-      deliveryPeriod: data.deliveryPeriod || null,
+      deliveryDays: data.deliveryDays as Weekday[],
+      deliveryPeriod: (data.deliveryPeriod || null) as DeliveryPeriod | null,
     };
 
     if (supplier) {

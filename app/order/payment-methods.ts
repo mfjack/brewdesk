@@ -8,9 +8,6 @@ export const paymentMethodOptions: { value: TPaymentMethod; label: string; Icon:
   { value: "PIX", label: "Pix", Icon: QrCode },
 ];
 
-export const paymentMethodLabels: Record<TPaymentMethod, string> = {
-  CASH: "Dinheiro",
-  CREDIT: "Crédito",
-  DEBIT: "Débito",
-  PIX: "Pix",
-};
+export const paymentMethodLabels: Record<TPaymentMethod, string> = Object.fromEntries(
+  paymentMethodOptions.map((option) => [option.value, option.label]),
+) as Record<TPaymentMethod, string>;

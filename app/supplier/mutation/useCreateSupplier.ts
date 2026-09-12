@@ -1,9 +1,5 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 import type { TSupplierInput } from "@/_lib/store/suppliers";
 
-export function useCreateSupplier() {
-  return useMutation({
-    mutationFn: async (data: TSupplierInput) => localStore.createSupplier(data),
-  });
-}
+export const useCreateSupplier = createLocalStoreMutation((data: TSupplierInput) => localStore.createSupplier(data));

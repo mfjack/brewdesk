@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
 export interface TAddOrderItem {
@@ -7,8 +7,6 @@ export interface TAddOrderItem {
   quantity: number;
 }
 
-export function useAddOrderItem() {
-  return useMutation({
-    mutationFn: async ({ orderId, productId, quantity }: TAddOrderItem) => localStore.addOrderItem(orderId, productId, quantity),
-  });
-}
+export const useAddOrderItem = createLocalStoreMutation(({ orderId, productId, quantity }: TAddOrderItem) =>
+  localStore.addOrderItem(orderId, productId, quantity),
+);

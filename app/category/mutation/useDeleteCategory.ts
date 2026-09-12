@@ -1,8 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
-export function useDeleteCategory() {
-  return useMutation({
-    mutationFn: async (categoryId: number) => localStore.deleteCategory(categoryId),
-  });
-}
+export const useDeleteCategory = createLocalStoreMutation((categoryId: number) => localStore.deleteCategory(categoryId));

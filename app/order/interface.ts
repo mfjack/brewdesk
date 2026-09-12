@@ -1,3 +1,6 @@
+import type { SupplyUnit } from "@/_lib/supply-units";
+import type { Weekday, DeliveryPeriod } from "@/_lib/delivery-schedule";
+
 export interface TMenuList {
   order: TOrderResponse | null;
   onRemoveItem: (itemId: number) => void;
@@ -47,7 +50,7 @@ export interface TCategory {
 export interface TRecipeItem {
   supplyItemId: number;
   quantity: number;
-  unit: string;
+  unit: SupplyUnit;
 }
 
 export interface TProduct {
@@ -71,8 +74,8 @@ export interface TSupplier {
   whatsapp: string | null;
   suppliesDescription: string | null;
   paymentTerms: string | null;
-  deliveryDays: string[];
-  deliveryPeriod: string | null;
+  deliveryDays: Weekday[];
+  deliveryPeriod: DeliveryPeriod | null;
 }
 
 export interface TSupplyItem {
@@ -82,7 +85,7 @@ export interface TSupplyItem {
   quantity: number;
   /** Quantidade registrada na criação do insumo — não muda com as vendas. */
   initialQuantity: number;
-  unit: string;
+  unit: SupplyUnit;
   minQuantity: number;
   costPrice: number;
   supplierId: number | null;

@@ -1,14 +1,7 @@
 import type { TSupplier } from "@/app/order/interface";
 import { readStore, updateStore, writeStore } from "./storage";
 
-export interface TSupplierInput {
-  companyName: string;
-  whatsapp?: string | null;
-  suppliesDescription?: string | null;
-  paymentTerms?: string | null;
-  deliveryDays?: string[];
-  deliveryPeriod?: string | null;
-}
+export type TSupplierInput = Partial<Omit<TSupplier, "id" | "companyName">> & Pick<TSupplier, "companyName">;
 
 function buildSupplierFields(input: TSupplierInput): Omit<TSupplier, "id"> {
   return {

@@ -5,7 +5,9 @@ import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
 import { Badge } from "@/_components/ui/badge";
-import { AlertTriangle, ImageOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { EmptyState } from "@/_components/ui/empty-state";
+import { RowActions } from "@/_components/ui/row-actions";
+import { AlertTriangle, ImageOff, Pencil, Plus } from "lucide-react";
 
 import { useGetProducts } from "./query/useGetProducts";
 import { useGetCategories } from "../category/query/useGetCategories";
@@ -58,9 +60,9 @@ export default function ProductPage() {
 
       <Separator className="h-px w-full" />
 
-      <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
         {products?.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Nenhum produto cadastrado.</p>
+          <EmptyState message="Nenhum produto cadastrado." />
         ) : (
           <Table>
             <TableHeader>
@@ -161,23 +163,22 @@ export default function ProductPage() {
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <ProductFormDialog
-                        categories={categories}
-                        suppliers={suppliers}
-                        supplyItems={supplyItems}
-                        product={product}
-                        trigger={
-                          <Button variant="outline" size="icon-sm">
-                            <Pencil />
-                          </Button>
-                        }
-                      />
-
-                      <Button variant="destructive" size="icon-sm" onClick={() => handleDeleteProduct(product.id)}>
-                        <Trash2 />
-                      </Button>
-                    </div>
+                    <RowActions
+                      editTrigger={
+                        <ProductFormDialog
+                          categories={categories}
+                          suppliers={suppliers}
+                          supplyItems={supplyItems}
+                          product={product}
+                          trigger={
+                            <Button variant="outline" size="icon-sm">
+                              <Pencil />
+                            </Button>
+                          }
+                        />
+                      }
+                      onDelete={() => handleDeleteProduct(product.id)}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

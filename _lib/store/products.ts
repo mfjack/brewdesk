@@ -1,19 +1,11 @@
-import type { TCategory, TProduct, TRecipeItem } from "@/app/order/interface";
+import type { TCategory, TProduct } from "@/app/order/interface";
 import { readStore, updateStore, writeStore } from "./storage";
 
-export interface TProductInput {
-  name: string;
-  description?: string | null;
-  photoUrl?: string | null;
-  price: number;
-  costPrice?: number;
-  quantity?: number;
-  trackStock?: boolean;
-  lowStockThreshold?: number;
-  categoryId: number;
-  supplierId?: number | null;
-  recipe?: TRecipeItem[];
-}
+export type TProductInput = Partial<Omit<TProduct, "id" | "category" | "supplierId" | "name" | "price">> &
+  Pick<TProduct, "name" | "price"> & {
+    categoryId: number;
+    supplierId?: number | null;
+  };
 
 function buildProductFields(input: TProductInput, category: TCategory): Omit<TProduct, "id"> {
   const trackStock = input.trackStock ?? true;

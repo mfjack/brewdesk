@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/_lib/format-currency";
+import { formatDateTime } from "@/_lib/format-date";
 import { ProductReportStats, ProductStat, ReportStats } from "../query/useGetReportData";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 
@@ -45,7 +46,7 @@ export function ReportReceipt({ dateRangeLabel, reportData, selectedProduct, pro
       <p className="text-center text-sm text-muted-foreground mb-1 mt-2">Relatório de Vendas — {dateRangeLabel}</p>
 
       <p className="text-center text-xs text-muted-foreground border-b pb-2 mb-4">
-        Gerado em {new Date().toLocaleString("pt-BR")}
+        Gerado em {formatDateTime(new Date())}
       </p>
 
       <div className="grid grid-cols-4 gap-2 border-b pb-3 mb-4 text-center">

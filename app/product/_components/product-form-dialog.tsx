@@ -1,16 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-  useWatch,
-  type Control,
-  type UseFormRegister,
-  type UseFormSetValue,
-} from "react-hook-form";
-import { Plus, Trash2, Upload } from "lucide-react";
+import { useState } from "react";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import type { ReactNode } from "react";
 
 import { Button } from "@/_components/ui/button";
@@ -27,16 +18,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/_components/ui/dialog";
+import { ImageUploadField } from "@/_components/ui/image-upload-field";
+import { RecipeSection } from "./recipe-section";
 
 import { useCreateProduct } from "../mutation/useCreateProduct";
 import { useUpdateProduct } from "../mutation/useUpdateProduct";
 import type { TCategory, TProduct, TRecipeItem, TSupplier, TSupplyItem } from "../../order/interface";
 import { toTitleCase } from "@/_lib/to-title-case";
-import { resizeImage } from "@/_lib/resize-image";
 import { formatCurrency } from "@/_lib/format-currency";
-import { getMaxProducibleQuantity, getRecipeCost, getSupplyUnitCost } from "@/_lib/recipe-cost";
-import { convertQuantity, formatUnit, getCompatibleUnits } from "@/_lib/supply-units";
-import Image from "next/image";
+import { getMaxProducibleQuantity, getRecipeCost } from "@/_lib/recipe-cost";
+import { convertQuantity, type SupplyUnit } from "@/_lib/supply-units";
 
 interface TRecipeRowFormValues {
   supplyItemId: number;
@@ -44,13 +35,13 @@ interface TRecipeRowFormValues {
   unit: string;
 }
 
-interface TProductFormValues {
+export interface TProductFormValues {
   name: string;
   description: string;
-  price: number;
-  costPrice: number;
-  quantity: number;
-  lowStockThreshold: number;
+  price: string;
+  costPrice: string;
+  quantity: string;
+  lowStockThreshold: string;
   categoryId: number;
   supplierId: number;
   recipe: TRecipeRowFormValues[];
@@ -69,10 +60,10 @@ function buildDefaultValues(product: TProduct | undefined, supplyItems: TSupplyI
   return {
     name: product?.name ?? "",
     description: product?.description ?? "",
-    price: product?.price ?? 0,
-    costPrice: product?.costPrice ?? 0,
-    quantity: product?.quantity ?? 0,
-    lowStockThreshold: product?.lowStockThreshold ?? 5,
+    price: product ? String(product.price) : "",
+    costPrice: product ? String(product.costPrice) : "",
+    quantity: product ? String(product.quantity) : "",
+    lowStockThreshold: product ? String(product.lowStockThreshold) : "",
     categoryId: product?.category.id ?? 0,
     supplierId: product?.supplierId ?? 0,
     recipe:
@@ -98,108 +89,9 @@ function parseRecipe(recipe: TRecipeRowFormValues[], supplyItems: TSupplyItem[])
       return {
         supplyItemId: item.supplyItemId,
         quantity: convertQuantity(Number(item.quantity), unit, nativeUnit),
-        unit,
+        unit: unit as SupplyUnit,
       };
     });
-}
-
-function RecipeItemRow({
-  index,
-  control,
-  register,
-  setValue,
-  supplyItems,
-  onRemove,
-}: {
-  index: number;
-  control: Control<TProductFormValues>;
-  register: UseFormRegister<TProductFormValues>;
-  setValue: UseFormSetValue<TProductFormValues>;
-  supplyItems: TSupplyItem[] | undefined;
-  onRemove: () => void;
-}) {
-  const supplyItemId = useWatch({ control, name: `recipe.${index}.supplyItemId` });
-  const quantity = useWatch({ control, name: `recipe.${index}.quantity` });
-  const unit = useWatch({ control, name: `recipe.${index}.unit` });
-  const supplyItem = supplyItems?.find((item) => item.id === supplyItemId);
-  const compatibleUnits = getCompatibleUnits(supplyItem?.unit ?? "unidade");
-
-  const numericQuantity = Number(quantity) || 0;
-  const rowCost =
-    supplyItem && numericQuantity > 0
-      ? convertQuantity(numericQuantity, unit || supplyItem.unit, supplyItem.unit) * getSupplyUnitCost(supplyItem)
-      : 0;
-
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-end gap-2">
-        <div className="flex flex-1 flex-col gap-1">
-          <label className="text-xs text-muted-foreground">Insumo</label>
-          <Controller
-            control={control}
-            name={`recipe.${index}.supplyItemId`}
-            render={({ field }) => (
-              <Select
-                value={field.value ? String(field.value) : ""}
-                onValueChange={(value) => {
-                  const newSupplyItemId = Number(value);
-                  field.onChange(newSupplyItemId);
-
-                  const newSupplyItem = supplyItems?.find((item) => item.id === newSupplyItemId);
-
-                  setValue(`recipe.${index}.unit`, newSupplyItem?.unit ?? "");
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {supplyItems?.map((item) => (
-                    <SelectItem key={item.id} value={String(item.id)}>
-                      {toTitleCase(item.name)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-
-        <div className="flex w-20 flex-col gap-1">
-          <label className="text-xs text-muted-foreground">Qtd.</label>
-          <Input type="number" step="0.01" min="0" placeholder="0" {...register(`recipe.${index}.quantity`)} />
-        </div>
-
-        <div className="flex w-20 flex-col gap-1">
-          <label className="text-xs text-muted-foreground">Unidade</label>
-          <Controller
-            control={control}
-            name={`recipe.${index}.unit`}
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {compatibleUnits.map((unitOption) => (
-                    <SelectItem key={unitOption} value={unitOption}>
-                      {formatUnit(unitOption)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-
-        <Button type="button" variant="destructive" size="icon-sm" onClick={onRemove}>
-          <Trash2 />
-        </Button>
-      </div>
-
-      {rowCost > 0 && <p className="text-right text-xs text-muted-foreground">Custo: {formatCurrency(rowCost)}</p>}
-    </div>
-  );
 }
 
 export function ProductFormDialog({ categories, suppliers, supplyItems, trigger, product }: TProductFormDialog) {
@@ -208,8 +100,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
   const [open, setOpen] = useState(false);
   const [trackStock, setTrackStock] = useState(product?.trackStock ?? true);
   const [photoUrl, setPhotoUrl] = useState<string | null>(product?.photoUrl ?? null);
-  const [fileInputKey, setFileInputKey] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoFieldKey, setPhotoFieldKey] = useState(0);
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -232,36 +123,26 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
   const calculatedCost = hasRecipe ? getRecipeCost(parsedRecipe, supplyItems ?? []) : null;
   const maxProducible = hasRecipe ? getMaxProducibleQuantity(parsedRecipe, supplyItems ?? []) : null;
 
-  async function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    setPhotoUrl(await resizeImage(file));
-  }
-
   function syncFormToProduct() {
     reset(buildDefaultValues(product, supplyItems));
     setPhotoUrl(product?.photoUrl ?? null);
     setTrackStock(product?.trackStock ?? false);
-    setFileInputKey((key) => key + 1);
+    setPhotoFieldKey((key) => key + 1);
   }
 
   function handleSubmitProduct(data: TProductFormValues) {
     const recipe = parseRecipe(data.recipe, supplyItems ?? []);
-    const costPrice = recipe.length > 0 ? getRecipeCost(recipe, supplyItems ?? []) : data.costPrice;
+    const costPrice = recipe.length > 0 ? getRecipeCost(recipe, supplyItems ?? []) : Number(data.costPrice) || 0;
 
     const payload = {
       name: data.name,
       description: data.description || null,
       photoUrl,
-      price: data.price,
+      price: Number(data.price) || 0,
       costPrice,
-      quantity: trackStock ? data.quantity : 0,
+      quantity: trackStock ? Number(data.quantity) || 0 : 0,
       trackStock,
-      lowStockThreshold: trackStock ? data.lowStockThreshold : 0,
+      lowStockThreshold: trackStock ? Number(data.lowStockThreshold) || 0 : 0,
       categoryId: data.categoryId,
       supplierId: data.supplierId || null,
       recipe,
@@ -287,7 +168,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:hidden">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto no-scrollbar">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar produto" : "Novo produto"}</DialogTitle>
           <DialogDescription>
@@ -306,34 +187,14 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
             <Textarea placeholder="Opcional" rows={3} {...register("description")} />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Foto</label>
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                <Upload />
-                {photoUrl ? "Trocar foto" : "Adicionar foto"}
-              </Button>
-
-              {photoUrl && (
-                <Image
-                  src={photoUrl}
-                  alt=""
-                  className="h-12 w-12 rounded-md object-cover ring-1 ring-foreground/10"
-                  width={48}
-                  height={48}
-                />
-              )}
-
-              <input
-                key={fileInputKey}
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoChange}
-              />
-            </div>
-          </div>
+          <ImageUploadField
+            key={photoFieldKey}
+            label="Foto"
+            addLabel="Adicionar foto"
+            changeLabel="Trocar foto"
+            value={photoUrl}
+            onChange={setPhotoUrl}
+          />
 
           <div className="flex gap-2">
             <div className="flex flex-1 flex-col gap-1">
@@ -343,7 +204,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
                 step="0.01"
                 min="0"
                 placeholder="Quanto o cliente paga"
-                {...register("price", { required: true, valueAsNumber: true })}
+                {...register("price", { required: true })}
               />
             </div>
 
@@ -363,55 +224,24 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
                   min="0"
                   placeholder="Quanto custou pra você"
                   title="Usado no relatório de CMV e margem"
-                  {...register("costPrice", { valueAsNumber: true })}
+                  {...register("costPrice")}
                 />
               )}
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-lg border border-input p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-sm font-medium">Ficha técnica</p>
-                <p className="text-xs text-muted-foreground">
-                  Insumos usados nesse produto. Calcula o CMV automaticamente.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => appendRecipeItem({ supplyItemId: 0, quantity: "", unit: "" })}
-              >
-                <Plus />
-                Insumo
-              </Button>
-            </div>
-
-            {recipeFields.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {recipeFields.map((field, index) => (
-                  <RecipeItemRow
-                    key={field.id}
-                    index={index}
-                    control={control}
-                    register={register}
-                    setValue={setValue}
-                    supplyItems={supplyItems}
-                    onRemove={() => removeRecipeItem(index)}
-                  />
-                ))}
-              </div>
-            )}
-
-            {hasRecipe && (
-              <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-                <span>CMV calculado: {formatCurrency(calculatedCost ?? 0)}</span>
-                {maxProducible !== null && <span>Dá pra fazer aprox. {maxProducible} unidade(s) com o estoque atual.</span>}
-              </div>
-            )}
-          </div>
+          <RecipeSection
+            control={control}
+            register={register}
+            setValue={setValue}
+            supplyItems={supplyItems}
+            recipeFields={recipeFields}
+            onAppendItem={() => appendRecipeItem({ supplyItemId: 0, quantity: "", unit: "" })}
+            onRemoveItem={removeRecipeItem}
+            hasRecipe={hasRecipe}
+            calculatedCost={calculatedCost}
+            maxProducible={maxProducible}
+          />
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Categoria</label>
@@ -475,7 +305,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
             <div className="flex gap-2">
               <div className="flex flex-1 flex-col gap-1">
                 <label className="text-sm font-medium">Quantidade em estoque</label>
-                <Input type="number" min="0" placeholder="0" {...register("quantity", { valueAsNumber: true })} />
+                <Input type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
               </div>
 
               <div className="flex flex-1 flex-col gap-1">
@@ -485,7 +315,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
                   min="0"
                   placeholder="Ex.: 5"
                   title="Alertar quando o estoque ficar menor ou igual a esse valor"
-                  {...register("lowStockThreshold", { valueAsNumber: true })}
+                  {...register("lowStockThreshold")}
                 />
               </div>
             </div>

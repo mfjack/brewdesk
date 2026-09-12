@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/_lib/format-currency";
+import { formatDateTime } from "@/_lib/format-date";
 
 import { TOrderResponse } from "../interface";
 import { toTitleCase } from "@/_lib/to-title-case";
@@ -53,7 +54,7 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
       </div>
 
       <div className="border-b pb-2 mb-2 text-xs">
-        <p>Data: {new Date(order.createdAt).toLocaleString("pt-BR")}</p>
+        <p>Data: {formatDateTime(order.createdAt)}</p>
 
         <p>
           Cliente: <span className="text-base font-medium uppercase">{order.customerName || "Sem nome"}</span>

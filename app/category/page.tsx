@@ -4,7 +4,9 @@ import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { EmptyState } from "@/_components/ui/empty-state";
+import { RowActions } from "@/_components/ui/row-actions";
+import { Pencil, Plus } from "lucide-react";
 
 import { useGetCategories } from "./query/useGetCategories";
 import { useDeleteCategory } from "./mutation/useDeleteCategory";
@@ -37,9 +39,9 @@ export default function CategoryPage() {
 
       <Separator className="h-px w-full" />
 
-      <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
         {categories?.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Nenhuma categoria cadastrada.</p>
+          <EmptyState message="Nenhuma categoria cadastrada." />
         ) : (
           <Table>
             <TableHeader>
@@ -55,20 +57,19 @@ export default function CategoryPage() {
                   <TableCell className="font-medium">{toTitleCase(category.name)}</TableCell>
 
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <CategoryFormDialog
-                        category={category}
-                        trigger={
-                          <Button variant="outline" size="icon-sm">
-                            <Pencil />
-                          </Button>
-                        }
-                      />
-
-                      <Button variant="destructive" size="icon-sm" onClick={() => handleDeleteCategory(category.id)}>
-                        <Trash2 />
-                      </Button>
-                    </div>
+                    <RowActions
+                      editTrigger={
+                        <CategoryFormDialog
+                          category={category}
+                          trigger={
+                            <Button variant="outline" size="icon-sm">
+                              <Pencil />
+                            </Button>
+                          }
+                        />
+                      }
+                      onDelete={() => handleDeleteCategory(category.id)}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

@@ -1,5 +1,7 @@
 export const SUPPLY_UNITS = ["kg", "g", "L", "ml", "unidade"] as const;
 
+export type SupplyUnit = (typeof SUPPLY_UNITS)[number];
+
 const UNIT_LABELS: Record<string, string> = { unidade: "un" };
 
 export function formatUnit(unit: string): string {

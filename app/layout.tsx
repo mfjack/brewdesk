@@ -5,8 +5,8 @@ import { ThemeProvider } from "./theme-provider";
 import { cn } from "@/_lib/utils";
 import { Saira } from "next/font/google";
 import { SidebarInset, SidebarProvider } from "@/_components/ui/sidebar";
-import { AppSidebar } from "@/_components/ui/app-sidebar";
-import { OperatorGate } from "@/_components/ui/operator-gate";
+import { AppSidebar } from "@/_components/app/app-sidebar";
+import { OperatorGate } from "@/_components/app/operator-gate";
 
 const saira = Saira({
   subsets: ["latin"],

@@ -1,8 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
 
-export function useImportData() {
-  return useMutation({
-    mutationFn: async (data: unknown) => localStore.importData(data),
-  });
-}
+export const useImportData = createLocalStoreMutation((data: unknown) => localStore.importData(data));
