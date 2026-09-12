@@ -15,9 +15,9 @@ const ROLE_ALLOWED_ROUTES: Record<TOperatorRole, string[]> = {
 };
 
 export function isRouteAllowedForRole(role: TOperatorRole, pathname: string): boolean {
-  return ROLE_ALLOWED_ROUTES[role].includes(pathname);
+  return (ROLE_ALLOWED_ROUTES[role] ?? []).includes(pathname);
 }
 
 export function getAllowedRoutesForRole(role: TOperatorRole): string[] {
-  return ROLE_ALLOWED_ROUTES[role];
+  return ROLE_ALLOWED_ROUTES[role] ?? [];
 }

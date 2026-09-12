@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import type { TOperatorRole } from "./operator-roles";
+import { OPERATOR_ROLES, type TOperatorRole } from "./operator-roles";
 
 const OPERATOR_STORAGE_KEY = "brewdesk.operator";
 const OPERATOR_CHANGE_EVENT = "brewdesk-operator-change";
@@ -10,6 +10,21 @@ export interface TActiveOperator {
   id: number;
   name: string;
   role: TOperatorRole;
+}
+
+function isValidActiveOperator(value: unknown): value is TActiveOperator {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<TActiveOperator>;
+
+  return (
+    typeof candidate.id === "number" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.role === "string" &&
+    OPERATOR_ROLES.includes(candidate.role as TOperatorRole)
+  );
 }
 
 export function getActiveOperator(): TActiveOperator | null {
@@ -24,7 +39,15 @@ export function getActiveOperator(): TActiveOperator | null {
   }
 
   try {
-    return JSON.parse(stored) as TActiveOperator;
+    const parsed = JSON.parse(stored);
+
+    if (!isValidActiveOperator(parsed)) {
+      window.sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+
+      return null;
+    }
+
+    return parsed;
   } catch {
     return null;
   }
