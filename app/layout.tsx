@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { cookies } from "next/headers";
 import { ClientProvider } from "./client-provider";
 import { ThemeProvider } from "./theme-provider";
 import { cn } from "@/_lib/utils";
 import { Saira } from "next/font/google";
-import { SidebarInset, SidebarProvider } from "@/_components/ui/sidebar";
+import { SIDEBAR_COOKIE_NAME, SidebarInset, SidebarProvider } from "@/_components/ui/sidebar";
 import { AppSidebar } from "@/_components/app/app-sidebar";
 import { OperatorGate } from "@/_components/app/operator-gate";
 import { RoleGuard } from "@/_components/app/role-guard";
@@ -20,18 +21,21 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const sidebarDefaultOpen = cookieStore.get(SIDEBAR_COOKIE_NAME)?.value !== "false";
+
   return (
     <html lang="pt-BR" className={cn("antialiased select-none", saira.variable)} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClientProvider>
             <OperatorGate>
-              <SidebarProvider>
+              <SidebarProvider defaultOpen={sidebarDefaultOpen}>
                 <AppSidebar />
                 <SidebarInset>
                   <main>
