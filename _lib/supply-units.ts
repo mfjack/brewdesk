@@ -25,17 +25,21 @@ export function getCompatibleUnits(unit: string): readonly string[] {
   return [unit];
 }
 
+function roundToAvoidFloatDrift(value: number): number {
+  return Math.round(value * 1e6) / 1e6;
+}
+
 export function convertQuantity(quantity: number, fromUnit: string, toUnit: string): number {
   if (fromUnit === toUnit) {
     return quantity;
   }
 
   if (fromUnit in WEIGHT_UNITS_IN_GRAMS && toUnit in WEIGHT_UNITS_IN_GRAMS) {
-    return (quantity * WEIGHT_UNITS_IN_GRAMS[fromUnit]) / WEIGHT_UNITS_IN_GRAMS[toUnit];
+    return roundToAvoidFloatDrift((quantity * WEIGHT_UNITS_IN_GRAMS[fromUnit]) / WEIGHT_UNITS_IN_GRAMS[toUnit]);
   }
 
   if (fromUnit in VOLUME_UNITS_IN_ML && toUnit in VOLUME_UNITS_IN_ML) {
-    return (quantity * VOLUME_UNITS_IN_ML[fromUnit]) / VOLUME_UNITS_IN_ML[toUnit];
+    return roundToAvoidFloatDrift((quantity * VOLUME_UNITS_IN_ML[fromUnit]) / VOLUME_UNITS_IN_ML[toUnit]);
   }
 
   return quantity;

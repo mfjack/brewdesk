@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Controller,
   useFieldArray,
@@ -78,8 +78,11 @@ function buildDefaultValues(product: TProduct | undefined, supplyItems: TSupplyI
     recipe:
       product?.recipe.map((item) => {
         const supplyItem = supplyItems?.find((supply) => supply.id === item.supplyItemId);
+        const nativeUnit = supplyItem?.unit ?? item.unit;
+        const displayUnit = item.unit || nativeUnit;
+        const displayQuantity = convertQuantity(item.quantity, nativeUnit, displayUnit);
 
-        return { supplyItemId: item.supplyItemId, quantity: String(item.quantity), unit: supplyItem?.unit ?? "" };
+        return { supplyItemId: item.supplyItemId, quantity: String(displayQuantity), unit: displayUnit };
       }) ?? [],
   };
 }
@@ -90,10 +93,12 @@ function parseRecipe(recipe: TRecipeRowFormValues[], supplyItems: TSupplyItem[])
     .map((item) => {
       const supplyItem = supplyItems.find((supply) => supply.id === item.supplyItemId);
       const nativeUnit = supplyItem?.unit ?? item.unit;
+      const unit = item.unit || nativeUnit;
 
       return {
         supplyItemId: item.supplyItemId,
-        quantity: convertQuantity(Number(item.quantity), item.unit || nativeUnit, nativeUnit),
+        quantity: convertQuantity(Number(item.quantity), unit, nativeUnit),
+        unit,
       };
     });
 }
@@ -227,13 +232,6 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
   const calculatedCost = hasRecipe ? getRecipeCost(parsedRecipe, supplyItems ?? []) : null;
   const maxProducible = hasRecipe ? getMaxProducibleQuantity(parsedRecipe, supplyItems ?? []) : null;
 
-  useEffect(() => {
-    if (calculatedCost !== null) {
-      setValue("costPrice", Number(calculatedCost.toFixed(2)));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calculatedCost]);
-
   async function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -351,15 +349,23 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
 
             <div className="flex flex-1 flex-col gap-1">
               <label className="text-sm font-medium">Preço de custo</label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Quanto custou pra você"
-                title={hasRecipe ? "Calculado pela ficha técnica" : "Usado no relatório de CMV e margem"}
-                disabled={hasRecipe}
-                {...register("costPrice", { valueAsNumber: true })}
-              />
+              {hasRecipe ? (
+                <div
+                  className="flex h-10 items-center rounded-lg border border-input bg-input/30 px-2.5 text-sm"
+                  title="Calculado pela ficha técnica"
+                >
+                  {formatCurrency(calculatedCost ?? 0)}
+                </div>
+              ) : (
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Quanto custou pra você"
+                  title="Usado no relatório de CMV e margem"
+                  {...register("costPrice", { valueAsNumber: true })}
+                />
+              )}
             </div>
           </div>
 

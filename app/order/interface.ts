@@ -47,6 +47,7 @@ export interface TCategory {
 export interface TRecipeItem {
   supplyItemId: number;
   quantity: number;
+  unit: string;
 }
 
 export interface TProduct {

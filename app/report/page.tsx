@@ -314,7 +314,7 @@ export default function ReportPage() {
                         </p>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="max-h-96 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden">
                         {reportData.allProducts.length > 0 ? (
                           reportData.allProducts.map((product) => (
                             <div
