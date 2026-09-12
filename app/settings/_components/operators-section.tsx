@@ -6,8 +6,11 @@ import { KeyRound, Trash2 } from "lucide-react";
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
+import { Badge } from "@/_components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { OPERATOR_ROLES, OPERATOR_ROLE_LABELS, type TOperatorRole } from "@/_lib/operator-roles";
 
 import { useAddOperator } from "../mutation/useAddOperator";
 import { useDeleteOperator } from "../mutation/useDeleteOperator";
@@ -20,11 +23,16 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [operatorName, setOperatorName] = useState("");
   const [operatorPin, setOperatorPin] = useState("");
+  const [operatorRole, setOperatorRole] = useState<TOperatorRole>("ATENDENTE");
   const [operatorError, setOperatorError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const isFirstOperator = (settings?.operators.length ?? 0) === 0;
 
   function handleOpenDialog() {
     setOperatorName("");
     setOperatorPin("");
+    setOperatorRole("ATENDENTE");
     setOperatorError(null);
     setIsDialogOpen(true);
   }
@@ -41,11 +49,19 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
     }
 
     addOperator.mutate(
-      { name: operatorName, pin: operatorPin },
+      { name: operatorName, pin: operatorPin, role: operatorRole },
       {
         onSuccess: () => setIsDialogOpen(false),
       },
     );
+  }
+
+  function handleDeleteOperator(operatorId: number) {
+    setDeleteError(null);
+
+    deleteOperator.mutate(operatorId, {
+      onError: (error) => setDeleteError(error instanceof Error ? error.message : "Não foi possível excluir o operador."),
+    });
   }
 
   return (
@@ -53,8 +69,8 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
       <div>
         <p className="text-sm font-medium">Operadores</p>
         <p className="text-xs text-muted-foreground">
-          Cadastre operadores com PIN pra exigir login antes de usar o sistema. Sem operadores cadastrados, o login fica
-          desativado.
+          Cadastre operadores com PIN pra exigir login antes de usar o sistema. A role define quais páginas o operador
+          consegue acessar. Sem operadores cadastrados, o login fica desativado.
         </p>
       </div>
 
@@ -64,12 +80,13 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
             <div className="flex items-center gap-2">
               <KeyRound size={16} className="text-muted-foreground" />
               <span className="text-sm font-medium">{toTitleCase(operator.name)}</span>
+              <Badge variant="outline">{OPERATOR_ROLE_LABELS[operator.role]}</Badge>
             </div>
 
             <Button
               variant="destructive"
               size="icon-sm"
-              onClick={() => deleteOperator.mutate(operator.id)}
+              onClick={() => handleDeleteOperator(operator.id)}
               disabled={deleteOperator.isPending}
             >
               <Trash2 />
@@ -79,6 +96,8 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
 
         {settings?.operators.length === 0 && <p className="text-xs text-muted-foreground">Nenhum operador cadastrado.</p>}
       </div>
+
+      {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
 
       <Button type="button" variant="outline" onClick={handleOpenDialog}>
         Adicionar operador
@@ -111,6 +130,25 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
                 setOperatorError(null);
               }}
             />
+
+            {isFirstOperator ? (
+              <p className="text-xs text-muted-foreground">
+                O primeiro operador cadastrado vira gerente automaticamente, com acesso a todas as páginas.
+              </p>
+            ) : (
+              <Select value={operatorRole} onValueChange={(value) => setOperatorRole(value as TOperatorRole)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {OPERATOR_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {OPERATOR_ROLE_LABELS[role]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             {operatorError && <p className="text-xs text-destructive">{operatorError}</p>}
           </div>

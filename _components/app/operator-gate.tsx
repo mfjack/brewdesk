@@ -37,7 +37,7 @@ export function OperatorGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setActiveOperator({ id: selectedOperator.id, name: selectedOperator.name });
+    setActiveOperator({ id: selectedOperator.id, name: selectedOperator.name, role: selectedOperator.role });
     setPin("");
     setError(null);
     setSelectedId(null);

@@ -17,6 +17,7 @@ import Image from "next/image";
 import { BarChart3, Boxes, HandCoins, LogOut, ScanBarcode, ScrollText, Settings, Tags, Truck } from "lucide-react";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
+import { isRouteAllowedForRole } from "@/_lib/operator-roles";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { Button } from "@/_components/ui/button";
 
@@ -72,6 +73,10 @@ export function AppSidebar() {
   const { data: settings } = useGetSettings();
   const activeOperator = useActiveOperator();
 
+  const visibleNavLinks = activeOperator
+    ? navLinks.filter((link) => isRouteAllowedForRole(activeOperator.role, link.href))
+    : navLinks;
+
   return (
     <Sidebar collapsible="offcanvas" className="print:hidden">
       <SidebarHeader />
@@ -94,7 +99,7 @@ export function AppSidebar() {
 
           <SidebarGroupContent>
             <SidebarMenu className="space-y-4">
-              {navLinks.map(({ icon: Icon, label, href }) => (
+              {visibleNavLinks.map(({ icon: Icon, label, href }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton variant="outline" asChild>
                     <Link href={href}>

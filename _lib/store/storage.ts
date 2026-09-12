@@ -71,6 +71,23 @@ function normalizeProducts(products: TProduct[]): TProduct[] {
   return products.map((product) => ({ ...product, recipe: product.recipe ?? [] }));
 }
 
+function normalizeSettings(settings: TStoreSettings): { settings: TStoreSettings; migrated: boolean } {
+  let migrated = false;
+
+  const operators = settings.operators.map((operator) => {
+    if (operator.role) {
+      return operator;
+    }
+
+    migrated = true;
+
+    // Operadores cadastrados antes das roles existirem viram gerente, pra não perder acesso a nada.
+    return { ...operator, role: "GERENTE" as const };
+  });
+
+  return { settings: { ...settings, operators }, migrated };
+}
+
 function normalizeSupplyItems(data: StoreData): boolean {
   let migrated = false;
 
@@ -137,10 +154,14 @@ export function readStore(): StoreData {
     data.orders = normalizeOrders(data.orders);
     data.products = normalizeProducts(data.products);
 
+    const { settings: normalizedSettings, migrated: operatorsMigrated } = normalizeSettings(data.settings);
+
+    data.settings = normalizedSettings;
+
     const supplyItemsMigrated = normalizeSupplyItems(data);
     const ordersPruned = pruneOldPaidOrders(data);
 
-    if (ordersPruned || supplyItemsMigrated) {
+    if (ordersPruned || supplyItemsMigrated || operatorsMigrated) {
       writeStore(data);
     }
 

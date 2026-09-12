@@ -1,5 +1,6 @@
 import type { SupplyUnit } from "@/_lib/supply-units";
 import type { Weekday, DeliveryPeriod } from "@/_lib/delivery-schedule";
+import type { TOperatorRole } from "@/_lib/operator-roles";
 
 export interface TMenuList {
   order: TOrderResponse | null;
@@ -130,6 +131,7 @@ export interface TOperator {
   id: number;
   name: string;
   pin: string;
+  role: TOperatorRole;
 }
 
 export interface TStoreSettings {

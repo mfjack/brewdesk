@@ -7,6 +7,7 @@ import { Saira } from "next/font/google";
 import { SidebarInset, SidebarProvider } from "@/_components/ui/sidebar";
 import { AppSidebar } from "@/_components/app/app-sidebar";
 import { OperatorGate } from "@/_components/app/operator-gate";
+import { RoleGuard } from "@/_components/app/role-guard";
 
 const saira = Saira({
   subsets: ["latin"],
@@ -33,7 +34,9 @@ export default function RootLayout({
               <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
-                  <main>{children}</main>
+                  <main>
+                    <RoleGuard>{children}</RoleGuard>
+                  </main>
                 </SidebarInset>
               </SidebarProvider>
             </OperatorGate>

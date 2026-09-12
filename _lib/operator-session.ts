@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import type { TOperatorRole } from "./operator-roles";
 
 const OPERATOR_STORAGE_KEY = "brewdesk.operator";
 const OPERATOR_CHANGE_EVENT = "brewdesk-operator-change";
@@ -8,6 +9,7 @@ const OPERATOR_CHANGE_EVENT = "brewdesk-operator-change";
 export interface TActiveOperator {
   id: number;
   name: string;
+  role: TOperatorRole;
 }
 
 export function getActiveOperator(): TActiveOperator | null {
