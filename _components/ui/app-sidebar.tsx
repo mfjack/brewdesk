@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
 } from "./sidebar";
 import Image from "next/image";
-import { Boxes, HandCoins, LogOut, ScanBarcode, ScrollText, Settings, Tags, Truck } from "lucide-react";
+import { BarChart3, Boxes, HandCoins, LogOut, ScanBarcode, ScrollText, Settings, Tags, Truck } from "lucide-react";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
 import { toTitleCase } from "@/_lib/to-title-case";
@@ -55,6 +55,11 @@ const navLinks = [
     icon: Truck,
     label: "Fornecedores",
     href: "/supplier",
+  },
+  {
+    icon: BarChart3,
+    label: "Relatório",
+    href: "/report",
   },
   {
     icon: Settings,

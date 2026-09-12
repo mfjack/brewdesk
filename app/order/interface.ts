@@ -80,6 +80,8 @@ export interface TSupplyItem {
   name: string;
   brand: string | null;
   quantity: number;
+  /** Quantidade registrada na criação do insumo — não muda com as vendas. */
+  initialQuantity: number;
   unit: string;
   minQuantity: number;
   costPrice: number;

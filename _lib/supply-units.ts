@@ -21,7 +21,7 @@ export function getCompatibleUnits(unit: string): readonly string[] {
   return [unit];
 }
 
-function roundToAvoidFloatDrift(value: number): number {
+export function roundToAvoidFloatDrift(value: number): number {
   return Math.round(value * 1e6) / 1e6;
 }
 

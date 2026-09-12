@@ -75,19 +75,27 @@ function normalizeSupplyItems(data: StoreData): boolean {
   let migrated = false;
 
   data.supplyItems = data.supplyItems.map((item) => {
+    let normalizedItem = item;
+
     const legacyUnitContent = (item as TSupplyItem & { unitContent?: number | null }).unitContent;
 
     if (legacyUnitContent && legacyUnitContent > 0) {
       migrated = true;
 
-      const migratedItem: Record<string, unknown> = { ...item, quantity: item.quantity * legacyUnitContent };
+      const migratedItem: Record<string, unknown> = { ...normalizedItem, quantity: normalizedItem.quantity * legacyUnitContent };
 
       delete migratedItem.unitContent;
 
-      return migratedItem as unknown as TSupplyItem;
+      normalizedItem = migratedItem as unknown as TSupplyItem;
     }
 
-    return item;
+    if (normalizedItem.initialQuantity === undefined) {
+      migrated = true;
+
+      normalizedItem = { ...normalizedItem, initialQuantity: normalizedItem.quantity };
+    }
+
+    return normalizedItem;
   });
 
   return migrated;

@@ -1,5 +1,6 @@
 import type { TSupplyItem } from "@/app/order/interface";
 import { readStore, updateStore, writeStore } from "./storage";
+import { roundToAvoidFloatDrift } from "@/_lib/supply-units";
 
 export interface TSupplyItemInput {
   name: string;
@@ -12,7 +13,7 @@ export interface TSupplyItemInput {
   expiresAt?: string | null;
 }
 
-function buildSupplyItemFields(input: TSupplyItemInput): Omit<TSupplyItem, "id"> {
+function buildSupplyItemFields(input: TSupplyItemInput): Omit<TSupplyItem, "id" | "initialQuantity"> {
   return {
     name: input.name.trim(),
     brand: input.brand?.trim() || null,
@@ -26,7 +27,7 @@ function buildSupplyItemFields(input: TSupplyItemInput): Omit<TSupplyItem, "id">
 }
 
 export function adjustSupplyItemStock(supplyItem: TSupplyItem, deltaInUnit: number) {
-  supplyItem.quantity -= deltaInUnit;
+  supplyItem.quantity = roundToAvoidFloatDrift(supplyItem.quantity - deltaInUnit);
 }
 
 export const supplyItemStore = {
@@ -37,9 +38,12 @@ export const supplyItemStore = {
   createSupplyItem: (input: TSupplyItemInput) => {
     const data = readStore();
 
+    const fields = buildSupplyItemFields(input);
+
     const supplyItem: TSupplyItem = {
       id: data.nextIds.supplyItem++,
-      ...buildSupplyItemFields(input),
+      ...fields,
+      initialQuantity: fields.quantity,
     };
 
     data.supplyItems.push(supplyItem);

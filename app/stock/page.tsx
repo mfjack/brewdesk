@@ -104,7 +104,7 @@ export default function StockPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className={isLowStock ? "font-semibold text-destructive" : ""}>
-                          {supplyItem.quantity}
+                          {Number(supplyItem.quantity.toFixed(2))}
                           {formatUnit(supplyItem.unit)}
                         </span>
 
@@ -115,6 +115,11 @@ export default function StockPage() {
                           </Badge>
                         )}
                       </div>
+
+                      <p className="text-xs text-muted-foreground">
+                        Cadastrado: {Number(supplyItem.initialQuantity.toFixed(2))}
+                        {formatUnit(supplyItem.unit)}
+                      </p>
                     </TableCell>
 
                     <TableCell>{formatCurrency(supplyItem.costPrice)}</TableCell>
