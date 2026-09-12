@@ -80,7 +80,6 @@ export interface TSupplyItem {
   name: string;
   brand: string | null;
   quantity: number;
-  unitContent: number | null;
   unit: string;
   minQuantity: number;
   costPrice: number;

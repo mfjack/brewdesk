@@ -20,14 +20,13 @@ import {
 import { useCreateSupplyItem } from "../mutation/useCreateSupplyItem";
 import { useUpdateSupplyItem } from "../mutation/useUpdateSupplyItem";
 import type { TSupplier, TSupplyItem } from "../../order/interface";
-import { formatUnit, getSupplyTotal, SUPPLY_UNITS } from "@/_lib/supply-units";
+import { formatUnit, SUPPLY_UNITS } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 interface TStockFormValues {
   name: string;
   brand: string;
   quantity: string;
-  unitContent: string;
   unit: string;
   minQuantity: string;
   costPrice: string;
@@ -47,7 +46,6 @@ function buildDefaultValues(supplyItem?: TSupplyItem): TStockFormValues {
     name: supplyItem?.name ?? "",
     brand: supplyItem?.brand ?? "",
     quantity: supplyItem ? String(supplyItem.quantity) : "",
-    unitContent: supplyItem?.unitContent ? String(supplyItem.unitContent) : "",
     unit: supplyItem?.unit ?? SUPPLY_UNITS[0],
     minQuantity: supplyItem ? String(supplyItem.minQuantity) : "",
     costPrice: supplyItem ? String(supplyItem.costPrice) : "",
@@ -70,8 +68,6 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
 
   const isPending = createSupplyItem.isPending || updateSupplyItem.isPending;
 
-  const quantity = Number(useWatch({ control, name: "quantity" })) || 0;
-  const unitContent = Number(useWatch({ control, name: "unitContent" })) || 0;
   const unit = useWatch({ control, name: "unit" });
 
   function handleSubmitSupplyItem(data: TStockFormValues) {
@@ -79,7 +75,6 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
       name: data.name,
       brand: data.brand || null,
       quantity: Number(data.quantity) || 0,
-      unitContent: data.unitContent ? Number(data.unitContent) : null,
       unit: data.unit,
       minQuantity: Number(data.minQuantity) || 0,
       costPrice: Number(data.costPrice) || 0,
@@ -126,27 +121,16 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
             <Input placeholder="Opcional" {...register("brand")} />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Quantidade (embalagens/unidades)</label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Ex.: 5"
-              {...register("quantity")}
-            />
-          </div>
-
           <div className="flex gap-2">
             <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Conteúdo por unidade</label>
+              <label className="text-sm font-medium">Quantidade em estoque</label>
               <Input
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="Opcional. Ex.: 250"
-                title="Deixe em branco se a quantidade acima já for o total"
-                {...register("unitContent")}
+                placeholder="Ex.: 1250"
+                title="Já no total: se comprou 5 pacotes de 250g, digite 1250"
+                {...register("quantity")}
               />
             </div>
 
@@ -174,34 +158,27 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
             </div>
           </div>
 
-          {quantity > 0 && (
-            <p className="-mt-2 text-xs text-muted-foreground">
-              Total em estoque: {getSupplyTotal(quantity, unitContent)}
-              {formatUnit(unit)}
-              {unitContent > 0 && ` (${quantity} × ${unitContent}${formatUnit(unit)})`}
-            </p>
-          )}
-
           <div className="flex gap-2">
             <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Alertar com estoque baixo</label>
+              <label className="text-sm font-medium">Estoque mínimo (alerta)</label>
               <Input
                 type="number"
                 step="0.01"
                 min="0"
                 placeholder="Ex.: 500"
-                title={`Alertar quando o total em estoque (em ${formatUnit(unit)}) ficar menor ou igual a esse valor`}
+                title={`Alertar quando o estoque (em ${formatUnit(unit)}) ficar menor ou igual a esse valor`}
                 {...register("minQuantity")}
               />
             </div>
 
             <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Valor de custo</label>
+              <label className="text-sm font-medium">Valor total pago</label>
               <Input
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="Quanto custou"
+                placeholder="Quanto custou essa compra toda"
+                title="Valor total pago por essa quantidade, não o preço por unidade"
                 {...register("costPrice")}
               />
             </div>

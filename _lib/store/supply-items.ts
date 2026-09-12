@@ -5,7 +5,6 @@ export interface TSupplyItemInput {
   name: string;
   brand?: string | null;
   quantity?: number;
-  unitContent?: number | null;
   unit: string;
   minQuantity?: number;
   costPrice?: number;
@@ -18,7 +17,6 @@ function buildSupplyItemFields(input: TSupplyItemInput): Omit<TSupplyItem, "id">
     name: input.name.trim(),
     brand: input.brand?.trim() || null,
     quantity: Number(input.quantity ?? 0),
-    unitContent: input.unitContent ? Number(input.unitContent) : null,
     unit: input.unit,
     minQuantity: Number(input.minQuantity ?? 0),
     costPrice: Number(input.costPrice ?? 0),
@@ -28,7 +26,7 @@ function buildSupplyItemFields(input: TSupplyItemInput): Omit<TSupplyItem, "id">
 }
 
 export function adjustSupplyItemStock(supplyItem: TSupplyItem, deltaInUnit: number) {
-  supplyItem.quantity -= deltaInUnit / (supplyItem.unitContent || 1);
+  supplyItem.quantity -= deltaInUnit;
 }
 
 export const supplyItemStore = {

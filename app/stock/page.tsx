@@ -13,7 +13,7 @@ import { useDeleteSupplyItem } from "./mutation/useDeleteSupplyItem";
 import { StockFormDialog } from "./_components/stock-form-dialog";
 import type { TSupplyItem } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
-import { formatUnit, getSupplyTotal } from "@/_lib/supply-units";
+import { formatUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 const EXPIRY_WARNING_DAYS = 7;
@@ -45,8 +45,7 @@ export default function StockPage() {
     deleteSupplyItem.mutate(supplyItemId);
   }
 
-  const lowStockItems =
-    supplyItems?.filter((item) => getSupplyTotal(item.quantity, item.unitContent) <= item.minQuantity) ?? [];
+  const lowStockItems = supplyItems?.filter((item) => item.quantity <= item.minQuantity) ?? [];
 
   const supplierName = (supplierId: number | null) =>
     supplierId ? suppliers?.find((supplier) => supplier.id === supplierId)?.companyName : undefined;
@@ -92,8 +91,7 @@ export default function StockPage() {
             <TableBody>
               {supplyItems?.map((supplyItem: TSupplyItem) => {
                 const expiryStatus = getExpiryStatus(supplyItem.expiresAt);
-                const total = getSupplyTotal(supplyItem.quantity, supplyItem.unitContent);
-                const isLowStock = total <= supplyItem.minQuantity;
+                const isLowStock = supplyItem.quantity <= supplyItem.minQuantity;
 
                 return (
                   <TableRow key={supplyItem.id}>
@@ -104,26 +102,17 @@ export default function StockPage() {
                     </TableCell>
 
                     <TableCell>
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className={isLowStock ? "font-semibold text-destructive" : ""}>
-                            {total}
-                            {formatUnit(supplyItem.unit)}
-                          </span>
+                      <div className="flex items-center gap-2">
+                        <span className={isLowStock ? "font-semibold text-destructive" : ""}>
+                          {supplyItem.quantity}
+                          {formatUnit(supplyItem.unit)}
+                        </span>
 
-                          {isLowStock && (
-                            <Badge variant="outline" className="gap-1">
-                              <AlertTriangle />
-                              Estoque baixo
-                            </Badge>
-                          )}
-                        </div>
-
-                        {supplyItem.unitContent && (
-                          <span className="text-xs text-muted-foreground">
-                            {supplyItem.quantity} × {supplyItem.unitContent}
-                            {formatUnit(supplyItem.unit)}
-                          </span>
+                        {isLowStock && (
+                          <Badge variant="outline" className="gap-1">
+                            <AlertTriangle />
+                            Estoque baixo
+                          </Badge>
                         )}
                       </div>
                     </TableCell>

@@ -71,6 +71,28 @@ function normalizeProducts(products: TProduct[]): TProduct[] {
   return products.map((product) => ({ ...product, recipe: product.recipe ?? [] }));
 }
 
+function normalizeSupplyItems(data: StoreData): boolean {
+  let migrated = false;
+
+  data.supplyItems = data.supplyItems.map((item) => {
+    const legacyUnitContent = (item as TSupplyItem & { unitContent?: number | null }).unitContent;
+
+    if (legacyUnitContent && legacyUnitContent > 0) {
+      migrated = true;
+
+      const migratedItem: Record<string, unknown> = { ...item, quantity: item.quantity * legacyUnitContent };
+
+      delete migratedItem.unitContent;
+
+      return migratedItem as unknown as TSupplyItem;
+    }
+
+    return item;
+  });
+
+  return migrated;
+}
+
 const PAID_ORDER_RETENTION_DAYS = 60;
 
 function pruneOldPaidOrders(data: StoreData): boolean {
@@ -107,7 +129,10 @@ export function readStore(): StoreData {
     data.orders = normalizeOrders(data.orders);
     data.products = normalizeProducts(data.products);
 
-    if (pruneOldPaidOrders(data)) {
+    const supplyItemsMigrated = normalizeSupplyItems(data);
+    const ordersPruned = pruneOldPaidOrders(data);
+
+    if (ordersPruned || supplyItemsMigrated) {
       writeStore(data);
     }
 

@@ -6,10 +6,6 @@ export function formatUnit(unit: string): string {
   return UNIT_LABELS[unit] ?? unit;
 }
 
-export function getSupplyTotal(quantity: number, unitContent: number | null): number {
-  return quantity * (unitContent && unitContent > 0 ? unitContent : 1);
-}
-
 const WEIGHT_UNITS_IN_GRAMS: Record<string, number> = { kg: 1000, g: 1 };
 const VOLUME_UNITS_IN_ML: Record<string, number> = { L: 1000, ml: 1 };
 

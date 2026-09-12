@@ -1,10 +1,7 @@
 import type { TRecipeItem, TSupplyItem } from "@/app/order/interface";
-import { getSupplyTotal } from "./supply-units";
 
 export function getSupplyUnitCost(supplyItem: TSupplyItem): number {
-  const total = getSupplyTotal(supplyItem.quantity, supplyItem.unitContent);
-
-  return total > 0 ? supplyItem.costPrice / total : 0;
+  return supplyItem.quantity > 0 ? supplyItem.costPrice / supplyItem.quantity : 0;
 }
 
 export function getRecipeCost(recipe: TRecipeItem[], supplyItems: TSupplyItem[]): number {
@@ -29,9 +26,7 @@ export function getMaxProducibleQuantity(recipe: TRecipeItem[], supplyItems: TSu
       return 0;
     }
 
-    const total = getSupplyTotal(supplyItem.quantity, supplyItem.unitContent);
-
-    max = Math.min(max, Math.floor(total / recipeItem.quantity));
+    max = Math.min(max, Math.floor(supplyItem.quantity / recipeItem.quantity));
   }
 
   return Math.max(max, 0);
