@@ -81,7 +81,6 @@ function normalizeSettings(settings: TStoreSettings): { settings: TStoreSettings
 
     migrated = true;
 
-    // Operadores cadastrados antes das roles existirem viram gerente, pra não perder acesso a nada.
     return { ...operator, role: "GERENTE" as const };
   });
 

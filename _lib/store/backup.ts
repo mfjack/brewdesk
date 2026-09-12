@@ -1,13 +1,5 @@
 import { clone, defaultSettings, initialData, readStore, writeStore, type StoreData } from "./storage";
 
-/**
- * Confere só a forma essencial do backup — cada campo que
- * deveria ser um array precisa realmente ser um array, e
- * `settings` (se vier) precisa ser um objeto. Não valida cada
- * campo interno; o objetivo é rejeitar um arquivo claramente
- * errado antes de mesclar e persistir, não substituir um schema
- * completo.
- */
 function isValidBackupShape(input: unknown): input is Partial<StoreData> {
   if (typeof input !== "object" || input === null) {
     return false;

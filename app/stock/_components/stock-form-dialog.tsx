@@ -37,7 +37,6 @@ interface TStockFormValues {
 interface TStockFormDialog {
   suppliers: TSupplier[] | undefined;
   trigger: ReactNode;
-  /** Quando informado, o dialog edita esse insumo em vez de criar um novo. */
   supplyItem?: TSupplyItem;
 }
 

@@ -32,11 +32,6 @@ const navLinks = [
     label: "Comandas",
     href: "/order-detail",
   },
-  // {
-  //   icon: ChefHat,
-  //   label: "Cozinha",
-  //   href: "/kitchen",
-  // },
   {
     icon: Tags,
     label: "Categorias",

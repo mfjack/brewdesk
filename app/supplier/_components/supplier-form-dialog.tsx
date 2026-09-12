@@ -33,7 +33,6 @@ interface TSupplierFormValues {
 
 interface TSupplierFormDialog {
   trigger: ReactNode;
-  /** Quando informado, o dialog edita esse fornecedor em vez de criar um novo. */
   supplier?: TSupplier;
 }
 

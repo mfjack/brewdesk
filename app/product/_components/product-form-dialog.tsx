@@ -52,7 +52,6 @@ interface TProductFormDialog {
   suppliers?: TSupplier[];
   supplyItems?: TSupplyItem[];
   trigger: ReactNode;
-  /** Quando informado, o dialog edita esse produto em vez de criar um novo. */
   product?: TProduct;
 }
 

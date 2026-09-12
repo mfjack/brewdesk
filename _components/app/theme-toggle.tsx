@@ -10,7 +10,6 @@ function subscribe() {
   return () => {};
 }
 
-/** Só é `true` após a hidratação, evitando divergência entre o HTML renderizado no servidor e o tema real do navegador. */
 function useIsHydrated() {
   return useSyncExternalStore(
     subscribe,

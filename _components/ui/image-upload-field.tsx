@@ -13,7 +13,6 @@ interface TImageUploadField {
   description?: string;
   value: string | null;
   onChange: (value: string | null) => void;
-  /** Chamado além de onChange(null) ao remover, útil para persistir a remoção imediatamente. */
   onRemove?: () => void;
   addLabel?: string;
   changeLabel?: string;

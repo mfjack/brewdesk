@@ -18,7 +18,6 @@ interface TCategoryFormValues {
 
 interface TCategoryFormDialog {
   trigger: ReactNode;
-  /** Quando informado, o dialog edita essa categoria em vez de criar uma nova. */
   category?: TCategory;
 }
 

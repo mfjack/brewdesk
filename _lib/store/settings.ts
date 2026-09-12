@@ -31,7 +31,6 @@ export const settingsStore = {
       id: 0,
       name: name.trim(),
       pin: pin.trim(),
-      // O primeiro operador cadastrado vira gerente pra garantir que sempre exista alguém com acesso às configurações.
       role,
     };
 
