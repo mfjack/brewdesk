@@ -15,6 +15,7 @@ import { useAddOrderItem } from "../mutation/useAddOrderItem";
 import { useRemoveOrderItem } from "../mutation/useRemoveOrderItem";
 import { useUpdateOrderStatus } from "../mutation/useUpdateOrderStatus";
 import { useMarkOrderItemsPrinted } from "../mutation/useMarkOrderItemsPrinted";
+import { useDeleteOrder } from "../../order-detail/mutation/useDeleteOrder";
 
 import { TCategory, TOrderItem, TOrderResponse, TPaymentMethod, TProduct } from "../interface";
 import {
@@ -70,6 +71,8 @@ export default function OrderPageContent() {
 
   const [amountReceived, setAmountReceived] = useState("");
 
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+
   const sendingOrderRef = useRef(false);
 
   const { data: categories } = useGetCategories();
@@ -81,6 +84,7 @@ export default function OrderPageContent() {
   const removeOrderItem = useRemoveOrderItem();
   const updateOrderStatus = useUpdateOrderStatus();
   const markOrderItemsPrinted = useMarkOrderItemsPrinted();
+  const deleteOrder = useDeleteOrder();
 
   const { data: existingOrder } = useGetOrderById(orderId ? Number(orderId) : null);
 
@@ -346,12 +350,40 @@ export default function OrderPageContent() {
     schedulePrint(currentOrder.id, printedQty, () => setPrintedItemQuantities(printedQty));
   }
 
-  function resetCart() {
+  function clearCartState() {
     setCurrentOrder(null);
     setObservation("");
     setPrintedItemQuantities({});
     setSyncedOrderId(null);
+  }
+
+  function resetCart() {
+    clearCartState();
     router.replace("/order");
+  }
+
+  function handleRequestCancelOrder() {
+    if (!currentOrder || isDraftOrder(currentOrder) || isSendingOrder) {
+      return;
+    }
+
+    setIsCancelDialogOpen(true);
+  }
+
+  async function handleConfirmCancelOrder() {
+    if (!currentOrder || isDraftOrder(currentOrder)) {
+      return;
+    }
+
+    try {
+      await deleteOrder.mutateAsync({ orderId: currentOrder.id });
+
+      setIsCancelDialogOpen(false);
+      clearCartState();
+      router.push("/order-detail");
+    } catch (error) {
+      setStockError(error instanceof Error ? error.message : "Não foi possível cancelar a comanda.");
+    }
   }
 
   function handleRequestPayment() {
@@ -446,6 +478,11 @@ export default function OrderPageContent() {
             onAmountReceivedChange={setAmountReceived}
             onConfirmPayment={handleConfirmPayment}
             isConfirmingPayment={isSendingOrder}
+            onRequestCancelOrder={handleRequestCancelOrder}
+            isCancelDialogOpen={isCancelDialogOpen}
+            onCancelDialogOpenChange={setIsCancelDialogOpen}
+            onConfirmCancelOrder={handleConfirmCancelOrder}
+            isCancelling={deleteOrder.isPending}
           />
         )}
       </section>

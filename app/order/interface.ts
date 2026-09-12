@@ -31,6 +31,12 @@ export interface TMenuList {
   onAmountReceivedChange: (value: string) => void;
   onConfirmPayment: () => void;
   isConfirmingPayment: boolean;
+
+  onRequestCancelOrder: () => void;
+  isCancelDialogOpen: boolean;
+  onCancelDialogOpenChange: (open: boolean) => void;
+  onConfirmCancelOrder: () => void;
+  isCancelling: boolean;
 }
 
 export interface TOrderPanel {

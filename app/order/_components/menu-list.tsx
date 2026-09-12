@@ -1,4 +1,4 @@
-import { Trash2, NotebookPen, Send, User, DollarSign } from "lucide-react";
+import { Trash2, NotebookPen, Send, User, DollarSign, Ban } from "lucide-react";
 
 import { useEffect } from "react";
 
@@ -10,6 +10,7 @@ import { Switch } from "@/_components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 
 import { TMenuList, TOrderItem } from "../interface";
+import { DRAFT_ORDER_ID } from "../order-math";
 import { PaymentMethodFields } from "./payment-method-fields";
 
 import { formatCurrency } from "@/_lib/format-currency";
@@ -47,8 +48,15 @@ export function MenuList({
   onAmountReceivedChange,
   onConfirmPayment,
   isConfirmingPayment,
+
+  onRequestCancelOrder,
+  isCancelDialogOpen,
+  onCancelDialogOpenChange,
+  onConfirmCancelOrder,
+  isCancelling,
 }: TMenuList) {
   const hasItems = (order?.orderItems?.length ?? 0) > 0;
+  const isExistingOrder = order?.id !== undefined && order.id !== DRAFT_ORDER_ID;
 
   const { data: settings } = useGetSettings();
 
@@ -179,6 +187,22 @@ export function MenuList({
             );
           })()}
 
+          {isExistingOrder && (
+            <div className="mx-4 mb-4">
+              <Button
+                type="button"
+                variant="destructive"
+                className="w-full flex gap-3"
+                size="lg"
+                onClick={onRequestCancelOrder}
+                disabled={isSending}
+              >
+                <Ban />
+                Cancelar comanda
+              </Button>
+            </div>
+          )}
+
           <Dialog open={isNameDialogOpen} onOpenChange={onNameDialogOpenChange}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -255,6 +279,33 @@ export function MenuList({
                 >
                   <DollarSign />
                   {isConfirmingPayment ? "Processando..." : "Pagamento Recebido"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isCancelDialogOpen} onOpenChange={onCancelDialogOpenChange}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader className="flex flex-col gap-0.5">
+                <DialogTitle>Cancelar comanda?</DialogTitle>
+                <DialogDescription>
+                  Essa ação remove a comanda e devolve os itens ao estoque. Não pode ser desfeita.
+                </DialogDescription>
+              </DialogHeader>
+
+              <DialogFooter className="flex-row gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => onCancelDialogOpenChange(false)}
+                  disabled={isCancelling}
+                >
+                  Voltar
+                </Button>
+
+                <Button type="button" variant="destructive" className="flex-1" onClick={onConfirmCancelOrder} disabled={isCancelling}>
+                  {isCancelling ? "Cancelando..." : "Cancelar comanda"}
                 </Button>
               </DialogFooter>
             </DialogContent>
