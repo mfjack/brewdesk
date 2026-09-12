@@ -1,6 +1,6 @@
-import { Trash2, NotebookPen, Send, User, DollarSign, Ban } from "lucide-react";
+import { Trash2, NotebookPen, Send, User, DollarSign, Ban, Clock } from "lucide-react";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
@@ -14,10 +14,23 @@ import { DRAFT_ORDER_ID } from "../order-math";
 import { PaymentMethodFields } from "./payment-method-fields";
 
 import { formatCurrency } from "@/_lib/format-currency";
+import { formatTime } from "@/_lib/format-date";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 
 import { Input } from "@/_components/ui/input";
 import { toTitleCase } from "@/_lib/to-title-case";
+
+function LiveClock() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return <span className="font-medium tabular-nums">{formatTime(now)}</span>;
+}
 
 export function MenuList({
   order,
@@ -84,10 +97,21 @@ export function MenuList({
         <div className="flex flex-col md:h-full">
           {order.customerName && (
             <>
-              <div className="p-4 text-sm text-muted-foreground">
-                <p>
-                  Cliente: <span className="font-bold">{toTitleCase(order.customerName)}</span>
-                </p>
+              <div className="p-4 flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                <div>
+                  <p>
+                    Cliente: <span className="font-bold">{toTitleCase(order.customerName)}</span>
+                  </p>
+
+                  <p className="text-xs">
+                    Horário da comanda: <span className="font-medium tabular-nums">{formatTime(order.createdAt)}</span>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1 text-xs shrink-0">
+                  <Clock size={14} />
+                  <LiveClock />
+                </div>
               </div>
 
               <Separator className="h-px bg-border" />
