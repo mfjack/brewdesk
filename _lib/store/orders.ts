@@ -52,6 +52,8 @@ export const orderStore = {
       amountReceived: null,
 
       changeDue: null,
+
+      groupId: null,
     };
 
     data.orders.push(order);
@@ -154,6 +156,8 @@ export const orderStore = {
 
     isTakeout?: boolean,
 
+    groupWithOrderId?: number | null,
+
     payment?: {
       paymentMethod?: TPaymentMethod;
       amountReceived?: number | null;
@@ -180,6 +184,21 @@ export const orderStore = {
     if (isTakeout !== undefined) {
       order.isTakeout = isTakeout;
       order.total = computeOrderTotal(order.orderItems, order.isTakeout);
+    }
+
+    if (groupWithOrderId !== undefined) {
+      if (groupWithOrderId === null) {
+        order.groupId = null;
+      } else {
+        const targetOrder = data.orders.find((item) => item.id === groupWithOrderId);
+
+        if (targetOrder) {
+          const groupId = targetOrder.groupId ?? targetOrder.id;
+
+          targetOrder.groupId = groupId;
+          order.groupId = groupId;
+        }
+      }
     }
 
     if (payment) {

@@ -23,6 +23,7 @@ import {
   computeOrderTotal,
   decrementOrRemoveItem,
   DRAFT_ORDER_ID,
+  getGroupedOrders,
   isDraftOrder,
   isOrderPaid,
   mergeOrderItem,
@@ -60,6 +61,8 @@ export default function OrderPageContent() {
   const [customerNameDraft, setCustomerNameDraft] = useState("");
 
   const [isTakeoutDraft, setIsTakeoutDraft] = useState(false);
+
+  const [groupWithOrderId, setGroupWithOrderId] = useState<number | null>(null);
 
   const [nameError, setNameError] = useState<string | null>(null);
 
@@ -102,6 +105,13 @@ export default function OrderPageContent() {
     () => (selectedCategory ? products?.filter((product: TProduct) => product.category.id === selectedCategory.id) : products),
     [products, selectedCategory],
   );
+
+  const groupableOrders = orders
+    .filter((order) => !isOrderPaid(order) && order.status !== "OPEN" && order.id !== currentOrder?.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4);
+
+  const groupedOrders = currentOrder ? getGroupedOrders(currentOrder, orders) : [];
 
   function handleCategoryClick(categoryId: number) {
     const category = categories?.find((cat: TCategory) => cat.id === categoryId);
@@ -181,6 +191,7 @@ export default function OrderPageContent() {
           paymentMethod: null,
           amountReceived: null,
           changeDue: null,
+          groupId: null,
         };
 
         const reservedQuantities = buildReservedSupplyQuantities(base.orderItems, products ?? []);
@@ -281,6 +292,7 @@ export default function OrderPageContent() {
     setCustomerNameDraft("");
     setNameError(null);
     setIsTakeoutDraft(false);
+    setGroupWithOrderId(null);
     setIsNameDialogOpen(true);
   }
 
@@ -305,10 +317,10 @@ export default function OrderPageContent() {
     setNameError(null);
     setIsNameDialogOpen(false);
 
-    await sendOrder(trimmedName, isTakeoutDraft);
+    await sendOrder(trimmedName, isTakeoutDraft, groupWithOrderId);
   }
 
-  async function sendOrder(customerName: string, isTakeout?: boolean) {
+  async function sendOrder(customerName: string, isTakeout?: boolean, groupWithOrderId?: number | null) {
     if (!currentOrder || currentOrder.orderItems.length === 0 || sendingOrderRef.current) {
       return;
     }
@@ -325,6 +337,7 @@ export default function OrderPageContent() {
         observation,
         customerName,
         isTakeout,
+        groupWithOrderId,
       });
 
       const printedQty: Record<number, number> = {};
@@ -457,6 +470,7 @@ export default function OrderPageContent() {
           observation={observation}
           printMode={printJob.mode}
           printedItemQuantities={printedItemQuantities}
+          groupedCustomerNames={getGroupedOrders(printJob.order, orders).map((groupedOrder) => groupedOrder.customerName)}
         />
       )}
 
@@ -495,6 +509,10 @@ export default function OrderPageContent() {
             nameError={nameError}
             isTakeoutDraft={isTakeoutDraft}
             onIsTakeoutDraftChange={setIsTakeoutDraft}
+            groupableOrders={groupableOrders}
+            groupWithOrderId={groupWithOrderId}
+            onGroupWithOrderIdChange={setGroupWithOrderId}
+            groupedOrders={groupedOrders}
             onRequestPayment={handleRequestPayment}
             isPaymentDialogOpen={isPaymentDialogOpen}
             onPaymentDialogOpenChange={setIsPaymentDialogOpen}

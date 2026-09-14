@@ -1,4 +1,4 @@
-import { Trash2, NotebookPen, Send, User, DollarSign, Ban, Clock } from "lucide-react";
+import { Trash2, NotebookPen, Send, User, DollarSign, Ban, Clock, Users } from "lucide-react";
 
 import { useEffect, useState } from "react";
 
@@ -6,6 +6,7 @@ import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Card } from "@/_components/ui/card";
 import { Switch } from "@/_components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 
@@ -51,6 +52,10 @@ export function MenuList({
   nameError,
   isTakeoutDraft,
   onIsTakeoutDraftChange,
+  groupableOrders,
+  groupWithOrderId,
+  onGroupWithOrderIdChange,
+  groupedOrders,
 
   onRequestPayment,
   isPaymentDialogOpen,
@@ -106,6 +111,16 @@ export function MenuList({
                   <p className="text-xs">
                     Horário da comanda: <span className="font-medium tabular-nums">{formatTime(order.createdAt)}</span>
                   </p>
+
+                  {groupedOrders.length > 0 && (
+                    <p className="text-xs flex items-center gap-1">
+                      <Users size={12} />
+                      Junto com:{" "}
+                      <span className="font-medium">
+                        {groupedOrders.map((groupedOrder) => toTitleCase(groupedOrder.customerName)).join(", ")}
+                      </span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1 text-xs shrink-0">
@@ -243,6 +258,32 @@ export function MenuList({
 
                 <Switch checked={isTakeoutDraft} onCheckedChange={onIsTakeoutDraftChange} />
               </div>
+
+              {groupableOrders.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Junto com</label>
+                  <p className="text-xs text-muted-foreground">
+                    Pra avisar a cozinha que essa comanda deve ser preparada junto com outra já aberta.
+                  </p>
+
+                  <Select
+                    value={groupWithOrderId ? String(groupWithOrderId) : "none"}
+                    onValueChange={(value) => onGroupWithOrderIdChange(value === "none" ? null : Number(value))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Nenhuma" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhuma</SelectItem>
+                      {groupableOrders.map((groupableOrder) => (
+                        <SelectItem key={groupableOrder.id} value={String(groupableOrder.id)}>
+                          {toTitleCase(groupableOrder.customerName)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />

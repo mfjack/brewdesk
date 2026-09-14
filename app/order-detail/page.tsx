@@ -6,12 +6,12 @@ import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
-import { DollarSign, HandCoins, X } from "lucide-react";
+import { DollarSign, HandCoins, Users, X } from "lucide-react";
 import Link from "next/link";
 
 import { useGetOrder } from "../order/query/useGetOrder";
 import { TOrderResponse, TPaymentMethod } from "../order/interface";
-import { isOrderPaid, TAKEOUT_FEE } from "../order/order-math";
+import { getGroupedOrders, isOrderPaid, TAKEOUT_FEE } from "../order/order-math";
 import { paymentMethodLabels } from "../order/payment-methods";
 import { PaymentMethodFields } from "../order/_components/payment-method-fields";
 import { formatCurrency } from "@/_lib/format-currency";
@@ -154,6 +154,19 @@ export default function OrderDetailPage() {
                     {order.operatorName && (
                       <p className="text-xs text-center text-muted-foreground">Atendente: {toTitleCase(order.operatorName)}</p>
                     )}
+
+                    {(() => {
+                      const groupedOrders = getGroupedOrders(order, orders);
+
+                      return (
+                        groupedOrders.length > 0 && (
+                          <p className="flex items-center justify-center gap-1 text-xs text-center text-muted-foreground">
+                            <Users size={12} />
+                            Junto com: {groupedOrders.map((groupedOrder) => toTitleCase(groupedOrder.customerName)).join(", ")}
+                          </p>
+                        )
+                      );
+                    })()}
 
                     {order.observation && (
                       <p className="text-xs font-bold">

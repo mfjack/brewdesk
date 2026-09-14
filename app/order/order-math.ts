@@ -12,6 +12,14 @@ export function isOrderPaid(order: TOrderResponse): boolean {
   return order.status === "PAID";
 }
 
+export function getGroupedOrders(order: TOrderResponse, allOrders: TOrderResponse[]): TOrderResponse[] {
+  if (!order.groupId) {
+    return [];
+  }
+
+  return allOrders.filter((candidate) => candidate.id !== order.id && candidate.groupId === order.groupId);
+}
+
 export function computeOrderTotal(items: TOrderItem[], isTakeout?: boolean): number {
   const itemsTotal = items.reduce((total, item) => total + item.subtotal, 0);
 

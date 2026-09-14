@@ -21,6 +21,10 @@ export interface TMenuList {
   nameError?: string | null;
   isTakeoutDraft: boolean;
   onIsTakeoutDraftChange: (value: boolean) => void;
+  groupableOrders: TOrderResponse[];
+  groupWithOrderId: number | null;
+  onGroupWithOrderIdChange: (orderId: number | null) => void;
+  groupedOrders: TOrderResponse[];
 
   onRequestPayment: () => void;
   isPaymentDialogOpen: boolean;
@@ -132,6 +136,7 @@ export interface TOrderResponse {
   paymentMethod: TPaymentMethod | null;
   amountReceived: number | null;
   changeDue: number | null;
+  groupId: number | null;
 }
 
 export interface TOperator {

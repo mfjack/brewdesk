@@ -4,11 +4,13 @@ import { Card } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
 import { useGetOrder } from "../order/query/useGetOrder";
 import { TOrderResponse } from "../order/interface";
+import { getGroupedOrders } from "../order/order-math";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
-import { Check, HandPlatter, Play } from "lucide-react";
+import { Check, HandPlatter, Play, Users } from "lucide-react";
 import { Header } from "@/_components/ui/header";
+import { toTitleCase } from "@/_lib/to-title-case";
 
 export default function KitchenPage() {
   const { data: orders = [] } = useGetOrder();
@@ -113,6 +115,22 @@ export default function KitchenPage() {
                         <span className="text-sm font-medium">{order.observation}</span>
                       </div>
                     )}
+
+                    {(() => {
+                      const groupedOrders = getGroupedOrders(order, orders);
+
+                      return (
+                        groupedOrders.length > 0 && (
+                          <div className="flex gap-1 items-center">
+                            <Users size={14} />
+                            <span className="text-sm font-bold">JUNTO COM:</span>
+                            <span className="text-sm font-medium">
+                              {groupedOrders.map((groupedOrder) => toTitleCase(groupedOrder.customerName)).join(", ")}
+                            </span>
+                          </div>
+                        )
+                      );
+                    })()}
 
                     {order.orderItems.length > 0 && (
                       <div className="flex flex-col gap-2">

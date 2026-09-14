@@ -8,18 +8,20 @@ export interface TUpdateOrderStatus {
   observation?: string;
   customerName?: string;
   isTakeout?: boolean;
+  groupWithOrderId?: number | null;
   paymentMethod?: TPaymentMethod;
   amountReceived?: number | null;
 }
 
 export const useUpdateOrderStatus = createLocalStoreMutation(
-  ({ orderId, status, observation, customerName, isTakeout, paymentMethod, amountReceived }: TUpdateOrderStatus) =>
+  ({ orderId, status, observation, customerName, isTakeout, groupWithOrderId, paymentMethod, amountReceived }: TUpdateOrderStatus) =>
     localStore.updateOrderStatus(
       orderId,
       status,
       observation,
       customerName,
       isTakeout,
+      groupWithOrderId,
       paymentMethod !== undefined ? { paymentMethod, amountReceived } : undefined,
     ),
 );

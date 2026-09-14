@@ -64,6 +64,7 @@ function normalizeOrders(orders: TOrderResponse[]): TOrderResponse[] {
   return orders.map((order) => ({
     ...order,
     orderItems: order.orderItems.map((item) => ({ ...item, costPrice: item.costPrice ?? 0 })),
+    groupId: order.groupId ?? null,
   }));
 }
 

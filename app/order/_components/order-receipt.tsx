@@ -14,9 +14,17 @@ interface TOrderReceipt {
   printMode?: "full" | "additional" | null;
 
   printedItemQuantities?: Record<number, number>;
+
+  groupedCustomerNames?: string[];
 }
 
-export function OrderReceipt({ order, observation, printMode, printedItemQuantities = {} }: TOrderReceipt) {
+export function OrderReceipt({
+  order,
+  observation,
+  printMode,
+  printedItemQuantities = {},
+  groupedCustomerNames = [],
+}: TOrderReceipt) {
   const { data: settings } = useGetSettings();
 
   const isAdditional = printMode === "additional";
@@ -64,6 +72,10 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
         {order.operatorName && <p>Atendente: {toTitleCase(order.operatorName)}</p>}
 
         {order.isTakeout && <p className="mt-1 text-center text-base font-bold">*** PARA LEVAR ***</p>}
+
+        {groupedCustomerNames.length > 0 && (
+          <p className="mt-1 text-center text-sm font-bold">*** JUNTO COM: {groupedCustomerNames.join(", ").toUpperCase()} ***</p>
+        )}
 
         {receiptObservation && (
           <p>
