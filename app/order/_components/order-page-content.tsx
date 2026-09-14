@@ -76,7 +76,7 @@ export default function OrderPageContent() {
 
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CASH");
+  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CREDIT");
 
   const [amountReceived, setAmountReceived] = useState("");
 
@@ -431,7 +431,7 @@ export default function OrderPageContent() {
       return;
     }
 
-    setPaymentMethod("CASH");
+    setPaymentMethod("CREDIT");
     setAmountReceived("");
     setIsSplitOpen(false);
     setIsPaymentDialogOpen(true);

@@ -39,7 +39,7 @@ export default function OrderDetailPage() {
   const [historyOrder, setHistoryOrder] = useState<TOrderResponse | null>(null);
 
   const [selectedOrder, setSelectedOrder] = useState<TOrderResponse | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CASH");
+  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CREDIT");
   const [amountReceived, setAmountReceived] = useState("");
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
@@ -71,7 +71,7 @@ export default function OrderDetailPage() {
 
   function handleOpenPayment(order: TOrderResponse) {
     setSelectedOrder(order);
-    setPaymentMethod("CASH");
+    setPaymentMethod("CREDIT");
     setAmountReceived("");
     setIsSplitOpen(false);
   }

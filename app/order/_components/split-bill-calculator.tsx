@@ -26,7 +26,7 @@ interface TPersonPaymentState {
   amountReceived: string;
 }
 
-const DEFAULT_PERSON_PAYMENT: TPersonPaymentState = { method: "CASH", amountReceived: "" };
+const DEFAULT_PERSON_PAYMENT: TPersonPaymentState = { method: "CREDIT", amountReceived: "" };
 
 export function SplitBillCalculator({ order, isOpen, onOpenChange, pixQrCodeUrl, onConfirmSplitPayment, isConfirming }: TSplitBillCalculator) {
   const [mode, setMode] = useState<"equal" | "items">("equal");
