@@ -7,17 +7,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/_components/ui/badge";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { RowActions } from "@/_components/ui/row-actions";
-import { AlertTriangle, Pencil, Plus } from "lucide-react";
+import { AlertTriangle, Pencil, Plus, ShoppingCart } from "lucide-react";
 
 import { useGetSupplyItems } from "./query/useGetSupplyItems";
 import { useGetSuppliers } from "../supplier/query/useGetSuppliers";
+import { useGetProducts } from "../product/query/useGetProducts";
 import { useDeleteSupplyItem } from "./mutation/useDeleteSupplyItem";
 import { StockFormDialog } from "./_components/stock-form-dialog";
+import { ShoppingListDialog } from "./_components/shopping-list-dialog";
+import { ShoppingListPrintView } from "./_components/shopping-list-print-view";
 import type { TSupplyItem } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
 import { formatUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatDate } from "@/_lib/format-date";
+import { buildShoppingListGroups } from "@/_lib/shopping-list";
+import { useShoppingListDismissals } from "@/_lib/use-shopping-list-dismissals";
 
 const EXPIRY_WARNING_DAYS = 7;
 
@@ -42,6 +47,7 @@ function getExpiryStatus(expiresAt: string | null) {
 export default function StockPage() {
   const { data: supplyItems } = useGetSupplyItems();
   const { data: suppliers } = useGetSuppliers();
+  const { data: products } = useGetProducts();
   const deleteSupplyItem = useDeleteSupplyItem();
 
   function handleDeleteSupplyItem(supplyItemId: number) {
@@ -50,26 +56,51 @@ export default function StockPage() {
 
   const lowStockItems = supplyItems?.filter((item) => item.quantity <= item.minQuantity) ?? [];
 
+  const rawShoppingListGroups = buildShoppingListGroups(supplyItems ?? [], products ?? [], suppliers ?? []);
+  const shoppingListItemIds = rawShoppingListGroups.flatMap((group) => group.items.map((item) => item.id));
+
+  const { dismissedIds, clearList } = useShoppingListDismissals(shoppingListItemIds);
+
+  const shoppingListGroups = rawShoppingListGroups
+    .map((group) => ({ ...group, items: group.items.filter((item) => !dismissedIds.has(item.id)) }))
+    .filter((group) => group.items.length > 0);
+
   const supplierName = (supplierId: number | null) =>
     supplierId ? suppliers?.find((supplier) => supplier.id === supplierId)?.companyName : undefined;
 
   return (
-    <section className="flex flex-col h-screen">
+    <>
+      <ShoppingListPrintView groups={shoppingListGroups} />
+
+      <section className="flex flex-col h-screen print:hidden">
       <div className="flex items-center justify-between p-4 flex-wrap gap-2">
         <Header
           title="Estoque"
           description={lowStockItems.length > 0 ? `${lowStockItems.length} insumo(s) com estoque baixo` : undefined}
         />
 
-        <StockFormDialog
-          suppliers={suppliers}
-          trigger={
-            <Button size="lg">
-              <Plus />
-              Adicionar insumo
-            </Button>
-          }
-        />
+        <div className="flex gap-2">
+          <ShoppingListDialog
+            groups={shoppingListGroups}
+            onClearList={clearList}
+            trigger={
+              <Button size="lg" variant="outline">
+                <ShoppingCart />
+                Lista de compras
+              </Button>
+            }
+          />
+
+          <StockFormDialog
+            suppliers={suppliers}
+            trigger={
+              <Button size="lg">
+                <Plus />
+                Adicionar insumo
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       <Separator className="h-px w-full" />
@@ -174,6 +205,7 @@ export default function StockPage() {
           </Table>
         )}
       </div>
-    </section>
+      </section>
+    </>
   );
 }

@@ -44,6 +44,8 @@ export interface TOrderPanel {
   selectedCategory: TCategory | null;
   handleCategoryClick: (categoryId: number) => void;
   filteredProducts: TProduct[] | undefined;
+  products: TProduct[] | undefined;
+  supplyItems: TSupplyItem[] | undefined;
   onAddProduct: (product: TProduct) => void;
   order: TOrderResponse | null;
   stockError?: string | null;

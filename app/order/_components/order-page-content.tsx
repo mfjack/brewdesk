@@ -8,6 +8,7 @@ import { Separator } from "@/_components/ui/separator";
 
 import { useGetCategories } from "../../category/query/useGetCategories";
 import { useGetProducts } from "../../product/query/useGetProducts";
+import { useGetSupplyItems } from "../../stock/query/useGetSupplyItems";
 import { useGetOrder } from "../query/useGetOrder";
 
 import { useCreateOrder } from "../mutation/useCreateOrder";
@@ -27,6 +28,7 @@ import {
   mergeOrderItem,
 } from "../order-math";
 import { getActiveOperator } from "@/_lib/operator-session";
+import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
@@ -77,6 +79,7 @@ export default function OrderPageContent() {
 
   const { data: categories } = useGetCategories();
   const { data: products } = useGetProducts();
+  const { data: supplyItems } = useGetSupplyItems();
   const { data: orders = [] } = useGetOrder();
 
   const createOrder = useCreateOrder();
@@ -142,28 +145,28 @@ export default function OrderPageContent() {
     return order;
   }
 
-  function getAvailableStock(product: TProduct) {
+  function computeAvailableStock(product: TProduct, orderItems: TOrderItem[], reservedQuantities: Record<number, number> = {}) {
+    if (product.recipe.length > 0) {
+      return getMaxProducibleQuantity(product.recipe, supplyItems ?? [], reservedQuantities);
+    }
+
     if (!product.trackStock) {
       return null;
     }
 
-    const inCart = currentOrder?.orderItems.find((item) => item.product.id === product.id)?.quantity ?? 0;
+    const inCart = orderItems.find((item) => item.product.id === product.id)?.quantity ?? 0;
 
     return product.quantity - inCart;
   }
 
+  function getAvailableStock(product: TProduct) {
+    return computeAvailableStock(product, currentOrder?.orderItems ?? []);
+  }
+
   async function handleAddProduct(product: TProduct) {
-    const available = getAvailableStock(product);
-
-    if (available !== null && available <= 0) {
-      setStockError(`Estoque insuficiente para "${product.name}".`);
-
-      return;
-    }
-
-    setStockError(null);
-
     if (!currentOrder || isDraftOrder(currentOrder)) {
+      let blockedMessage: string | null = null;
+
       setCurrentOrder((prev) => {
         const base: TOrderResponse = prev ?? {
           id: DRAFT_ORDER_ID,
@@ -180,6 +183,15 @@ export default function OrderPageContent() {
           changeDue: null,
         };
 
+        const reservedQuantities = buildReservedSupplyQuantities(base.orderItems, products ?? []);
+        const available = computeAvailableStock(product, base.orderItems, reservedQuantities);
+
+        if (available !== null && available <= 0) {
+          blockedMessage = `Estoque insuficiente para "${product.name}".`;
+
+          return prev;
+        }
+
         const orderItems = mergeOrderItem(base.orderItems, product, 1, () => product.id);
 
         return {
@@ -189,8 +201,20 @@ export default function OrderPageContent() {
         };
       });
 
+      setStockError(blockedMessage);
+
       return;
     }
+
+    const available = getAvailableStock(product);
+
+    if (available !== null && available <= 0) {
+      setStockError(`Estoque insuficiente para "${product.name}".`);
+
+      return;
+    }
+
+    setStockError(null);
 
     try {
       const updatedOrder = await addOrderItem.mutateAsync({
@@ -442,6 +466,8 @@ export default function OrderPageContent() {
           selectedCategory={selectedCategory}
           handleCategoryClick={handleCategoryClick}
           filteredProducts={filteredProducts}
+          products={products}
+          supplyItems={supplyItems}
           onAddProduct={handleAddProduct}
           order={currentOrder}
           stockError={stockError}

@@ -1,4 +1,4 @@
-import type { TRecipeItem, TSupplyItem } from "@/app/order/interface";
+import type { TProduct, TRecipeItem, TSupplyItem } from "@/app/order/interface";
 
 export function getSupplyUnitCost(supplyItem: TSupplyItem): number {
   return supplyItem.quantity > 0 ? supplyItem.costPrice / supplyItem.quantity : 0;
@@ -12,7 +12,11 @@ export function getRecipeCost(recipe: TRecipeItem[], supplyItems: TSupplyItem[])
   }, 0);
 }
 
-export function getMaxProducibleQuantity(recipe: TRecipeItem[], supplyItems: TSupplyItem[]): number | null {
+export function getMaxProducibleQuantity(
+  recipe: TRecipeItem[],
+  supplyItems: TSupplyItem[],
+  reservedQuantities: Record<number, number> = {},
+): number | null {
   if (recipe.length === 0) {
     return null;
   }
@@ -26,8 +30,27 @@ export function getMaxProducibleQuantity(recipe: TRecipeItem[], supplyItems: TSu
       return 0;
     }
 
-    max = Math.min(max, Math.floor(supplyItem.quantity / recipeItem.quantity));
+    const remaining = supplyItem.quantity - (reservedQuantities[recipeItem.supplyItemId] ?? 0);
+
+    max = Math.min(max, Math.floor(remaining / recipeItem.quantity));
   }
 
   return Math.max(max, 0);
+}
+
+export function buildReservedSupplyQuantities(
+  orderItems: { product: { id: number }; quantity: number }[],
+  products: TProduct[],
+): Record<number, number> {
+  const reserved: Record<number, number> = {};
+
+  orderItems.forEach((orderItem) => {
+    const product = products.find((item) => item.id === orderItem.product.id);
+
+    product?.recipe.forEach((recipeItem) => {
+      reserved[recipeItem.supplyItemId] = (reserved[recipeItem.supplyItemId] ?? 0) + recipeItem.quantity * orderItem.quantity;
+    });
+  });
+
+  return reserved;
 }

@@ -3,7 +3,9 @@ import { Separator } from "@/_components/ui/separator";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { formatCurrency } from "@/_lib/format-currency";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 import { TCategory, TOrderPanel, TProduct } from "../interface";
+import { isDraftOrder } from "../order-math";
 import { ScrollText } from "lucide-react";
 import { Header } from "@/_components/ui/header";
 import Link from "next/link";
@@ -13,10 +15,14 @@ export function OrderPanel({
   selectedCategory,
   handleCategoryClick,
   filteredProducts,
+  products,
+  supplyItems,
   onAddProduct,
   order,
   stockError,
 }: TOrderPanel) {
+  const reservedQuantities =
+    order && isDraftOrder(order) && products ? buildReservedSupplyQuantities(order.orderItems, products) : {};
   return (
     <section className="flex flex-col w-full md:h-screen">
       <div className="flex flex-col p-4 w-full">
@@ -71,9 +77,13 @@ export function OrderPanel({
             filteredProducts.map((product: TProduct) => {
               const orderItem = order?.orderItems?.find((item) => item.product.id === product.id);
               const quantity = orderItem?.quantity ?? 0;
-              const available = product.trackStock ? product.quantity - quantity : null;
+              const available =
+                product.recipe.length > 0
+                  ? getMaxProducibleQuantity(product.recipe, supplyItems ?? [], reservedQuantities)
+                  : product.trackStock
+                    ? product.quantity - quantity
+                    : null;
               const outOfStock = available !== null && available <= 0;
-              const isLowStock = available !== null && available > 0 && available <= (product.lowStockThreshold ?? 5);
 
               return (
                 <Button
@@ -95,15 +105,7 @@ export function OrderPanel({
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-center text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
                     <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
-                    {available !== null && (
-                      <span
-                        className={`text-[10px] font-semibold ${
-                          outOfStock ? "text-destructive" : isLowStock ? "text-amber-600 dark:text-amber-500" : "text-muted-foreground font-medium"
-                        }`}
-                      >
-                        {outOfStock ? "Esgotado" : `Restam ${available}`}
-                      </span>
-                    )}
+                    {outOfStock && <span className="text-[10px] font-semibold text-destructive">Esgotado</span>}
                   </div>
                 </Button>
               );

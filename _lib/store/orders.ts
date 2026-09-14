@@ -2,6 +2,7 @@ import type { TOrderResponse, TOrderStatus, TPaymentMethod, TProduct, TSupplyIte
 import { computeOrderTotal, decrementOrRemoveItem, mergeOrderItem } from "@/app/order/order-math";
 import { readStore, updateStore, writeStore } from "./storage";
 import { adjustSupplyItemStock } from "./supply-items";
+import { getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 
 function consumeRecipeStock(product: TProduct, supplyItems: TSupplyItem[], quantitySold: number) {
   product.recipe.forEach((recipeItem) => {
@@ -73,6 +74,14 @@ export const orderStore = {
 
     if (product.trackStock && product.quantity < quantity) {
       throw new Error(`Estoque insuficiente para "${product.name}".`);
+    }
+
+    if (product.recipe.length > 0) {
+      const maxProducible = getMaxProducibleQuantity(product.recipe, data.supplyItems) ?? 0;
+
+      if (maxProducible < quantity) {
+        throw new Error(`Estoque insuficiente para "${product.name}".`);
+      }
     }
 
     order.orderItems = mergeOrderItem(order.orderItems, product, quantity, () => data.nextIds.item++);
