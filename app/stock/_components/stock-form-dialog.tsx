@@ -61,7 +61,13 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
   const createSupplyItem = useCreateSupplyItem();
   const updateSupplyItem = useUpdateSupplyItem();
 
-  const { register, handleSubmit, control, reset } = useForm<TStockFormValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<TStockFormValues>({
     defaultValues: buildDefaultValues(supplyItem),
   });
 
@@ -113,6 +119,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Nome</label>
             <Input placeholder="Ex.: Mussarela" {...register("name", { required: true })} />
+            {errors.name && <p className="text-xs text-destructive">Campo obrigatório.</p>}
           </div>
 
           <div className="flex flex-col gap-1">
@@ -154,6 +161,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
                   </Select>
                 )}
               />
+              {errors.unit && <p className="text-xs text-destructive">Campo obrigatório.</p>}
             </div>
           </div>
 

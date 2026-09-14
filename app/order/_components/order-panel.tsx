@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { EmptyState } from "@/_components/ui/empty-state";
@@ -21,8 +22,23 @@ export function OrderPanel({
   order,
   stockError,
 }: TOrderPanel) {
-  const reservedQuantities =
-    order && isDraftOrder(order) && products ? buildReservedSupplyQuantities(order.orderItems, products) : {};
+  const reservedQuantities = useMemo(
+    () => (order && isDraftOrder(order) && products ? buildReservedSupplyQuantities(order.orderItems, products) : {}),
+    [order, products],
+  );
+
+  const recipeAvailabilityByProductId = useMemo(() => {
+    const map = new Map<number, number | null>();
+
+    filteredProducts?.forEach((product) => {
+      if (product.recipe.length > 0) {
+        map.set(product.id, getMaxProducibleQuantity(product.recipe, supplyItems ?? [], reservedQuantities));
+      }
+    });
+
+    return map;
+  }, [filteredProducts, supplyItems, reservedQuantities]);
+
   return (
     <section className="flex flex-col w-full md:h-screen">
       <div className="flex flex-col p-4 w-full">
@@ -79,7 +95,7 @@ export function OrderPanel({
               const quantity = orderItem?.quantity ?? 0;
               const available =
                 product.recipe.length > 0
-                  ? getMaxProducibleQuantity(product.recipe, supplyItems ?? [], reservedQuantities)
+                  ? (recipeAvailabilityByProductId.get(product.id) ?? null)
                   : product.trackStock
                     ? product.quantity - quantity
                     : null;

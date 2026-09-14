@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Switch } from "@/_components/ui/switch";
 import { Input } from "@/_components/ui/input";
+import { SettingRow } from "@/_components/ui/setting-row";
 import { ThemeToggle } from "@/_components/app/theme-toggle";
 import type { TFeatureFlags, TStoreSettings } from "../../order/interface";
 
@@ -45,57 +46,44 @@ export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | u
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
-          <div>
-            <p className="text-sm font-medium">Tema escuro</p>
-            <p className="text-xs text-muted-foreground">Alterna a aparência do sistema entre claro e escuro.</p>
-          </div>
-
+        <SettingRow label="Tema escuro" description="Alterna a aparência do sistema entre claro e escuro.">
           <ThemeToggle />
-        </div>
+        </SettingRow>
 
-        <div className="flex flex-col gap-2 rounded-lg border border-input px-3 py-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Para levar</p>
-              <p className="text-xs text-muted-foreground">Permite marcar a comanda como para levar e cobrar a embalagem.</p>
+        <SettingRow
+          label="Para levar"
+          description="Permite marcar a comanda como para levar e cobrar a embalagem."
+          extra={
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground whitespace-nowrap">Valor da embalagem</label>
+              <div className="relative w-24">
+                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  R$
+                </span>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="pl-7"
+                  placeholder="0,00"
+                  value={takeoutFeeDisplayValue}
+                  onChange={(e) => setTakeoutFeeInput(e.target.value)}
+                  onBlur={handleTakeoutFeeBlur}
+                />
+              </div>
             </div>
-
-            <Switch checked={settings?.featureFlags.takeout ?? true} onCheckedChange={(value) => handleToggle("takeout", value)} />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground whitespace-nowrap">Valor da embalagem</label>
-            <div className="relative w-24">
-              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                R$
-              </span>
-              <Input
-                type="number"
-                min={0}
-                step="0.01"
-                className="pl-7"
-                placeholder="0,00"
-                value={takeoutFeeDisplayValue}
-                onChange={(e) => setTakeoutFeeInput(e.target.value)}
-                onBlur={handleTakeoutFeeBlur}
-              />
-            </div>
-          </div>
-        </div>
+          }
+        >
+          <Switch checked={settings?.featureFlags.takeout ?? true} onCheckedChange={(value) => handleToggle("takeout", value)} />
+        </SettingRow>
 
         {OTHER_FEATURE_FLAG_OPTIONS.map((option) => (
-          <div key={option.key} className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
-            <div>
-              <p className="text-sm font-medium">{option.label}</p>
-              <p className="text-xs text-muted-foreground">{option.description}</p>
-            </div>
-
+          <SettingRow key={option.key} label={option.label} description={option.description}>
             <Switch
               checked={settings?.featureFlags[option.key] ?? true}
               onCheckedChange={(value) => handleToggle(option.key, value)}
             />
-          </div>
+          </SettingRow>
         ))}
       </div>
     </div>

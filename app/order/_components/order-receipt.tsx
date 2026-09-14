@@ -74,7 +74,7 @@ export function OrderReceipt({
         {order.isTakeout && <p className="mt-1 text-center text-base font-bold">*** PARA LEVAR ***</p>}
 
         {groupedCustomerNames.length > 0 && (
-          <p className="mt-1 text-center text-sm font-bold">*** JUNTO COM: {groupedCustomerNames.join(", ").toUpperCase()} ***</p>
+          <p className="mt-1 text-center text-base font-bold">*** JUNTO COM: {groupedCustomerNames.join(", ").toUpperCase()} ***</p>
         )}
 
         {receiptObservation && (

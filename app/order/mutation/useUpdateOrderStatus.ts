@@ -1,18 +1,7 @@
 import { createLocalStoreMutation } from "@/_lib/create-local-store-mutation";
 import { localStore } from "@/_lib/store";
-import type { TOrderPayment, TOrderStatus } from "@/app/order/interface";
+import type { TUpdateOrderStatusInput } from "@/_lib/store/orders";
 
-export interface TUpdateOrderStatus {
-  orderId: number;
-  status: Exclude<TOrderStatus, "OPEN">;
-  observation?: string;
-  customerName?: string;
-  isTakeout?: boolean;
-  groupWithOrderId?: number | null;
-  payments?: TOrderPayment[];
-}
+export type TUpdateOrderStatus = TUpdateOrderStatusInput;
 
-export const useUpdateOrderStatus = createLocalStoreMutation(
-  ({ orderId, status, observation, customerName, isTakeout, groupWithOrderId, payments }: TUpdateOrderStatus) =>
-    localStore.updateOrderStatus(orderId, status, observation, customerName, isTakeout, groupWithOrderId, payments),
-);
+export const useUpdateOrderStatus = createLocalStoreMutation((input: TUpdateOrderStatus) => localStore.updateOrderStatus(input));

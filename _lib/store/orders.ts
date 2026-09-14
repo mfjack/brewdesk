@@ -4,6 +4,16 @@ import { readStore, updateStore, writeStore } from "./storage";
 import { adjustSupplyItemStock } from "./supply-items";
 import { getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 
+export interface TUpdateOrderStatusInput {
+  orderId: number;
+  status: Exclude<TOrderStatus, "OPEN">;
+  observation?: string;
+  customerName?: string;
+  isTakeout?: boolean;
+  groupWithOrderId?: number | null;
+  payments?: TOrderPayment[];
+}
+
 function consumeRecipeStock(product: TProduct, supplyItems: TSupplyItem[], quantitySold: number) {
   product.recipe.forEach((recipeItem) => {
     const supplyItem = supplyItems.find((item) => item.id === recipeItem.supplyItemId);
@@ -141,21 +151,15 @@ export const orderStore = {
     return order;
   },
 
-  updateOrderStatus: (
-    orderId: number,
-
-    status: Exclude<TOrderStatus, "OPEN">,
-
-    observation?: string,
-
-    customerName?: string,
-
-    isTakeout?: boolean,
-
-    groupWithOrderId?: number | null,
-
-    payments?: TOrderPayment[],
-  ) => {
+  updateOrderStatus: ({
+    orderId,
+    status,
+    observation,
+    customerName,
+    isTakeout,
+    groupWithOrderId,
+    payments,
+  }: TUpdateOrderStatusInput) => {
     const data = readStore();
 
     const order = data.orders.find((item) => item.id === orderId);

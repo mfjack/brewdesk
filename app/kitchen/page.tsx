@@ -1,22 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
-import { useGetOrder } from "../order/query/useGetOrder";
+import { useGetOrders } from "../order/query/useGetOrders";
 import { TOrderResponse } from "../order/interface";
 import { getGroupedOrders } from "../order/order-math";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
-import { Check, HandPlatter, Play, Users } from "lucide-react";
+import { Check, HandPlatter, Play } from "lucide-react";
 import { Header } from "@/_components/ui/header";
-import { toTitleCase } from "@/_lib/to-title-case";
 import { useGetSettings } from "../settings/query/useGetSettings";
+import { GroupedOrdersBadge } from "../order/_components/grouped-orders-badge";
 
 export default function KitchenPage() {
-  const { data: orders = [] } = useGetOrder();
+  const { data: orders = [] } = useGetOrders();
   const { data: settings } = useGetSettings();
   const updateOrderStatus = useUpdateOrderStatus();
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const pendingOrders = orders.filter((order: TOrderResponse) => order.status === "PENDING");
   const inProgressOrders = orders.filter((order: TOrderResponse) => order.status === "IN_PROGRESS");
@@ -73,10 +75,16 @@ export default function KitchenPage() {
   async function handleAdvanceStatus(order: TOrderResponse) {
     const nextStatus = order.status === "PENDING" ? "IN_PROGRESS" : order.status === "IN_PROGRESS" ? "READY" : "DELIVERED";
 
-    await updateOrderStatus.mutateAsync({
-      orderId: order.id,
-      status: nextStatus,
-    });
+    try {
+      await updateOrderStatus.mutateAsync({
+        orderId: order.id,
+        status: nextStatus,
+      });
+
+      setStatusError(null);
+    } catch (error) {
+      setStatusError(error instanceof Error ? error.message : "Não foi possível atualizar o status do pedido.");
+    }
   }
 
   return (
@@ -86,6 +94,10 @@ export default function KitchenPage() {
       </div>
 
       <Separator className="h-px w-full" />
+
+      {statusError && (
+        <p className="mx-4 mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{statusError}</p>
+      )}
 
       <div className="grid flex-1 grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 overflow-y-auto no-scrollbar">
         {columns.map((column) => (
@@ -118,21 +130,10 @@ export default function KitchenPage() {
                       </div>
                     )}
 
-                    {(() => {
-                      const groupedOrders = settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : [];
-
-                      return (
-                        groupedOrders.length > 0 && (
-                          <div className="flex gap-1 items-center">
-                            <Users size={14} />
-                            <span className="text-sm font-bold">JUNTO COM:</span>
-                            <span className="text-sm font-medium">
-                              {groupedOrders.map((groupedOrder) => toTitleCase(groupedOrder.customerName)).join(", ")}
-                            </span>
-                          </div>
-                        )
-                      );
-                    })()}
+                    <GroupedOrdersBadge
+                      groupedOrders={settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : []}
+                      variant="board"
+                    />
 
                     {order.orderItems.length > 0 && (
                       <div className="flex flex-col gap-2">

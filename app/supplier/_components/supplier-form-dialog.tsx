@@ -55,7 +55,13 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
 
-  const { register, handleSubmit, control, reset } = useForm<TSupplierFormValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<TSupplierFormValues>({
     defaultValues: buildDefaultValues(supplier),
   });
 
@@ -103,6 +109,7 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Empresa</label>
             <Input placeholder="Nome da empresa" {...register("companyName", { required: true })} />
+            {errors.companyName && <p className="text-xs text-destructive">Campo obrigatório.</p>}
           </div>
 
           <div className="flex flex-col gap-1">

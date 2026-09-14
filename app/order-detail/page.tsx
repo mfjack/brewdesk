@@ -6,15 +6,16 @@ import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
-import { DollarSign, HandCoins, Users, X } from "lucide-react";
+import { DollarSign, HandCoins, X } from "lucide-react";
 import Link from "next/link";
 
-import { useGetOrder } from "../order/query/useGetOrder";
+import { useGetOrders } from "../order/query/useGetOrders";
 import { TOrderPayment, TOrderResponse, TPaymentMethod } from "../order/interface";
 import { buildOrderPayment, getChargedTakeoutFee, getGroupedOrders, isOrderPaid } from "../order/order-math";
 import { paymentMethodLabels } from "../order/payment-methods";
 import { PaymentMethodFields } from "../order/_components/payment-method-fields";
 import { SplitBillCalculator } from "../order/_components/split-bill-calculator";
+import { GroupedOrdersBadge } from "../order/_components/grouped-orders-badge";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Header } from "@/_components/ui/header";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
@@ -43,7 +44,7 @@ export default function OrderDetailPage() {
   const [amountReceived, setAmountReceived] = useState("");
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
-  const { data: orders = [] } = useGetOrder();
+  const { data: orders = [] } = useGetOrders();
   const { data: settings } = useGetSettings();
 
   const updateOrderStatus = useUpdateOrderStatus();
@@ -171,18 +172,10 @@ export default function OrderDetailPage() {
                       <p className="text-xs text-center text-muted-foreground">Atendente: {toTitleCase(order.operatorName)}</p>
                     )}
 
-                    {(() => {
-                      const groupedOrders = settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : [];
-
-                      return (
-                        groupedOrders.length > 0 && (
-                          <p className="flex items-center justify-center gap-1 text-xs text-center text-muted-foreground">
-                            <Users size={12} />
-                            Junto com: {groupedOrders.map((groupedOrder) => toTitleCase(groupedOrder.customerName)).join(", ")}
-                          </p>
-                        )
-                      );
-                    })()}
+                    <GroupedOrdersBadge
+                      groupedOrders={settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : []}
+                      className="justify-center text-center"
+                    />
 
                     {order.observation && (
                       <p className="text-xs font-bold">

@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/_components/ui/dialog";
 import { ImageUploadField } from "@/_components/ui/image-upload-field";
+import { SettingRow } from "@/_components/ui/setting-row";
 import { RecipeSection } from "./recipe-section";
 
 import { useCreateProduct } from "../mutation/useCreateProduct";
@@ -38,12 +39,14 @@ interface TRecipeRowFormValues {
 export interface TProductFormValues {
   name: string;
   description: string;
+  photoUrl: string | null;
   price: string;
   costPrice: string;
   quantity: string;
   lowStockThreshold: string;
   categoryId: number;
   supplierId: number;
+  trackStock: boolean;
   recipe: TRecipeRowFormValues[];
 }
 
@@ -59,12 +62,14 @@ function buildDefaultValues(product: TProduct | undefined, supplyItems: TSupplyI
   return {
     name: product?.name ?? "",
     description: product?.description ?? "",
+    photoUrl: product?.photoUrl ?? null,
     price: product ? String(product.price) : "",
     costPrice: product ? String(product.costPrice) : "",
     quantity: product ? String(product.quantity) : "",
     lowStockThreshold: product ? String(product.lowStockThreshold) : "",
     categoryId: product?.category.id ?? 0,
     supplierId: product?.supplierId ?? 0,
+    trackStock: product?.trackStock ?? true,
     recipe:
       product?.recipe.map((item) => {
         const supplyItem = supplyItems?.find((supply) => supply.id === item.supplyItemId);
@@ -97,14 +102,19 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
   const isEditing = Boolean(product);
 
   const [open, setOpen] = useState(false);
-  const [trackStock, setTrackStock] = useState(product?.trackStock ?? true);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(product?.photoUrl ?? null);
   const [photoFieldKey, setPhotoFieldKey] = useState(0);
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
 
-  const { register, handleSubmit, control, reset, setValue } = useForm<TProductFormValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<TProductFormValues>({
     defaultValues: buildDefaultValues(product, supplyItems),
   });
 
@@ -117,6 +127,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
   const isPending = createProduct.isPending || updateProduct.isPending;
 
   const watchedRecipe = useWatch({ control, name: "recipe" });
+  const trackStock = useWatch({ control, name: "trackStock" });
   const parsedRecipe = parseRecipe(watchedRecipe ?? [], supplyItems ?? []);
   const hasRecipe = parsedRecipe.length > 0;
   const calculatedCost = hasRecipe ? getRecipeCost(parsedRecipe, supplyItems ?? []) : null;
@@ -124,8 +135,6 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
 
   function syncFormToProduct() {
     reset(buildDefaultValues(product, supplyItems));
-    setPhotoUrl(product?.photoUrl ?? null);
-    setTrackStock(product?.trackStock ?? false);
     setPhotoFieldKey((key) => key + 1);
   }
 
@@ -136,12 +145,12 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
     const payload = {
       name: data.name,
       description: data.description || null,
-      photoUrl,
+      photoUrl: data.photoUrl,
       price: Number(data.price) || 0,
       costPrice,
-      quantity: trackStock ? Number(data.quantity) || 0 : 0,
-      trackStock,
-      lowStockThreshold: trackStock ? Number(data.lowStockThreshold) || 0 : 0,
+      quantity: data.trackStock ? Number(data.quantity) || 0 : 0,
+      trackStock: data.trackStock,
+      lowStockThreshold: data.trackStock ? Number(data.lowStockThreshold) || 0 : 0,
       categoryId: data.categoryId,
       supplierId: data.supplierId || null,
       recipe,
@@ -179,6 +188,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Nome do produto</label>
             <Input {...register("name", { required: true })} />
+            {errors.name && <p className="text-xs text-destructive">Campo obrigatório.</p>}
           </div>
 
           <div className="flex flex-col gap-1">
@@ -186,13 +196,19 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
             <Textarea placeholder="Opcional" rows={3} {...register("description")} />
           </div>
 
-          <ImageUploadField
-            key={photoFieldKey}
-            label="Foto"
-            addLabel="Adicionar foto"
-            changeLabel="Trocar foto"
-            value={photoUrl}
-            onChange={setPhotoUrl}
+          <Controller
+            control={control}
+            name="photoUrl"
+            render={({ field }) => (
+              <ImageUploadField
+                key={photoFieldKey}
+                label="Foto"
+                addLabel="Adicionar foto"
+                changeLabel="Trocar foto"
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
           />
 
           <div className="flex gap-2">
@@ -205,6 +221,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
                 placeholder="Quanto o cliente paga"
                 {...register("price", { required: true })}
               />
+              {errors.price && <p className="text-xs text-destructive">Campo obrigatório.</p>}
             </div>
 
             <div className="flex flex-1 flex-col gap-1">
@@ -263,6 +280,7 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
                 </Select>
               )}
             />
+            {errors.categoryId && <p className="text-xs text-destructive">Campo obrigatório.</p>}
           </div>
 
           <div className="flex flex-col gap-1">
@@ -291,14 +309,13 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
-            <div>
-              <p className="text-sm font-medium">Controlar estoque</p>
-              <p className="text-xs text-muted-foreground">Diminui automaticamente a cada venda no PDV.</p>
-            </div>
-
-            <Switch checked={trackStock} onCheckedChange={setTrackStock} />
-          </div>
+          <SettingRow label="Controlar estoque" description="Diminui automaticamente a cada venda no PDV.">
+            <Controller
+              control={control}
+              name="trackStock"
+              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+            />
+          </SettingRow>
 
           {trackStock && (
             <div className="flex gap-2">

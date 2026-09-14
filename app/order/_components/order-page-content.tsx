@@ -9,7 +9,7 @@ import { Separator } from "@/_components/ui/separator";
 import { useGetCategories } from "../../category/query/useGetCategories";
 import { useGetProducts } from "../../product/query/useGetProducts";
 import { useGetSupplyItems } from "../../stock/query/useGetSupplyItems";
-import { useGetOrder } from "../query/useGetOrder";
+import { useGetOrders } from "../query/useGetOrders";
 import { useGetSettings } from "../../settings/query/useGetSettings";
 
 import { useCreateOrder } from "../mutation/useCreateOrder";
@@ -87,7 +87,7 @@ export default function OrderPageContent() {
   const { data: categories } = useGetCategories();
   const { data: products } = useGetProducts();
   const { data: supplyItems } = useGetSupplyItems();
-  const { data: orders = [] } = useGetOrder();
+  const { data: orders = [] } = useGetOrders();
   const { data: settings } = useGetSettings();
 
   const createOrder = useCreateOrder();
@@ -106,9 +106,12 @@ export default function OrderPageContent() {
     setPrintedItemQuantities(existingOrder.printedItemQuantities ?? {});
   }
 
+  const defaultCategory = categories?.length ? (categories.find((category: TCategory) => category.id === 1) ?? categories[0]) : null;
+  const effectiveCategory = selectedCategory ?? defaultCategory;
+
   const filteredProducts = useMemo(
-    () => (selectedCategory ? products?.filter((product: TProduct) => product.category.id === selectedCategory.id) : products),
-    [products, selectedCategory],
+    () => (effectiveCategory ? products?.filter((product: TProduct) => product.category.id === effectiveCategory.id) : products),
+    [products, effectiveCategory],
   );
 
   const groupableOrders = orders
@@ -122,12 +125,6 @@ export default function OrderPageContent() {
     const category = categories?.find((cat: TCategory) => cat.id === categoryId);
 
     setSelectedCategory(category || null);
-  }
-
-  if (categories?.length && !selectedCategory) {
-    const defaultCategory = categories.find((category: TCategory) => category.id === 1) ?? categories[0];
-
-    setSelectedCategory(defaultCategory);
   }
 
   function schedulePrint(orderIdToMark: number, printedQty: Record<number, number>, onAfterPrint?: () => void) {
@@ -509,7 +506,7 @@ export default function OrderPageContent() {
       <section className="flex flex-col md:flex-row md:h-full print:hidden">
         <OrderPanel
           categories={categories || []}
-          selectedCategory={selectedCategory}
+          selectedCategory={effectiveCategory}
           handleCategoryClick={handleCategoryClick}
           filteredProducts={filteredProducts}
           products={products}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
@@ -56,8 +57,15 @@ export default function StockPage() {
 
   const lowStockItems = supplyItems?.filter((item) => item.quantity <= item.minQuantity) ?? [];
 
-  const rawShoppingListGroups = buildShoppingListGroups(supplyItems ?? [], products ?? [], suppliers ?? []);
-  const shoppingListItemIds = rawShoppingListGroups.flatMap((group) => group.items.map((item) => item.id));
+  const rawShoppingListGroups = useMemo(
+    () => buildShoppingListGroups(supplyItems ?? [], products ?? [], suppliers ?? []),
+    [supplyItems, products, suppliers],
+  );
+
+  const shoppingListItemIds = useMemo(
+    () => rawShoppingListGroups.flatMap((group) => group.items.map((item) => item.id)),
+    [rawShoppingListGroups],
+  );
 
   const { dismissedIds, clearList } = useShoppingListDismissals(shoppingListItemIds);
 
@@ -126,6 +134,7 @@ export default function StockPage() {
               {supplyItems?.map((supplyItem: TSupplyItem) => {
                 const expiryStatus = getExpiryStatus(supplyItem.expiresAt);
                 const isLowStock = supplyItem.quantity <= supplyItem.minQuantity;
+                const itemSupplierName = supplierName(supplyItem.supplierId);
 
                 return (
                   <TableRow key={supplyItem.id}>
@@ -159,7 +168,7 @@ export default function StockPage() {
                     <TableCell>{formatCurrency(supplyItem.costPrice)}</TableCell>
 
                     <TableCell className="text-muted-foreground">
-                      {supplierName(supplyItem.supplierId) ? toTitleCase(supplierName(supplyItem.supplierId)!) : "—"}
+                      {itemSupplierName ? toTitleCase(itemSupplierName) : "—"}
                     </TableCell>
 
                     <TableCell>

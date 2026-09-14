@@ -24,7 +24,12 @@ interface TSettingsFormValues {
 export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undefined }) {
   const updateSettings = useUpdateSettings();
 
-  const { register, handleSubmit, control } = useForm<TSettingsFormValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<TSettingsFormValues>({
     defaultValues: { name: "", cnpj: "", phone: "", address: "", receiptFooterMessage: "", logoUrl: null, pixQrCodeUrl: null },
     values: settings
       ? {
@@ -93,6 +98,7 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium">Nome do estabelecimento</label>
         <Input placeholder="Nome do estabelecimento" {...register("name", { required: true })} />
+        {errors.name && <p className="text-xs text-destructive">Campo obrigatório.</p>}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

@@ -1,4 +1,4 @@
-import type { TProduct, TRecipeItem, TSupplyItem } from "@/app/order/interface";
+import type { TOrderItem, TProduct, TRecipeItem, TSupplyItem } from "@/app/order/interface";
 
 export function getSupplyUnitCost(supplyItem: TSupplyItem): number {
   return supplyItem.quantity > 0 ? supplyItem.costPrice / supplyItem.quantity : 0;
@@ -39,7 +39,7 @@ export function getMaxProducibleQuantity(
 }
 
 export function buildReservedSupplyQuantities(
-  orderItems: { product: { id: number }; quantity: number }[],
+  orderItems: Pick<TOrderItem, "product" | "quantity">[],
   products: TProduct[],
 ): Record<number, number> {
   const reserved: Record<number, number> = {};

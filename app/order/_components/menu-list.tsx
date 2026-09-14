@@ -1,4 +1,4 @@
-import { Trash2, NotebookPen, Send, User, DollarSign, Ban, Clock, Users } from "lucide-react";
+import { Trash2, NotebookPen, Send, User, DollarSign, Ban, Clock } from "lucide-react";
 
 import { useEffect, useState } from "react";
 
@@ -14,6 +14,7 @@ import { TMenuList, TOrderItem } from "../interface";
 import { DRAFT_ORDER_ID } from "../order-math";
 import { PaymentMethodFields } from "./payment-method-fields";
 import { SplitBillCalculator } from "./split-bill-calculator";
+import { GroupedOrdersBadge } from "./grouped-orders-badge";
 
 import { formatCurrency } from "@/_lib/format-currency";
 import { formatTime } from "@/_lib/format-date";
@@ -120,15 +121,7 @@ export function MenuList({
                     Horário da comanda: <span className="font-medium tabular-nums">{formatTime(order.createdAt)}</span>
                   </p>
 
-                  {isOrderGroupingEnabled && groupedOrders.length > 0 && (
-                    <p className="text-xs flex items-center gap-1">
-                      <Users size={12} />
-                      Junto com:{" "}
-                      <span className="font-medium">
-                        {groupedOrders.map((groupedOrder) => toTitleCase(groupedOrder.customerName)).join(", ")}
-                      </span>
-                    </p>
-                  )}
+                  <GroupedOrdersBadge groupedOrders={isOrderGroupingEnabled ? groupedOrders : []} />
                 </div>
 
                 <div className="flex items-center gap-1 text-xs shrink-0">

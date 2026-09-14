@@ -29,7 +29,12 @@ export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
 
-  const { register, handleSubmit, reset } = useForm<TCategoryFormValues>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<TCategoryFormValues>({
     defaultValues: { name: category?.name ?? "" },
   });
 
@@ -65,7 +70,10 @@ export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
         </DialogHeader>
 
         <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitCategory)}>
-          <Input placeholder="Nome da categoria" {...register("name", { required: true })} />
+          <div className="flex flex-col gap-1">
+            <Input placeholder="Nome da categoria" {...register("name", { required: true })} />
+            {errors.name && <p className="text-xs text-destructive">Campo obrigatório.</p>}
+          </div>
 
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
