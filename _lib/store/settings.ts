@@ -1,5 +1,4 @@
 import type { TOperator, TStoreSettings } from "@/app/order/interface";
-import type { TOperatorRole } from "@/_lib/operator-roles";
 import { readStore, updateStore, writeStore } from "./storage";
 
 export const settingsStore = {
@@ -28,17 +27,20 @@ export const settingsStore = {
     return data.settings;
   },
 
-  addOperator: (name: string, pin: string, role: TOperatorRole) => {
+  addOperator: (name: string, pin: string, allowedRoutes: string[]) => {
     const operator: TOperator = {
       id: 0,
       name: name.trim(),
       pin: pin.trim(),
-      role,
+      allowedRoutes,
     };
 
     updateStore((data) => {
       operator.id = data.nextIds.operator++;
-      operator.role = data.settings.operators.length === 0 ? "GERENTE" : role;
+
+      if (data.settings.operators.length === 0 && !operator.allowedRoutes.includes("/settings")) {
+        operator.allowedRoutes = [...operator.allowedRoutes, "/settings"];
+      }
 
       data.settings.operators.push(operator);
     });
@@ -48,17 +50,15 @@ export const settingsStore = {
 
   deleteOperator: (operatorId: number) => {
     updateStore((data) => {
-      const operator = data.settings.operators.find((item) => item.id === operatorId);
+      const remainingOperators = data.settings.operators.filter((item) => item.id !== operatorId);
 
-      if (operator?.role === "GERENTE") {
-        const remainingManagers = data.settings.operators.filter((item) => item.role === "GERENTE" && item.id !== operatorId);
+      const wouldStillHaveAccess = remainingOperators.some((operator) => operator.allowedRoutes.includes("/settings"));
 
-        if (remainingManagers.length === 0) {
-          throw new Error("Não é possível excluir o único operador gerente. Cadastre outro gerente antes de excluir esse.");
-        }
+      if (!wouldStillHaveAccess) {
+        throw new Error("Não é possível excluir esse operador. Cadastre outro operador com acesso às configurações antes de excluir esse.");
       }
 
-      data.settings.operators = data.settings.operators.filter((operator) => operator.id !== operatorId);
+      data.settings.operators = remainingOperators;
     });
   },
 };

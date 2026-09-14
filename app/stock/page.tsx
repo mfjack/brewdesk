@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/_components/ui/badge";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { RowActions } from "@/_components/ui/row-actions";
+import { SearchInput } from "@/_components/ui/search-input";
 import { AlertTriangle, Pencil, Plus, ShoppingCart } from "lucide-react";
 
 import { useGetSupplyItems } from "./query/useGetSupplyItems";
@@ -50,12 +51,15 @@ export default function StockPage() {
   const { data: suppliers } = useGetSuppliers();
   const { data: products } = useGetProducts();
   const deleteSupplyItem = useDeleteSupplyItem();
+  const [searchTerm, setSearchTerm] = useState("");
 
   function handleDeleteSupplyItem(supplyItemId: number) {
     deleteSupplyItem.mutate(supplyItemId);
   }
 
   const lowStockItems = supplyItems?.filter((item) => item.quantity <= item.minQuantity) ?? [];
+
+  const filteredSupplyItems = supplyItems?.filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const rawShoppingListGroups = useMemo(
     () => buildShoppingListGroups(supplyItems ?? [], products ?? [], suppliers ?? []),
@@ -117,21 +121,32 @@ export default function StockPage() {
         {supplyItems?.length === 0 ? (
           <EmptyState message="Nenhum insumo cadastrado." />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Insumo</TableHead>
-                <TableHead>Marca</TableHead>
-                <TableHead>Quantidade</TableHead>
-                <TableHead>Custo</TableHead>
-                <TableHead>Fornecedor</TableHead>
-                <TableHead>Validade</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
+          <>
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Filtrar por nome do insumo..."
+              className="mb-4 max-w-100"
+            />
 
-            <TableBody>
-              {supplyItems?.map((supplyItem: TSupplyItem) => {
+            {filteredSupplyItems?.length === 0 ? (
+              <EmptyState message="Nenhum insumo encontrado com esse nome." />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Insumo</TableHead>
+                    <TableHead>Marca</TableHead>
+                    <TableHead>Quantidade</TableHead>
+                    <TableHead>Custo</TableHead>
+                    <TableHead>Fornecedor</TableHead>
+                    <TableHead>Validade</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {filteredSupplyItems?.map((supplyItem: TSupplyItem) => {
                 const expiryStatus = getExpiryStatus(supplyItem.expiresAt);
                 const isLowStock = supplyItem.quantity <= supplyItem.minQuantity;
                 const itemSupplierName = supplierName(supplyItem.supplierId);
@@ -210,8 +225,10 @@ export default function StockPage() {
                   </TableRow>
                 );
               })}
-            </TableBody>
-          </Table>
+                </TableBody>
+              </Table>
+            )}
+          </>
         )}
       </div>
       </section>

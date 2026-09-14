@@ -4,21 +4,35 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 
-import { useActiveOperator } from "@/_lib/operator-session";
-import { isRouteAllowedForRole } from "@/_lib/operator-roles";
+import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
+import { useGetSettings } from "@/app/settings/query/useGetSettings";
+import { isPathAllowed } from "@/_lib/app-pages";
 
 export function RoleGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const activeOperator = useActiveOperator();
+  const { data: settings, isLoading } = useGetSettings();
 
-  const isAllowed = !activeOperator || isRouteAllowedForRole(activeOperator.role, pathname);
+  const currentOperator = activeOperator ? settings?.operators.find((operator) => operator.id === activeOperator.id) : undefined;
+  const isOperatorMissing = Boolean(activeOperator) && !isLoading && !currentOperator;
+  const isAllowed = !activeOperator || isLoading || Boolean(currentOperator && isPathAllowed(currentOperator.allowedRoutes, pathname));
 
   useEffect(() => {
+    if (isOperatorMissing) {
+      setActiveOperator(null);
+
+      return;
+    }
+
     if (!isAllowed) {
       router.replace("/");
     }
-  }, [isAllowed, router]);
+  }, [isAllowed, isOperatorMissing, router]);
+
+  if (isOperatorMissing) {
+    return null;
+  }
 
   if (!isAllowed) {
     return (

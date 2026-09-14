@@ -14,63 +14,22 @@ import {
   SidebarMenuItem,
 } from "@/_components/ui/sidebar";
 import Image from "next/image";
-import { BarChart3, Boxes, HandCoins, LogOut, ScanBarcode, ScrollText, Settings, Tags, Truck } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
-import { isRouteAllowedForRole } from "@/_lib/operator-roles";
+import { APP_PAGES } from "@/_lib/app-pages";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { Button } from "@/_components/ui/button";
-
-const navLinks = [
-  {
-    icon: HandCoins,
-    label: "PDV",
-    href: "/",
-  },
-  {
-    icon: ScrollText,
-    label: "Comandas",
-    href: "/order-detail",
-  },
-  {
-    icon: Tags,
-    label: "Categorias",
-    href: "/category",
-  },
-  {
-    icon: ScanBarcode,
-    label: "Produtos",
-    href: "/product",
-  },
-  {
-    icon: Boxes,
-    label: "Estoque",
-    href: "/stock",
-  },
-  {
-    icon: Truck,
-    label: "Fornecedores",
-    href: "/supplier",
-  },
-  {
-    icon: BarChart3,
-    label: "Relatório",
-    href: "/report",
-  },
-  {
-    icon: Settings,
-    label: "Configurações",
-    href: "/settings",
-  },
-];
 
 export function AppSidebar() {
   const { data: settings } = useGetSettings();
   const activeOperator = useActiveOperator();
 
+  const currentOperator = activeOperator ? settings?.operators.find((operator) => operator.id === activeOperator.id) : undefined;
+
   const visibleNavLinks = activeOperator
-    ? navLinks.filter((link) => isRouteAllowedForRole(activeOperator.role, link.href))
-    : navLinks;
+    ? APP_PAGES.filter((page) => currentOperator?.allowedRoutes.includes(page.path))
+    : APP_PAGES;
 
   return (
     <Sidebar collapsible="offcanvas" className="print:hidden">
@@ -94,10 +53,10 @@ export function AppSidebar() {
 
           <SidebarGroupContent>
             <SidebarMenu className="space-y-4">
-              {visibleNavLinks.map(({ icon: Icon, label, href }) => (
-                <SidebarMenuItem key={href}>
+              {visibleNavLinks.map(({ icon: Icon, label, path }) => (
+                <SidebarMenuItem key={path}>
                   <SidebarMenuButton variant="outline" asChild>
-                    <Link href={href}>
+                    <Link href={path}>
                       <Icon />
                       <p>{label}</p>
                     </Link>

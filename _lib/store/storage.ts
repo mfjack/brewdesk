@@ -1,5 +1,6 @@
-import type { TCategory, TOrderResponse, TProduct, TStoreSettings, TSupplier, TSupplyItem } from "@/app/order/interface";
+import type { TCategory, TOperator, TOrderResponse, TProduct, TStoreSettings, TSupplier, TSupplyItem } from "@/app/order/interface";
 import { isOrderPaid } from "@/app/order/order-math";
+import { APP_PAGES } from "@/_lib/app-pages";
 
 export const STORAGE_KEY = "brewdesk.data.v1";
 
@@ -66,6 +67,10 @@ export function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
+export function hasAnyOperatorWithSettingsAccess(data: StoreData): boolean {
+  return data.settings.operators.some((operator) => operator.allowedRoutes.includes("/settings"));
+}
+
 function normalizeOrders(orders: TOrderResponse[]): { orders: TOrderResponse[]; migrated: boolean } {
   let migrated = false;
 
@@ -108,20 +113,53 @@ function normalizeProducts(products: TProduct[]): TProduct[] {
   return products.map((product) => ({ ...product, recipe: product.recipe ?? [] }));
 }
 
-function normalizeSettings(settings: TStoreSettings): { settings: TStoreSettings; migrated: boolean } {
+const LEGACY_ENUM_ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
+  ATENDENTE: ["/", "/order-detail"],
+  ADM: ["/", "/order-detail", "/category", "/product", "/stock"],
+  GERENTE: APP_PAGES.map((page) => page.path),
+};
+
+interface TLegacyRole {
+  id: number;
+  allowedRoutes: string[];
+}
+
+function normalizeOperatorAccess(data: StoreData, legacyRoles: TLegacyRole[]): boolean {
   let migrated = false;
 
-  const operators = settings.operators.map((operator) => {
-    if (operator.role) {
+  data.settings.operators = data.settings.operators.map((operator) => {
+    if (Array.isArray(operator.allowedRoutes)) {
       return operator;
     }
 
     migrated = true;
 
-    return { ...operator, role: "GERENTE" as const };
+    const legacy = operator as TOperator & { role?: string; roleId?: number; roleIds?: number[] };
+
+    let allowedRoutes: string[] = [];
+
+    if (Array.isArray(legacy.roleIds)) {
+      const routes = new Set<string>();
+
+      legacy.roleIds.forEach((roleId) => {
+        legacyRoles.find((role) => role.id === roleId)?.allowedRoutes.forEach((route) => routes.add(route));
+      });
+
+      allowedRoutes = Array.from(routes);
+    } else if (typeof legacy.roleId === "number") {
+      allowedRoutes = legacyRoles.find((role) => role.id === legacy.roleId)?.allowedRoutes ?? [];
+    } else if (legacy.role) {
+      allowedRoutes = LEGACY_ENUM_ROLE_ALLOWED_ROUTES[legacy.role] ?? [];
+    }
+
+    if (allowedRoutes.length === 0) {
+      allowedRoutes = APP_PAGES.map((page) => page.path);
+    }
+
+    return { id: operator.id, name: operator.name, pin: operator.pin, allowedRoutes };
   });
 
-  return { settings: { ...settings, operators }, migrated };
+  return migrated;
 }
 
 function normalizeSupplyItems(data: StoreData): boolean {
@@ -178,7 +216,8 @@ export function readStore(): StoreData {
   }
 
   try {
-    const parsed = JSON.parse(stored) as Partial<StoreData>;
+    const parsed = JSON.parse(stored) as Partial<StoreData> & { roles?: TLegacyRole[] };
+    const legacyRoles = parsed.roles ?? [];
 
     const data: StoreData = {
       ...clone(initialData),
@@ -187,14 +226,15 @@ export function readStore(): StoreData {
       nextIds: { ...clone(initialData.nextIds), ...parsed.nextIds },
     };
 
+    delete (data as Partial<StoreData> & { roles?: TLegacyRole[] }).roles;
+    delete (data.nextIds as { role?: number }).role;
+
     const { orders: normalizedOrders, migrated: ordersMigrated } = normalizeOrders(data.orders);
 
     data.orders = normalizedOrders;
     data.products = normalizeProducts(data.products);
 
-    const { settings: normalizedSettings, migrated: operatorsMigrated } = normalizeSettings(data.settings);
-
-    data.settings = normalizedSettings;
+    const operatorsMigrated = normalizeOperatorAccess(data, legacyRoles);
 
     const supplyItemsMigrated = normalizeSupplyItems(data);
     const ordersPruned = pruneOldPaidOrders(data);

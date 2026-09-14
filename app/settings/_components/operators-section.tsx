@@ -7,10 +7,10 @@ import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { Badge } from "@/_components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
+import { Switch } from "@/_components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
+import { APP_PAGES } from "@/_lib/app-pages";
 import { toTitleCase } from "@/_lib/to-title-case";
-import { OPERATOR_ROLES, OPERATOR_ROLE_LABELS, type TOperatorRole } from "@/_lib/operator-roles";
 
 import { useAddOperator } from "../mutation/useAddOperator";
 import { useDeleteOperator } from "../mutation/useDeleteOperator";
@@ -23,7 +23,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [operatorName, setOperatorName] = useState("");
   const [operatorPin, setOperatorPin] = useState("");
-  const [operatorRole, setOperatorRole] = useState<TOperatorRole>("ATENDENTE");
+  const [allowedRoutes, setAllowedRoutes] = useState<string[]>([]);
   const [operatorError, setOperatorError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -32,9 +32,13 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   function handleOpenDialog() {
     setOperatorName("");
     setOperatorPin("");
-    setOperatorRole("ATENDENTE");
+    setAllowedRoutes([]);
     setOperatorError(null);
     setIsDialogOpen(true);
+  }
+
+  function handleTogglePage(path: string, checked: boolean) {
+    setAllowedRoutes((current) => (checked ? [...current, path] : current.filter((route) => route !== path)));
   }
 
   function handleAddOperator() {
@@ -48,8 +52,14 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
       return;
     }
 
+    if (!isFirstOperator && allowedRoutes.length === 0) {
+      setOperatorError("Selecione ao menos uma página.");
+
+      return;
+    }
+
     addOperator.mutate(
-      { name: operatorName, pin: operatorPin, role: operatorRole },
+      { name: operatorName, pin: operatorPin, allowedRoutes },
       {
         onSuccess: () => setIsDialogOpen(false),
       },
@@ -69,28 +79,37 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
       <div>
         <p className="text-sm font-medium">Operadores</p>
         <p className="text-xs text-muted-foreground">
-          Cadastre operadores com PIN pra exigir login antes de usar o sistema. A role define quais páginas o operador
-          consegue acessar. Sem operadores cadastrados, o login fica desativado.
+          Cadastre operadores com PIN pra exigir login antes de usar o sistema, e escolha exatamente quais páginas cada um
+          pode acessar. Sem operadores cadastrados, o login fica desativado.
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
         {settings?.operators.map((operator) => (
-          <Card key={operator.id} className="flex flex-row items-center justify-between p-3">
-            <div className="flex items-center gap-2">
-              <KeyRound size={16} className="text-muted-foreground" />
-              <span className="text-sm font-medium">{toTitleCase(operator.name)}</span>
-              <Badge variant="outline">{OPERATOR_ROLE_LABELS[operator.role]}</Badge>
+          <Card key={operator.id} className="flex flex-col gap-2 p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <KeyRound size={16} className="text-muted-foreground" />
+                <span className="text-sm font-medium">{toTitleCase(operator.name)}</span>
+              </div>
+
+              <Button
+                variant="destructive"
+                size="icon-sm"
+                onClick={() => handleDeleteOperator(operator.id)}
+                disabled={deleteOperator.isPending}
+              >
+                <Trash2 />
+              </Button>
             </div>
 
-            <Button
-              variant="destructive"
-              size="icon-sm"
-              onClick={() => handleDeleteOperator(operator.id)}
-              disabled={deleteOperator.isPending}
-            >
-              <Trash2 />
-            </Button>
+            <div className="flex flex-wrap gap-1">
+              {APP_PAGES.filter((page) => operator.allowedRoutes.includes(page.path)).map((page) => (
+                <Badge key={page.path} variant="outline">
+                  {page.label}
+                </Badge>
+              ))}
+            </div>
           </Card>
         ))}
 
@@ -131,23 +150,23 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
               }}
             />
 
-            {isFirstOperator ? (
+            <div className="flex flex-col gap-2">
+              {APP_PAGES.map((page) => (
+                <div key={page.path} className="flex items-center justify-between gap-2">
+                  <span className="text-sm">{page.label}</span>
+                  <Switch
+                    checked={allowedRoutes.includes(page.path)}
+                    onCheckedChange={(checked) => handleTogglePage(page.path, checked)}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {isFirstOperator && (
               <p className="text-xs text-muted-foreground">
-                O primeiro operador cadastrado vira gerente automaticamente, com acesso a todas as páginas.
+                Esse é o primeiro operador cadastrado, então o acesso às configurações é garantido automaticamente, além das
+                páginas selecionadas acima.
               </p>
-            ) : (
-              <Select value={operatorRole} onValueChange={(value) => setOperatorRole(value as TOperatorRole)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {OPERATOR_ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {OPERATOR_ROLE_LABELS[role]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             )}
 
             {operatorError && <p className="text-xs text-destructive">{operatorError}</p>}

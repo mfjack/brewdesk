@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
+import { SearchInput } from "@/_components/ui/search-input";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
 import { DollarSign, HandCoins, X } from "lucide-react";
@@ -48,6 +49,8 @@ export default function OrderDetailPage() {
   const { data: settings } = useGetSettings();
 
   const updateOrderStatus = useUpdateOrderStatus();
+
+  const openOrdersCount = useMemo(() => orders.filter((order) => !isOrderPaid(order)).length, [orders]);
 
   const filteredOrders = useMemo(
     () =>
@@ -139,22 +142,13 @@ export default function OrderDetailPage() {
         </div>
 
         <TabsContent value="open" className="flex-1 flex flex-col overflow-hidden">
-          {filteredOrders.length > 0 && (
-            <div className="p-4 flex gap-2 w-full max-w-100">
-              <Input
-                type="text"
-                placeholder="Filtrar por nome do cliente..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
-              />
-
-              {searchTerm && (
-                <Button size="icon" variant="ghost" onClick={() => setSearchTerm("")} className="h-10 w-10">
-                  <X size={16} />
-                </Button>
-              )}
-            </div>
+          {openOrdersCount > 0 && (
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Filtrar por nome do cliente..."
+              className="p-4 w-full max-w-100"
+            />
           )}
 
           {filteredOrders.length === 0 ? (

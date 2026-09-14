@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
@@ -7,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/_components/ui/badge";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { RowActions } from "@/_components/ui/row-actions";
+import { SearchInput } from "@/_components/ui/search-input";
 import { AlertTriangle, ImageOff, Pencil, Plus } from "lucide-react";
 
 import { useGetProducts } from "./query/useGetProducts";
@@ -27,6 +29,9 @@ export default function ProductPage() {
   const { data: suppliers } = useGetSuppliers();
   const { data: supplyItems } = useGetSupplyItems();
   const deleteProduct = useDeleteProduct();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredProducts = products?.filter((product) => product.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   function handleDeleteProduct(productId: number) {
     deleteProduct.mutate(productId);
@@ -64,22 +69,33 @@ export default function ProductPage() {
         {products?.length === 0 ? (
           <EmptyState message="Nenhum produto cadastrado." />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">Foto</TableHead>
-                <TableHead>Produto</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Preço</TableHead>
-                <TableHead>CMV %</TableHead>
-                <TableHead>Lucro</TableHead>
-                <TableHead>Estoque</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
+          <>
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Filtrar por nome do produto..."
+              className="mb-4 max-w-100"
+            />
 
-            <TableBody>
-              {products?.map((product: TProduct) => (
+            {filteredProducts?.length === 0 ? (
+              <EmptyState message="Nenhum produto encontrado com esse nome." />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">Foto</TableHead>
+                    <TableHead>Produto</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Preço</TableHead>
+                    <TableHead>CMV %</TableHead>
+                    <TableHead>Lucro</TableHead>
+                    <TableHead>Estoque</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {filteredProducts?.map((product: TProduct) => (
                 <TableRow key={product.id}>
                   <TableCell>
                     {product.photoUrl ? (
@@ -182,8 +198,10 @@ export default function ProductPage() {
                   </TableCell>
                 </TableRow>
               ))}
-            </TableBody>
-          </Table>
+                </TableBody>
+              </Table>
+            )}
+          </>
         )}
       </div>
     </section>
