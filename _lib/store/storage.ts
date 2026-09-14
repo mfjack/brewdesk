@@ -30,6 +30,12 @@ export const defaultSettings: TStoreSettings = {
   receiptFooterMessage: null,
   operators: [],
   pixQrCodeUrl: null,
+  featureFlags: {
+    takeout: true,
+    orderGrouping: true,
+    splitBill: true,
+  },
+  takeoutFee: 2,
 };
 
 export const initialData: StoreData = {

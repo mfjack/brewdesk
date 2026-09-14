@@ -8,7 +8,7 @@ import { Input } from "@/_components/ui/input";
 import { Separator } from "@/_components/ui/separator";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatCurrency } from "@/_lib/format-currency";
-import { buildOrderPayment, TAKEOUT_FEE } from "../order-math";
+import { buildOrderPayment, getChargedTakeoutFee } from "../order-math";
 import type { TOrderPayment, TOrderResponse, TPaymentMethod } from "../interface";
 import { PaymentMethodFields } from "./payment-method-fields";
 
@@ -35,7 +35,7 @@ export function SplitBillCalculator({ order, isOpen, onOpenChange, pixQrCodeUrl,
   const [personPayments, setPersonPayments] = useState<Record<number, TPersonPaymentState>>({});
 
   const peopleCount = Math.max(2, parseInt(peopleCountInput, 10) || 2);
-  const feeShare = (order.isTakeout ? TAKEOUT_FEE : 0) / peopleCount;
+  const feeShare = getChargedTakeoutFee(order) / peopleCount;
   const people = Array.from({ length: peopleCount }, (_, index) => index);
 
   const perPersonTotals = people.map((personIndex) => {

@@ -2,7 +2,7 @@ import { formatCurrency } from "@/_lib/format-currency";
 import { formatDateTime } from "@/_lib/format-date";
 
 import { TOrderResponse } from "../interface";
-import { TAKEOUT_FEE } from "../order-math";
+import { getChargedTakeoutFee } from "../order-math";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 
@@ -99,7 +99,7 @@ export function OrderReceipt({
       {!isAdditional && order.isTakeout && (
         <div className="flex justify-between text-xs font-semibold mt-1">
           <span>Embalagem para levar</span>
-          <span>{formatCurrency(TAKEOUT_FEE)}</span>
+          <span>{formatCurrency(getChargedTakeoutFee(order))}</span>
         </div>
       )}
 

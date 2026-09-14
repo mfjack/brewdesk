@@ -11,7 +11,7 @@ import Link from "next/link";
 
 import { useGetOrder } from "../order/query/useGetOrder";
 import { TOrderPayment, TOrderResponse, TPaymentMethod } from "../order/interface";
-import { buildOrderPayment, getGroupedOrders, isOrderPaid, TAKEOUT_FEE } from "../order/order-math";
+import { buildOrderPayment, getChargedTakeoutFee, getGroupedOrders, isOrderPaid } from "../order/order-math";
 import { paymentMethodLabels } from "../order/payment-methods";
 import { PaymentMethodFields } from "../order/_components/payment-method-fields";
 import { SplitBillCalculator } from "../order/_components/split-bill-calculator";
@@ -172,7 +172,7 @@ export default function OrderDetailPage() {
                     )}
 
                     {(() => {
-                      const groupedOrders = getGroupedOrders(order, orders);
+                      const groupedOrders = settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : [];
 
                       return (
                         groupedOrders.length > 0 && (
@@ -327,7 +327,7 @@ export default function OrderDetailPage() {
                 {historyOrder.isTakeout && (
                   <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
                     <span>Embalagem para levar</span>
-                    <span className="font-medium">{formatCurrency(TAKEOUT_FEE)}</span>
+                    <span className="font-medium">{formatCurrency(getChargedTakeoutFee(historyOrder))}</span>
                   </div>
                 )}
               </div>
@@ -412,7 +412,7 @@ export default function OrderDetailPage() {
                   {selectedOrder.isTakeout && (
                     <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
                       <span>Embalagem para levar</span>
-                      <span className="font-medium">{formatCurrency(TAKEOUT_FEE)}</span>
+                      <span className="font-medium">{formatCurrency(getChargedTakeoutFee(selectedOrder))}</span>
                     </div>
                   )}
                 </div>
@@ -422,14 +422,16 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-              <SplitBillCalculator
-                order={selectedOrder}
-                isOpen={isSplitOpen}
-                onOpenChange={setIsSplitOpen}
-                pixQrCodeUrl={settings?.pixQrCodeUrl}
-                onConfirmSplitPayment={handleConfirmSplitPayment}
-                isConfirming={updateOrderStatus.isPending}
-              />
+              {settings?.featureFlags.splitBill && (
+                <SplitBillCalculator
+                  order={selectedOrder}
+                  isOpen={isSplitOpen}
+                  onOpenChange={setIsSplitOpen}
+                  pixQrCodeUrl={settings?.pixQrCodeUrl}
+                  onConfirmSplitPayment={handleConfirmSplitPayment}
+                  isConfirming={updateOrderStatus.isPending}
+                />
+              )}
 
               {!isSplitOpen && (
                 <>

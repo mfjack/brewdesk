@@ -19,6 +19,8 @@ export const settingsStore = {
       receiptFooterMessage: input.receiptFooterMessage?.trim() || null,
       operators: data.settings.operators,
       pixQrCodeUrl: input.pixQrCodeUrl || null,
+      featureFlags: input.featureFlags,
+      takeoutFee: Math.max(0, Number(input.takeoutFee) || 0),
     };
 
     writeStore(data);

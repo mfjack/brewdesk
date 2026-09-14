@@ -123,7 +123,7 @@ export interface TOrderItem {
 
 export type TOrderStatus = "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID";
 
-export type TPaymentMethod = "CASH" | "CREDIT" | "DEBIT" | "PIX";
+export type TPaymentMethod = "CREDIT" | "DEBIT" | "PIX" | "CASH";
 
 export interface TOrderPayment {
   method: TPaymentMethod;
@@ -154,6 +154,12 @@ export interface TOperator {
   role: TOperatorRole;
 }
 
+export interface TFeatureFlags {
+  takeout: boolean;
+  orderGrouping: boolean;
+  splitBill: boolean;
+}
+
 export interface TStoreSettings {
   name: string;
   cnpj: string | null;
@@ -163,4 +169,6 @@ export interface TStoreSettings {
   receiptFooterMessage: string | null;
   operators: TOperator[];
   pixQrCodeUrl: string | null;
+  featureFlags: TFeatureFlags;
+  takeoutFee: number;
 }

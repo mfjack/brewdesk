@@ -11,9 +11,11 @@ import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
 import { Check, HandPlatter, Play, Users } from "lucide-react";
 import { Header } from "@/_components/ui/header";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { useGetSettings } from "../settings/query/useGetSettings";
 
 export default function KitchenPage() {
   const { data: orders = [] } = useGetOrder();
+  const { data: settings } = useGetSettings();
   const updateOrderStatus = useUpdateOrderStatus();
 
   const pendingOrders = orders.filter((order: TOrderResponse) => order.status === "PENDING");
@@ -117,7 +119,7 @@ export default function KitchenPage() {
                     )}
 
                     {(() => {
-                      const groupedOrders = getGroupedOrders(order, orders);
+                      const groupedOrders = settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : [];
 
                       return (
                         groupedOrders.length > 0 && (

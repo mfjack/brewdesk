@@ -65,9 +65,7 @@ export function PaymentMethodFields({
           {pixQrCodeUrl ? (
             <>
               <Image src={pixQrCodeUrl} alt="QR Code Pix" width={200} height={200} className="h-48 w-48 object-contain" />
-              <p className="text-xs text-muted-foreground text-center">
-                Peça pro cliente escanear o QR Code com o app do banco.
-              </p>
+              <p className="text-xs text-muted-foreground text-center">Peça pro cliente escanear o QR Code com o app do banco.</p>
             </>
           ) : (
             <p className="text-xs text-muted-foreground text-center">Nenhum QR Code cadastrado. Configure em Configurações.</p>

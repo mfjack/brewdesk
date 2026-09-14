@@ -1,0 +1,103 @@
+"use client";
+
+import { useState } from "react";
+
+import { Switch } from "@/_components/ui/switch";
+import { Input } from "@/_components/ui/input";
+import { ThemeToggle } from "@/_components/app/theme-toggle";
+import type { TFeatureFlags, TStoreSettings } from "../../order/interface";
+
+import { useUpdateSettings } from "../mutation/useUpdateSettings";
+
+const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; description: string }[] = [
+  { key: "orderGrouping", label: "Junto com", description: "Permite vincular comandas separadas que devem ser servidas juntas." },
+  { key: "splitBill", label: "Dividir conta", description: "Permite dividir o pagamento igualmente ou por item entre pessoas." },
+];
+
+export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | undefined }) {
+  const updateSettings = useUpdateSettings();
+  const [takeoutFeeInput, setTakeoutFeeInput] = useState<string | null>(null);
+
+  function handleToggle(key: keyof TFeatureFlags, value: boolean) {
+    if (!settings) {
+      return;
+    }
+
+    updateSettings.mutate({ ...settings, featureFlags: { ...settings.featureFlags, [key]: value } });
+  }
+
+  function handleTakeoutFeeBlur() {
+    if (!settings || takeoutFeeInput === null) {
+      return;
+    }
+
+    updateSettings.mutate({ ...settings, takeoutFee: Math.max(0, Number(takeoutFeeInput) || 0) });
+    setTakeoutFeeInput(null);
+  }
+
+  const takeoutFeeDisplayValue = takeoutFeeInput ?? (settings ? String(settings.takeoutFee) : "");
+
+  return (
+    <div className="max-w-lg space-y-3">
+      <div>
+        <p className="text-sm font-medium">Funcionalidades</p>
+        <p className="text-xs text-muted-foreground">Ative ou desative recursos extras do PDV.</p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
+          <div>
+            <p className="text-sm font-medium">Tema escuro</p>
+            <p className="text-xs text-muted-foreground">Alterna a aparência do sistema entre claro e escuro.</p>
+          </div>
+
+          <ThemeToggle />
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-lg border border-input px-3 py-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Para levar</p>
+              <p className="text-xs text-muted-foreground">Permite marcar a comanda como para levar e cobrar a embalagem.</p>
+            </div>
+
+            <Switch checked={settings?.featureFlags.takeout ?? true} onCheckedChange={(value) => handleToggle("takeout", value)} />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted-foreground whitespace-nowrap">Valor da embalagem</label>
+            <div className="relative w-24">
+              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                R$
+              </span>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                className="pl-7"
+                placeholder="0,00"
+                value={takeoutFeeDisplayValue}
+                onChange={(e) => setTakeoutFeeInput(e.target.value)}
+                onBlur={handleTakeoutFeeBlur}
+              />
+            </div>
+          </div>
+        </div>
+
+        {OTHER_FEATURE_FLAG_OPTIONS.map((option) => (
+          <div key={option.key} className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
+            <div>
+              <p className="text-sm font-medium">{option.label}</p>
+              <p className="text-xs text-muted-foreground">{option.description}</p>
+            </div>
+
+            <Switch
+              checked={settings?.featureFlags[option.key] ?? true}
+              onCheckedChange={(value) => handleToggle(option.key, value)}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

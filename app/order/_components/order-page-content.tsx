@@ -10,6 +10,7 @@ import { useGetCategories } from "../../category/query/useGetCategories";
 import { useGetProducts } from "../../product/query/useGetProducts";
 import { useGetSupplyItems } from "../../stock/query/useGetSupplyItems";
 import { useGetOrder } from "../query/useGetOrder";
+import { useGetSettings } from "../../settings/query/useGetSettings";
 
 import { useCreateOrder } from "../mutation/useCreateOrder";
 import { useAddOrderItem } from "../mutation/useAddOrderItem";
@@ -87,6 +88,7 @@ export default function OrderPageContent() {
   const { data: products } = useGetProducts();
   const { data: supplyItems } = useGetSupplyItems();
   const { data: orders = [] } = useGetOrder();
+  const { data: settings } = useGetSettings();
 
   const createOrder = useCreateOrder();
   const addOrderItem = useAddOrderItem();
@@ -209,7 +211,7 @@ export default function OrderPageContent() {
         return {
           ...base,
           orderItems,
-          total: computeOrderTotal(orderItems, base.isTakeout),
+          total: computeOrderTotal(orderItems, base.isTakeout, settings?.takeoutFee),
         };
       });
 
@@ -255,7 +257,7 @@ export default function OrderPageContent() {
         setCurrentOrder({
           ...currentOrder,
           orderItems,
-          total: computeOrderTotal(orderItems, currentOrder.isTakeout),
+          total: computeOrderTotal(orderItems, currentOrder.isTakeout, settings?.takeoutFee),
         });
       }
 

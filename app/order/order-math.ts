@@ -2,8 +2,6 @@ import { TOrderItem, TOrderPayment, TOrderResponse, TPaymentMethod, TProduct } f
 
 export const DRAFT_ORDER_ID = 0;
 
-export const TAKEOUT_FEE = 2;
-
 export function isDraftOrder(order: TOrderResponse): boolean {
   return order.id === DRAFT_ORDER_ID;
 }
@@ -20,10 +18,20 @@ export function getGroupedOrders(order: TOrderResponse, allOrders: TOrderRespons
   return allOrders.filter((candidate) => candidate.id !== order.id && candidate.groupId === order.groupId);
 }
 
-export function computeOrderTotal(items: TOrderItem[], isTakeout?: boolean): number {
+export function computeOrderTotal(items: TOrderItem[], isTakeout?: boolean, takeoutFee = 0): number {
   const itemsTotal = items.reduce((total, item) => total + item.subtotal, 0);
 
-  return isTakeout ? itemsTotal + TAKEOUT_FEE : itemsTotal;
+  return isTakeout ? itemsTotal + takeoutFee : itemsTotal;
+}
+
+export function getChargedTakeoutFee(order: TOrderResponse): number {
+  if (!order.isTakeout) {
+    return 0;
+  }
+
+  const itemsTotal = order.orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+  return order.total - itemsTotal;
 }
 
 export function computeChangeDue(amountReceived: number, total: number): number {

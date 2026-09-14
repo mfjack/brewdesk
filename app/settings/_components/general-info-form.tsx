@@ -9,6 +9,7 @@ import { ImageUploadField } from "@/_components/ui/image-upload-field";
 
 import { useUpdateSettings } from "../mutation/useUpdateSettings";
 import type { TStoreSettings } from "../../order/interface";
+import { defaultSettings } from "@/_lib/store/storage";
 
 interface TSettingsFormValues {
   name: string;
@@ -48,6 +49,8 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
       receiptFooterMessage: data.receiptFooterMessage || null,
       operators: settings?.operators ?? [],
       pixQrCodeUrl: data.pixQrCodeUrl,
+      featureFlags: settings?.featureFlags ?? defaultSettings.featureFlags,
+      takeoutFee: settings?.takeoutFee ?? defaultSettings.takeoutFee,
     });
   }
 

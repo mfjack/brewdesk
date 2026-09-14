@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 
 import { TMenuList, TOrderItem } from "../interface";
-import { DRAFT_ORDER_ID, TAKEOUT_FEE } from "../order-math";
+import { DRAFT_ORDER_ID } from "../order-math";
 import { PaymentMethodFields } from "./payment-method-fields";
 import { SplitBillCalculator } from "./split-bill-calculator";
 
@@ -82,6 +82,10 @@ export function MenuList({
 
   const { data: settings } = useGetSettings();
 
+  const isTakeoutEnabled = settings?.featureFlags.takeout ?? true;
+  const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
+  const isSplitBillEnabled = settings?.featureFlags.splitBill ?? true;
+
   const finalTotal = order?.total ?? 0;
 
   useEffect(() => {
@@ -116,7 +120,7 @@ export function MenuList({
                     Horário da comanda: <span className="font-medium tabular-nums">{formatTime(order.createdAt)}</span>
                   </p>
 
-                  {groupedOrders.length > 0 && (
+                  {isOrderGroupingEnabled && groupedOrders.length > 0 && (
                     <p className="text-xs flex items-center gap-1">
                       <Users size={12} />
                       Junto com:{" "}
@@ -254,16 +258,20 @@ export function MenuList({
                 <DialogDescription>Digite o nome para identificar essa comanda antes de enviar.</DialogDescription>
               </DialogHeader>
 
-              <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
-                <div>
-                  <p className="text-sm font-medium">Para levar</p>
-                  <p className="text-xs text-muted-foreground">Adiciona {formatCurrency(TAKEOUT_FEE)} na comanda.</p>
+              {isTakeoutEnabled && (
+                <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium">Para levar</p>
+                    <p className="text-xs text-muted-foreground">
+                      Adiciona {formatCurrency(settings?.takeoutFee ?? 0)} na comanda.
+                    </p>
+                  </div>
+
+                  <Switch checked={isTakeoutDraft} onCheckedChange={onIsTakeoutDraftChange} />
                 </div>
+              )}
 
-                <Switch checked={isTakeoutDraft} onCheckedChange={onIsTakeoutDraftChange} />
-              </div>
-
-              {groupableOrders.length > 0 && (
+              {isOrderGroupingEnabled && groupableOrders.length > 0 && (
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Junto com</label>
                   <p className="text-xs text-muted-foreground">
@@ -325,7 +333,7 @@ export function MenuList({
                 <DialogDescription>Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda.</DialogDescription>
               </DialogHeader>
 
-              {order && (
+              {isSplitBillEnabled && order && (
                 <SplitBillCalculator
                   order={order}
                   isOpen={isSplitOpen}
