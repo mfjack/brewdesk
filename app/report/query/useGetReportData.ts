@@ -109,14 +109,15 @@ function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange,
 
 function buildPaymentMethodStats(orders: TOrderResponse[]): PaymentMethodStat[] {
   const methods: TPaymentMethod[] = ["CASH", "CREDIT", "DEBIT", "PIX"];
+  const payments = orders.flatMap((order) => order.payments);
 
   return methods.map((method) => {
-    const ordersWithMethod = orders.filter((order) => order.paymentMethod === method);
+    const paymentsWithMethod = payments.filter((payment) => payment.method === method);
 
     return {
       method,
-      count: ordersWithMethod.length,
-      total: ordersWithMethod.reduce((sum, order) => sum + order.total, 0),
+      count: paymentsWithMethod.length,
+      total: paymentsWithMethod.reduce((sum, payment) => sum + payment.amount, 0),
     };
   });
 }

@@ -10,10 +10,11 @@ import { DollarSign, HandCoins, Users, X } from "lucide-react";
 import Link from "next/link";
 
 import { useGetOrder } from "../order/query/useGetOrder";
-import { TOrderResponse, TPaymentMethod } from "../order/interface";
-import { getGroupedOrders, isOrderPaid, TAKEOUT_FEE } from "../order/order-math";
+import { TOrderPayment, TOrderResponse, TPaymentMethod } from "../order/interface";
+import { buildOrderPayment, getGroupedOrders, isOrderPaid, TAKEOUT_FEE } from "../order/order-math";
 import { paymentMethodLabels } from "../order/payment-methods";
 import { PaymentMethodFields } from "../order/_components/payment-method-fields";
+import { SplitBillCalculator } from "../order/_components/split-bill-calculator";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Header } from "@/_components/ui/header";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
@@ -40,6 +41,7 @@ export default function OrderDetailPage() {
   const [selectedOrder, setSelectedOrder] = useState<TOrderResponse | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CASH");
   const [amountReceived, setAmountReceived] = useState("");
+  const [isSplitOpen, setIsSplitOpen] = useState(false);
 
   const { data: orders = [] } = useGetOrder();
   const { data: settings } = useGetSettings();
@@ -71,6 +73,7 @@ export default function OrderDetailPage() {
     setSelectedOrder(order);
     setPaymentMethod("CASH");
     setAmountReceived("");
+    setIsSplitOpen(false);
   }
 
   function handleClosePayment() {
@@ -89,8 +92,21 @@ export default function OrderDetailPage() {
     await updateOrderStatus.mutateAsync({
       orderId: selectedOrder.id,
       status: "PAID",
-      paymentMethod,
-      amountReceived: paymentMethod === "CASH" ? Number(amountReceived) || 0 : null,
+      payments: [buildOrderPayment(paymentMethod, selectedOrder.total, Number(amountReceived) || 0)],
+    });
+
+    setSelectedOrder(null);
+  }
+
+  async function handleConfirmSplitPayment(payments: TOrderPayment[]) {
+    if (!selectedOrder) {
+      return;
+    }
+
+    await updateOrderStatus.mutateAsync({
+      orderId: selectedOrder.id,
+      status: "PAID",
+      payments,
     });
 
     setSelectedOrder(null);
@@ -323,25 +339,37 @@ export default function OrderDetailPage() {
                 <span className="text-xl font-bold">{formatCurrency(historyOrder.total)}</span>
               </div>
 
-              {historyOrder.paymentMethod && (
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Forma de pagamento</span>
-                  <span className="font-medium text-foreground">{paymentMethodLabels[historyOrder.paymentMethod]}</span>
+              {historyOrder.payments.length > 0 && (
+                <div className="space-y-2">
+                  {historyOrder.payments.map((payment, index) => (
+                    <div key={index} className="space-y-1">
+                      {historyOrder.payments.length > 1 && (
+                        <p className="text-xs font-semibold text-muted-foreground">Pagamento {index + 1}</p>
+                      )}
+
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>Forma de pagamento</span>
+                        <span className="font-medium text-foreground">
+                          {paymentMethodLabels[payment.method]} — {formatCurrency(payment.amount)}
+                        </span>
+                      </div>
+
+                      {payment.method === "CASH" && payment.amountReceived != null && (
+                        <>
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <span>Valor recebido</span>
+                            <span className="font-medium text-foreground">{formatCurrency(payment.amountReceived)}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <span>Troco</span>
+                            <span className="font-medium text-foreground">{formatCurrency(payment.changeDue ?? 0)}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              {historyOrder.paymentMethod === "CASH" && historyOrder.amountReceived != null && (
-                <>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Valor recebido</span>
-                    <span className="font-medium text-foreground">{formatCurrency(historyOrder.amountReceived)}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Troco</span>
-                    <span className="font-medium text-foreground">{formatCurrency(historyOrder.changeDue ?? 0)}</span>
-                  </div>
-                </>
               )}
             </div>
           )}
@@ -356,7 +384,7 @@ export default function OrderDetailPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar">
           <DialogHeader className="flex flex-col gap-0.5">
             <DialogTitle>Confirmar pagamento</DialogTitle>
             <DialogDescription>Confirme o recebimento do pagamento da comanda.</DialogDescription>
@@ -394,34 +422,47 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-              <Separator />
-
-              <PaymentMethodFields
-                paymentMethod={paymentMethod}
-                onPaymentMethodChange={setPaymentMethod}
-                amountReceived={amountReceived}
-                onAmountReceivedChange={setAmountReceived}
-                total={finalTotal}
+              <SplitBillCalculator
+                order={selectedOrder}
+                isOpen={isSplitOpen}
+                onOpenChange={setIsSplitOpen}
                 pixQrCodeUrl={settings?.pixQrCodeUrl}
+                onConfirmSplitPayment={handleConfirmSplitPayment}
+                isConfirming={updateOrderStatus.isPending}
               />
 
-              <Separator />
+              {!isSplitOpen && (
+                <>
+                  <Separator />
 
-              <Button
-                className="w-full"
-                type="button"
-                size="lg"
-                onClick={handleConfirmPayment}
-                disabled={
-                  updateOrderStatus.isPending ||
-                  !selectedOrder ||
-                  (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)
-                }
-              >
-                <DollarSign />
+                  <PaymentMethodFields
+                    paymentMethod={paymentMethod}
+                    onPaymentMethodChange={setPaymentMethod}
+                    amountReceived={amountReceived}
+                    onAmountReceivedChange={setAmountReceived}
+                    total={finalTotal}
+                    pixQrCodeUrl={settings?.pixQrCodeUrl}
+                  />
 
-                {updateOrderStatus.isPending ? "Processando..." : "Pagamento Recebido"}
-              </Button>
+                  <Separator />
+
+                  <Button
+                    className="w-full"
+                    type="button"
+                    size="lg"
+                    onClick={handleConfirmPayment}
+                    disabled={
+                      updateOrderStatus.isPending ||
+                      !selectedOrder ||
+                      (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)
+                    }
+                  >
+                    <DollarSign />
+
+                    {updateOrderStatus.isPending ? "Processando..." : "Pagamento Recebido"}
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </DialogContent>

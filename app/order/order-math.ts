@@ -1,4 +1,4 @@
-import { TOrderItem, TOrderResponse, TProduct } from "./interface";
+import { TOrderItem, TOrderPayment, TOrderResponse, TPaymentMethod, TProduct } from "./interface";
 
 export const DRAFT_ORDER_ID = 0;
 
@@ -28,6 +28,16 @@ export function computeOrderTotal(items: TOrderItem[], isTakeout?: boolean): num
 
 export function computeChangeDue(amountReceived: number, total: number): number {
   return Math.max(amountReceived - total, 0);
+}
+
+export function buildOrderPayment(method: TPaymentMethod, amount: number, amountReceivedInput?: number | null): TOrderPayment {
+  if (method !== "CASH") {
+    return { method, amount, amountReceived: amount, changeDue: 0 };
+  }
+
+  const amountReceived = amountReceivedInput ?? 0;
+
+  return { method, amount, amountReceived, changeDue: computeChangeDue(amountReceived, amount) };
 }
 
 export function mergeOrderItem(

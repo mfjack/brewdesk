@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { TMenuList, TOrderItem } from "../interface";
 import { DRAFT_ORDER_ID, TAKEOUT_FEE } from "../order-math";
 import { PaymentMethodFields } from "./payment-method-fields";
+import { SplitBillCalculator } from "./split-bill-calculator";
 
 import { formatCurrency } from "@/_lib/format-currency";
 import { formatTime } from "@/_lib/format-date";
@@ -66,6 +67,9 @@ export function MenuList({
   onAmountReceivedChange,
   onConfirmPayment,
   isConfirmingPayment,
+  isSplitOpen,
+  onSplitOpenChange,
+  onConfirmSplitPayment,
 
   onRequestCancelOrder,
   isCancelDialogOpen,
@@ -315,40 +319,55 @@ export function MenuList({
           </Dialog>
 
           <Dialog open={isPaymentDialogOpen} onOpenChange={onPaymentDialogOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar">
               <DialogHeader className="flex flex-col gap-0.5">
                 <DialogTitle>Confirmar pagamento</DialogTitle>
                 <DialogDescription>Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda.</DialogDescription>
               </DialogHeader>
 
-              <PaymentMethodFields
-                paymentMethod={paymentMethod}
-                onPaymentMethodChange={onPaymentMethodChange}
-                amountReceived={amountReceived}
-                onAmountReceivedChange={onAmountReceivedChange}
-                total={finalTotal}
-                pixQrCodeUrl={settings?.pixQrCodeUrl}
-              />
+              {order && (
+                <SplitBillCalculator
+                  order={order}
+                  isOpen={isSplitOpen}
+                  onOpenChange={onSplitOpenChange}
+                  pixQrCodeUrl={settings?.pixQrCodeUrl}
+                  onConfirmSplitPayment={onConfirmSplitPayment}
+                  isConfirming={isConfirmingPayment}
+                />
+              )}
 
-              <Separator />
+              {!isSplitOpen && (
+                <>
+                  <PaymentMethodFields
+                    paymentMethod={paymentMethod}
+                    onPaymentMethodChange={onPaymentMethodChange}
+                    amountReceived={amountReceived}
+                    onAmountReceivedChange={onAmountReceivedChange}
+                    total={finalTotal}
+                    pixQrCodeUrl={settings?.pixQrCodeUrl}
+                  />
 
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold">Total</span>
-                <span className="text-xl font-bold">{formatCurrency(finalTotal)}</span>
-              </div>
+                  <Separator />
 
-              <DialogFooter>
-                <Button
-                  className="w-full"
-                  type="button"
-                  size="lg"
-                  onClick={onConfirmPayment}
-                  disabled={isConfirmingPayment || (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)}
-                >
-                  <DollarSign />
-                  {isConfirmingPayment ? "Processando..." : "Pagamento Recebido"}
-                </Button>
-              </DialogFooter>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold">Total</span>
+                    <span className="text-xl font-bold">{formatCurrency(finalTotal)}</span>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      className="w-full"
+                      type="button"
+                      size="lg"
+                      onClick={onConfirmPayment}
+                      disabled={isConfirmingPayment || (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)}
+                    >
+                      <DollarSign />
+                      {isConfirmingPayment ? "Processando..." : "Pagamento Recebido"}
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
             </DialogContent>
           </Dialog>
 

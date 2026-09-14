@@ -35,6 +35,9 @@ export interface TMenuList {
   onAmountReceivedChange: (value: string) => void;
   onConfirmPayment: () => void;
   isConfirmingPayment: boolean;
+  isSplitOpen: boolean;
+  onSplitOpenChange: (open: boolean) => void;
+  onConfirmSplitPayment: (payments: TOrderPayment[]) => void | Promise<void>;
 
   onRequestCancelOrder: () => void;
   isCancelDialogOpen: boolean;
@@ -122,6 +125,13 @@ export type TOrderStatus = "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIV
 
 export type TPaymentMethod = "CASH" | "CREDIT" | "DEBIT" | "PIX";
 
+export interface TOrderPayment {
+  method: TPaymentMethod;
+  amount: number;
+  amountReceived: number | null;
+  changeDue: number | null;
+}
+
 export interface TOrderResponse {
   id: number;
   customerName: string;
@@ -133,9 +143,7 @@ export interface TOrderResponse {
   printedItemQuantities?: Record<number, number>;
   isTakeout: boolean;
   operatorName: string | null;
-  paymentMethod: TPaymentMethod | null;
-  amountReceived: number | null;
-  changeDue: number | null;
+  payments: TOrderPayment[];
   groupId: number | null;
 }
 

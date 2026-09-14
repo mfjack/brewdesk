@@ -1,4 +1,4 @@
-import type { TOrderResponse, TOrderStatus, TPaymentMethod, TProduct, TSupplyItem } from "@/app/order/interface";
+import type { TOrderPayment, TOrderResponse, TOrderStatus, TProduct, TSupplyItem } from "@/app/order/interface";
 import { computeOrderTotal, decrementOrRemoveItem, mergeOrderItem } from "@/app/order/order-math";
 import { readStore, updateStore, writeStore } from "./storage";
 import { adjustSupplyItemStock } from "./supply-items";
@@ -47,11 +47,7 @@ export const orderStore = {
 
       operatorName: operatorName?.trim() || null,
 
-      paymentMethod: null,
-
-      amountReceived: null,
-
-      changeDue: null,
+      payments: [],
 
       groupId: null,
     };
@@ -158,10 +154,7 @@ export const orderStore = {
 
     groupWithOrderId?: number | null,
 
-    payment?: {
-      paymentMethod?: TPaymentMethod;
-      amountReceived?: number | null;
-    },
+    payments?: TOrderPayment[],
   ) => {
     const data = readStore();
 
@@ -201,13 +194,8 @@ export const orderStore = {
       }
     }
 
-    if (payment) {
-      order.paymentMethod = payment.paymentMethod ?? null;
-      order.amountReceived = payment.paymentMethod === "CASH" ? payment.amountReceived ?? null : null;
-      order.changeDue =
-        payment.paymentMethod === "CASH" && payment.amountReceived != null
-          ? Math.max(payment.amountReceived - order.total, 0)
-          : null;
+    if (payments !== undefined) {
+      order.payments = payments;
     }
 
     writeStore(data);

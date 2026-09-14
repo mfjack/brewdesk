@@ -60,12 +60,42 @@ export function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
-function normalizeOrders(orders: TOrderResponse[]): TOrderResponse[] {
-  return orders.map((order) => ({
-    ...order,
-    orderItems: order.orderItems.map((item) => ({ ...item, costPrice: item.costPrice ?? 0 })),
-    groupId: order.groupId ?? null,
-  }));
+function normalizeOrders(orders: TOrderResponse[]): { orders: TOrderResponse[]; migrated: boolean } {
+  let migrated = false;
+
+  const normalized = orders.map((order) => {
+    const legacy = order as TOrderResponse & {
+      paymentMethod?: TOrderResponse["payments"][number]["method"] | null;
+      amountReceived?: number | null;
+      changeDue?: number | null;
+    };
+
+    let payments = order.payments;
+
+    if (!payments) {
+      migrated = true;
+
+      payments = legacy.paymentMethod
+        ? [
+            {
+              method: legacy.paymentMethod,
+              amount: order.total,
+              amountReceived: legacy.amountReceived ?? order.total,
+              changeDue: legacy.changeDue ?? 0,
+            },
+          ]
+        : [];
+    }
+
+    return {
+      ...order,
+      orderItems: order.orderItems.map((item) => ({ ...item, costPrice: item.costPrice ?? 0 })),
+      groupId: order.groupId ?? null,
+      payments,
+    };
+  });
+
+  return { orders: normalized, migrated };
 }
 
 function normalizeProducts(products: TProduct[]): TProduct[] {
@@ -151,7 +181,9 @@ export function readStore(): StoreData {
       nextIds: { ...clone(initialData.nextIds), ...parsed.nextIds },
     };
 
-    data.orders = normalizeOrders(data.orders);
+    const { orders: normalizedOrders, migrated: ordersMigrated } = normalizeOrders(data.orders);
+
+    data.orders = normalizedOrders;
     data.products = normalizeProducts(data.products);
 
     const { settings: normalizedSettings, migrated: operatorsMigrated } = normalizeSettings(data.settings);
@@ -161,7 +193,7 @@ export function readStore(): StoreData {
     const supplyItemsMigrated = normalizeSupplyItems(data);
     const ordersPruned = pruneOldPaidOrders(data);
 
-    if (ordersPruned || supplyItemsMigrated || operatorsMigrated) {
+    if (ordersPruned || supplyItemsMigrated || operatorsMigrated || ordersMigrated) {
       writeStore(data);
     }
 

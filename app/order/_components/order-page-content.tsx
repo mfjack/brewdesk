@@ -18,8 +18,9 @@ import { useUpdateOrderStatus } from "../mutation/useUpdateOrderStatus";
 import { useMarkOrderItemsPrinted } from "../mutation/useMarkOrderItemsPrinted";
 import { useDeleteOrder } from "../../order-detail/mutation/useDeleteOrder";
 
-import { TCategory, TOrderItem, TOrderResponse, TPaymentMethod, TProduct } from "../interface";
+import { TCategory, TOrderItem, TOrderPayment, TOrderResponse, TPaymentMethod, TProduct } from "../interface";
 import {
+  buildOrderPayment,
   computeOrderTotal,
   decrementOrRemoveItem,
   DRAFT_ORDER_ID,
@@ -71,6 +72,8 @@ export default function OrderPageContent() {
   const [isSendingOrder, setIsSendingOrder] = useState(false);
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+
+  const [isSplitOpen, setIsSplitOpen] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CASH");
 
@@ -188,9 +191,7 @@ export default function OrderPageContent() {
           observation: null,
           isTakeout: false,
           operatorName: null,
-          paymentMethod: null,
-          amountReceived: null,
-          changeDue: null,
+          payments: [],
           groupId: null,
         };
 
@@ -430,6 +431,7 @@ export default function OrderPageContent() {
 
     setPaymentMethod("CASH");
     setAmountReceived("");
+    setIsSplitOpen(false);
     setIsPaymentDialogOpen(true);
   }
 
@@ -448,11 +450,39 @@ export default function OrderPageContent() {
         orderId: order.id,
         status: "PAID",
         observation,
-        paymentMethod,
-        amountReceived: paymentMethod === "CASH" ? Number(amountReceived) || 0 : null,
+        payments: [buildOrderPayment(paymentMethod, order.total, Number(amountReceived) || 0)],
       });
 
       setIsPaymentDialogOpen(false);
+      resetCart();
+    } catch (error) {
+      setStockError(error instanceof Error ? error.message : "Não foi possível concluir o pagamento.");
+    } finally {
+      sendingOrderRef.current = false;
+      setIsSendingOrder(false);
+    }
+  }
+
+  async function handleConfirmSplitPayment(payments: TOrderPayment[]) {
+    if (!currentOrder || currentOrder.orderItems.length === 0 || sendingOrderRef.current) {
+      return;
+    }
+
+    sendingOrderRef.current = true;
+    setIsSendingOrder(true);
+
+    try {
+      const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, "") : currentOrder;
+
+      await updateOrderStatus.mutateAsync({
+        orderId: order.id,
+        status: "PAID",
+        observation,
+        payments,
+      });
+
+      setIsPaymentDialogOpen(false);
+      setIsSplitOpen(false);
       resetCart();
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível concluir o pagamento.");
@@ -522,6 +552,9 @@ export default function OrderPageContent() {
             onAmountReceivedChange={setAmountReceived}
             onConfirmPayment={handleConfirmPayment}
             isConfirmingPayment={isSendingOrder}
+            isSplitOpen={isSplitOpen}
+            onSplitOpenChange={setIsSplitOpen}
+            onConfirmSplitPayment={handleConfirmSplitPayment}
             onRequestCancelOrder={handleRequestCancelOrder}
             isCancelDialogOpen={isCancelDialogOpen}
             onCancelDialogOpenChange={setIsCancelDialogOpen}
