@@ -11,7 +11,7 @@ import Link from "next/link";
 
 import { useGetOrder } from "../order/query/useGetOrder";
 import { TOrderResponse, TPaymentMethod } from "../order/interface";
-import { isOrderPaid } from "../order/order-math";
+import { isOrderPaid, TAKEOUT_FEE } from "../order/order-math";
 import { paymentMethodLabels } from "../order/payment-methods";
 import { PaymentMethodFields } from "../order/_components/payment-method-fields";
 import { formatCurrency } from "@/_lib/format-currency";
@@ -294,6 +294,13 @@ export default function OrderDetailPage() {
                     <span className="font-medium">{formatCurrency(item.subtotal)}</span>
                   </div>
                 ))}
+
+                {historyOrder.isTakeout && (
+                  <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                    <span>Embalagem para levar</span>
+                    <span className="font-medium">{formatCurrency(TAKEOUT_FEE)}</span>
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -360,6 +367,13 @@ export default function OrderDetailPage() {
                       <span className="font-medium">{formatCurrency(item.subtotal)}</span>
                     </div>
                   ))}
+
+                  {selectedOrder.isTakeout && (
+                    <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                      <span>Embalagem para levar</span>
+                      <span className="font-medium">{formatCurrency(TAKEOUT_FEE)}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold">Total</span>

@@ -197,7 +197,7 @@ export default function OrderPageContent() {
         return {
           ...base,
           orderItems,
-          total: computeOrderTotal(orderItems),
+          total: computeOrderTotal(orderItems, base.isTakeout),
         };
       });
 
@@ -243,7 +243,7 @@ export default function OrderPageContent() {
         setCurrentOrder({
           ...currentOrder,
           orderItems,
-          total: computeOrderTotal(orderItems),
+          total: computeOrderTotal(orderItems, currentOrder.isTakeout),
         });
       }
 
@@ -344,7 +344,7 @@ export default function OrderPageContent() {
 
       setPrintedItemQuantities(printedQty);
 
-      schedulePrint(updatedOrder.id, printedQty, () => router.push("/order-detail"));
+      schedulePrint(updatedOrder.id, printedQty, () => resetCart());
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
     } finally {

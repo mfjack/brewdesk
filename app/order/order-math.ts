@@ -2,6 +2,8 @@ import { TOrderItem, TOrderResponse, TProduct } from "./interface";
 
 export const DRAFT_ORDER_ID = 0;
 
+export const TAKEOUT_FEE = 2;
+
 export function isDraftOrder(order: TOrderResponse): boolean {
   return order.id === DRAFT_ORDER_ID;
 }
@@ -10,8 +12,10 @@ export function isOrderPaid(order: TOrderResponse): boolean {
   return order.status === "PAID";
 }
 
-export function computeOrderTotal(items: TOrderItem[]): number {
-  return items.reduce((total, item) => total + item.subtotal, 0);
+export function computeOrderTotal(items: TOrderItem[], isTakeout?: boolean): number {
+  const itemsTotal = items.reduce((total, item) => total + item.subtotal, 0);
+
+  return isTakeout ? itemsTotal + TAKEOUT_FEE : itemsTotal;
 }
 
 export function computeChangeDue(amountReceived: number, total: number): number {

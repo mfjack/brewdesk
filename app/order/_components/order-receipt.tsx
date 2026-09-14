@@ -2,6 +2,7 @@ import { formatCurrency } from "@/_lib/format-currency";
 import { formatDateTime } from "@/_lib/format-date";
 
 import { TOrderResponse } from "../interface";
+import { TAKEOUT_FEE } from "../order-math";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useGetSettings } from "@/app/settings/query/useGetSettings";
 
@@ -82,6 +83,13 @@ export function OrderReceipt({ order, observation, printMode, printedItemQuantit
           </div>
         ))}
       </div>
+
+      {!isAdditional && order.isTakeout && (
+        <div className="flex justify-between text-xs font-semibold mt-1">
+          <span>Embalagem para levar</span>
+          <span>{formatCurrency(TAKEOUT_FEE)}</span>
+        </div>
+      )}
 
       <div className="border-t mt-3 pt-2 flex justify-between font-bold text-xs">
         <span>{isAdditional ? "Subtotal Adicionais" : "Total"}</span>

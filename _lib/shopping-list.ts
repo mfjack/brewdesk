@@ -17,7 +17,10 @@ export function buildShoppingListGroups(supplyItems: TSupplyItem[], products: TP
   const groups = new Map<number | null, TShoppingListGroup>();
 
   function pushItem(supplierId: number | null, item: TShoppingListItem) {
-    const existing = groups.get(supplierId);
+    const supplier = supplierId ? (suppliers.find((candidate) => candidate.id === supplierId) ?? null) : null;
+    const key = supplier?.id ?? null;
+
+    const existing = groups.get(key);
 
     if (existing) {
       existing.items.push(item);
@@ -25,9 +28,7 @@ export function buildShoppingListGroups(supplyItems: TSupplyItem[], products: TP
       return;
     }
 
-    const supplier = supplierId ? (suppliers.find((candidate) => candidate.id === supplierId) ?? null) : null;
-
-    groups.set(supplierId, { supplier, items: [item] });
+    groups.set(key, { supplier, items: [item] });
   }
 
   supplyItems

@@ -86,7 +86,7 @@ export const orderStore = {
 
     order.orderItems = mergeOrderItem(order.orderItems, product, quantity, () => data.nextIds.item++);
 
-    order.total = computeOrderTotal(order.orderItems);
+    order.total = computeOrderTotal(order.orderItems, order.isTakeout);
 
     if (product.trackStock) {
       product.quantity -= quantity;
@@ -112,7 +112,7 @@ export const orderStore = {
 
     order.orderItems = decrementOrRemoveItem(order.orderItems, itemId);
 
-    order.total = computeOrderTotal(order.orderItems);
+    order.total = computeOrderTotal(order.orderItems, order.isTakeout);
 
     if (removedItem) {
       const product = data.products.find((item) => item.id === removedItem.product.id);
@@ -179,6 +179,7 @@ export const orderStore = {
 
     if (isTakeout !== undefined) {
       order.isTakeout = isTakeout;
+      order.total = computeOrderTotal(order.orderItems, order.isTakeout);
     }
 
     if (payment) {

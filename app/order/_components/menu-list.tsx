@@ -10,7 +10,7 @@ import { Switch } from "@/_components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 
 import { TMenuList, TOrderItem } from "../interface";
-import { DRAFT_ORDER_ID } from "../order-math";
+import { DRAFT_ORDER_ID, TAKEOUT_FEE } from "../order-math";
 import { PaymentMethodFields } from "./payment-method-fields";
 
 import { formatCurrency } from "@/_lib/format-currency";
@@ -236,7 +236,10 @@ export function MenuList({
               </DialogHeader>
 
               <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
-                <p className="text-sm font-medium">Para levar</p>
+                <div>
+                  <p className="text-sm font-medium">Para levar</p>
+                  <p className="text-xs text-muted-foreground">Adiciona {formatCurrency(TAKEOUT_FEE)} na comanda.</p>
+                </div>
 
                 <Switch checked={isTakeoutDraft} onCheckedChange={onIsTakeoutDraftChange} />
               </div>
