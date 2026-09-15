@@ -176,25 +176,27 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Estoque mínimo (alerta)</label>
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="text-sm font-medium">Estoque mínimo (alerta)</label>
               <Input
                 type="number"
                 step="0.01"
                 min="0"
                 placeholder="Ex.: 500"
                 title="Alertar quando o estoque ficar menor ou igual a esse valor"
-                className="flex-1"
                 {...register("minQuantity")}
               />
+            </div>
 
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="text-sm font-medium">Unidade do mínimo</label>
               <Controller
                 control={control}
                 name="minQuantityUnit"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

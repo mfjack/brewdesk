@@ -42,3 +42,12 @@ export function convertQuantity(quantity: number, fromUnit: string, toUnit: stri
 
   return quantity;
 }
+
+const SMALLER_UNIT_FOR_DISPLAY: Record<string, string> = { kg: "g", L: "ml" };
+
+export function formatSupplyQuantity(quantity: number, unit: string): string {
+  const displayUnit = quantity < 1 && unit in SMALLER_UNIT_FOR_DISPLAY ? SMALLER_UNIT_FOR_DISPLAY[unit] : unit;
+  const displayQuantity = convertQuantity(quantity, unit, displayUnit);
+
+  return `${Number(displayQuantity.toFixed(2))}${formatUnit(displayUnit)}`;
+}

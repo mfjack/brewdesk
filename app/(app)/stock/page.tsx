@@ -20,7 +20,7 @@ import { ShoppingListDialog } from "./_components/shopping-list-dialog";
 import { ShoppingListPrintView } from "./_components/shopping-list-print-view";
 import type { TSupplyItem } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
-import { formatUnit } from "@/_lib/supply-units";
+import { formatSupplyQuantity } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatDate } from "@/_lib/format-date";
 import { buildShoppingListGroups } from "@/_lib/shopping-list";
@@ -162,8 +162,7 @@ export default function StockPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className={isLowStock ? "font-semibold text-destructive" : ""}>
-                          {Number(supplyItem.quantity.toFixed(2))}
-                          {formatUnit(supplyItem.unit)}
+                          {formatSupplyQuantity(supplyItem.quantity, supplyItem.unit)}
                         </span>
 
                         {isLowStock && (
@@ -175,8 +174,7 @@ export default function StockPage() {
                       </div>
 
                       <p className="text-xs text-muted-foreground">
-                        Cadastrado: {Number(supplyItem.initialQuantity.toFixed(2))}
-                        {formatUnit(supplyItem.unit)}
+                        Cadastrado: {formatSupplyQuantity(supplyItem.initialQuantity, supplyItem.unit)}
                       </p>
                     </TableCell>
 
