@@ -11,6 +11,7 @@ import { Switch } from "@/_components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { APP_PAGES } from "@/_lib/app-pages";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { useIsHydrated } from "@/_lib/use-is-hydrated";
 
 import { useAddOperator } from "../mutation/useAddOperator";
 import { useDeleteOperator } from "../mutation/useDeleteOperator";
@@ -19,6 +20,7 @@ import type { TStoreSettings } from "../../order/interface";
 export function OperatorsSection({ settings }: { settings: TStoreSettings | undefined }) {
   const addOperator = useAddOperator();
   const deleteOperator = useDeleteOperator();
+  const isHydrated = useIsHydrated();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [operatorName, setOperatorName] = useState("");
@@ -85,35 +87,38 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
       </div>
 
       <div className="flex flex-col gap-2">
-        {settings?.operators.map((operator) => (
-          <Card key={operator.id} className="flex flex-col gap-2 p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <KeyRound size={16} className="text-muted-foreground" />
-                <span className="text-sm font-medium">{toTitleCase(operator.name)}</span>
+        {isHydrated &&
+          settings?.operators.map((operator) => (
+            <Card key={operator.id} className="flex flex-col gap-2 p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <KeyRound size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-medium">{toTitleCase(operator.name)}</span>
+                </div>
+
+                <Button
+                  variant="destructive"
+                  size="icon-sm"
+                  onClick={() => handleDeleteOperator(operator.id)}
+                  disabled={deleteOperator.isPending}
+                >
+                  <Trash2 />
+                </Button>
               </div>
 
-              <Button
-                variant="destructive"
-                size="icon-sm"
-                onClick={() => handleDeleteOperator(operator.id)}
-                disabled={deleteOperator.isPending}
-              >
-                <Trash2 />
-              </Button>
-            </div>
+              <div className="flex flex-wrap gap-1">
+                {APP_PAGES.filter((page) => operator.allowedRoutes.includes(page.path)).map((page) => (
+                  <Badge key={page.path} variant="outline">
+                    {page.label}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          ))}
 
-            <div className="flex flex-wrap gap-1">
-              {APP_PAGES.filter((page) => operator.allowedRoutes.includes(page.path)).map((page) => (
-                <Badge key={page.path} variant="outline">
-                  {page.label}
-                </Badge>
-              ))}
-            </div>
-          </Card>
-        ))}
-
-        {settings?.operators.length === 0 && <p className="text-xs text-muted-foreground">Nenhum operador cadastrado.</p>}
+        {isHydrated && settings?.operators.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhum operador cadastrado.</p>
+        )}
       </div>
 
       {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
