@@ -21,12 +21,13 @@ import { useCreateSupplier } from "../mutation/useCreateSupplier";
 import { useUpdateSupplier } from "../mutation/useUpdateSupplier";
 import type { TSupplier } from "../../order/interface";
 import { DELIVERY_PERIODS, WEEKDAYS, type DeliveryPeriod, type Weekday } from "@/_lib/delivery-schedule";
+import { formatPhone } from "@/_lib/masks";
 
 interface TSupplierFormValues {
   companyName: string;
   whatsapp: string;
   suppliesDescription: string;
-  paymentTerms: string;
+  purchaseLink: string;
   deliveryDays: string[];
   deliveryPeriod: string;
 }
@@ -41,7 +42,7 @@ function buildDefaultValues(supplier?: TSupplier): TSupplierFormValues {
     companyName: supplier?.companyName ?? "",
     whatsapp: supplier?.whatsapp ?? "",
     suppliesDescription: supplier?.suppliesDescription ?? "",
-    paymentTerms: supplier?.paymentTerms ?? "",
+    purchaseLink: supplier?.purchaseLink ?? "",
     deliveryDays: supplier?.deliveryDays ?? [],
     deliveryPeriod: supplier?.deliveryPeriod ?? "",
   };
@@ -72,7 +73,7 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
       companyName: data.companyName,
       whatsapp: data.whatsapp || null,
       suppliesDescription: data.suppliesDescription || null,
-      paymentTerms: data.paymentTerms || null,
+      purchaseLink: data.purchaseLink || null,
       deliveryDays: data.deliveryDays as Weekday[],
       deliveryPeriod: (data.deliveryPeriod || null) as DeliveryPeriod | null,
     };
@@ -114,7 +115,17 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">WhatsApp</label>
-            <Input placeholder="Ex.: (22) 99999-9999" {...register("whatsapp")} />
+            <Controller
+              control={control}
+              name="whatsapp"
+              render={({ field }) => (
+                <Input
+                  placeholder="Ex.: 22 99999-9999"
+                  value={field.value}
+                  onChange={(event) => field.onChange(formatPhone(event.target.value))}
+                />
+              )}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
@@ -123,8 +134,8 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Condição de pagamento</label>
-            <Input placeholder="Ex.: 30 dias, à vista" {...register("paymentTerms")} />
+            <label className="text-sm font-medium">Link de compra</label>
+            <Input placeholder="Ex.: link do produto no Mercado Livre" {...register("purchaseLink")} />
           </div>
 
           <div className="flex flex-col gap-1">

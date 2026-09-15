@@ -76,7 +76,6 @@ async function fetchProduct(productId: number): Promise<TProduct | null> {
     trackStock: data.track_stock,
     lowStockThreshold: Number(data.low_stock_threshold),
     category: data.category,
-    supplierId: data.supplier_id,
     recipe: data.recipe ?? [],
   };
 }

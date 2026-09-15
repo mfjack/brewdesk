@@ -3,10 +3,8 @@ import { supabase } from "@/_lib/supabase/client";
 import { getEstablishmentId } from "@/_lib/supabase/establishment";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
 
-export type TProductInput = Partial<Omit<TProduct, "id" | "category" | "supplierId" | "name" | "price">> &
-  Pick<TProduct, "name" | "price" | "category"> & {
-    supplierId?: number | null;
-  };
+export type TProductInput = Partial<Omit<TProduct, "id" | "category" | "name" | "price">> &
+  Pick<TProduct, "name" | "price" | "category">;
 
 interface TProductRow {
   id: number;
@@ -19,7 +17,6 @@ interface TProductRow {
   track_stock: boolean;
   low_stock_threshold: number;
   category_id: number;
-  supplier_id: number | null;
   recipe: TProduct["recipe"];
   category: { id: number; name: string } | null;
 }
@@ -36,7 +33,6 @@ function fromRow(row: TProductRow): TProduct {
     trackStock: row.track_stock,
     lowStockThreshold: Number(row.low_stock_threshold),
     category: row.category ?? { id: row.category_id, name: "" },
-    supplierId: row.supplier_id,
     recipe: row.recipe ?? [],
   };
 }
@@ -54,7 +50,6 @@ function toRow(input: TProductInput) {
     track_stock: trackStock,
     low_stock_threshold: trackStock ? Number(input.lowStockThreshold ?? 5) : 0,
     category_id: input.category.id,
-    supplier_id: input.supplierId ?? null,
     recipe: input.recipe ?? [],
   };
 }

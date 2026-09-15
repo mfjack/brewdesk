@@ -24,7 +24,7 @@ import { RecipeSection } from "./recipe-section";
 
 import { useCreateProduct } from "../mutation/useCreateProduct";
 import { useUpdateProduct } from "../mutation/useUpdateProduct";
-import type { TCategory, TProduct, TRecipeItem, TSupplier, TSupplyItem } from "../../order/interface";
+import type { TCategory, TProduct, TRecipeItem, TSupplyItem } from "../../order/interface";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatCurrency } from "@/_lib/format-currency";
 import { getMaxProducibleQuantity, getRecipeCost } from "@/_lib/recipe-cost";
@@ -45,14 +45,12 @@ export interface TProductFormValues {
   quantity: string;
   lowStockThreshold: string;
   categoryId: number;
-  supplierId: number;
   trackStock: boolean;
   recipe: TRecipeRowFormValues[];
 }
 
 interface TProductFormDialog {
   categories: TCategory[] | undefined;
-  suppliers?: TSupplier[];
   supplyItems?: TSupplyItem[];
   trigger: ReactNode;
   product?: TProduct;
@@ -68,7 +66,6 @@ function buildDefaultValues(product: TProduct | undefined, supplyItems: TSupplyI
     quantity: product ? String(product.quantity) : "",
     lowStockThreshold: product ? String(product.lowStockThreshold) : "",
     categoryId: product?.category.id ?? 0,
-    supplierId: product?.supplierId ?? 0,
     trackStock: product?.trackStock ?? false,
     recipe:
       product?.recipe.map((item) => {
@@ -98,7 +95,7 @@ function parseRecipe(recipe: TRecipeRowFormValues[], supplyItems: TSupplyItem[])
     });
 }
 
-export function ProductFormDialog({ categories, suppliers, supplyItems, trigger, product }: TProductFormDialog) {
+export function ProductFormDialog({ categories, supplyItems, trigger, product }: TProductFormDialog) {
   const isEditing = Boolean(product);
 
   const [open, setOpen] = useState(false);
@@ -164,7 +161,6 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
       trackStock: data.trackStock,
       lowStockThreshold: data.trackStock ? Number(data.lowStockThreshold) || 0 : 0,
       category,
-      supplierId: data.supplierId || null,
       recipe,
     };
 
@@ -295,32 +291,6 @@ export function ProductFormDialog({ categories, suppliers, supplyItems, trigger,
               )}
             />
             {errors.categoryId && <p className="text-xs text-destructive">Campo obrigatório.</p>}
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Fornecedor</label>
-            <Controller
-              control={control}
-              name="supplierId"
-              render={({ field }) => (
-                <Select
-                  value={field.value ? String(field.value) : ""}
-                  onValueChange={(value) => field.onChange(Number(value))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Nenhum" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Nenhum</SelectItem>
-                    {suppliers?.map((supplier) => (
-                      <SelectItem key={supplier.id} value={String(supplier.id)}>
-                        {toTitleCase(supplier.companyName)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
           </div>
 
           <SettingRow label="Controlar estoque" description="Diminui automaticamente a cada venda no PDV.">

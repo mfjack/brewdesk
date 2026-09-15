@@ -13,7 +13,6 @@ import { AlertTriangle, ImageOff, Pencil, Plus } from "lucide-react";
 
 import { useGetProducts } from "./query/useGetProducts";
 import { useGetCategories } from "../category/query/useGetCategories";
-import { useGetSuppliers } from "../supplier/query/useGetSuppliers";
 import { useGetSupplyItems } from "../stock/query/useGetSupplyItems";
 import { useDeleteProduct } from "./mutation/useDeleteProduct";
 import { ProductFormDialog } from "./_components/product-form-dialog";
@@ -26,7 +25,6 @@ import Image from "next/image";
 export default function ProductPage() {
   const { data: products } = useGetProducts();
   const { data: categories } = useGetCategories();
-  const { data: suppliers } = useGetSuppliers();
   const { data: supplyItems } = useGetSupplyItems();
   const deleteProduct = useDeleteProduct();
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,9 +35,21 @@ export default function ProductPage() {
     deleteProduct.mutate(productId);
   }
 
+  function isRecipeLowStock(product: TProduct) {
+    if (product.recipe.length === 0) {
+      return false;
+    }
+
+    const maxProducible = getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0;
+
+    return maxProducible > 0 && maxProducible <= (product.lowStockThreshold || 5);
+  }
+
   const lowStockProducts =
     products?.filter(
-      (product) => product.trackStock && product.quantity > 0 && product.quantity <= (product.lowStockThreshold ?? 5),
+      (product) =>
+        (product.trackStock && product.quantity > 0 && product.quantity <= (product.lowStockThreshold ?? 5)) ||
+        isRecipeLowStock(product),
     ) ?? [];
 
   return (
@@ -52,7 +62,6 @@ export default function ProductPage() {
 
         <ProductFormDialog
           categories={categories}
-          suppliers={suppliers}
           supplyItems={supplyItems}
           trigger={
             <Button size="lg">
@@ -95,7 +104,11 @@ export default function ProductPage() {
                 </TableHeader>
 
                 <TableBody>
-                  {filteredProducts?.map((product: TProduct) => (
+                  {filteredProducts?.map((product: TProduct) => {
+                const maxProducible = product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : null;
+                const recipeLowStockThreshold = product.lowStockThreshold || 5;
+
+                return (
                 <TableRow key={product.id}>
                   <TableCell>
                     {product.photoUrl ? (
@@ -157,15 +170,34 @@ export default function ProductPage() {
                   </TableCell>
 
                   <TableCell>
-                    {product.trackStock ? (
+                    {maxProducible !== null ? (
                       <div className="flex items-center gap-2">
-                        <span className={product.quantity <= 0 ? "font-semibold text-destructive" : ""}>{product.quantity}</span>
+                        <span className={maxProducible <= recipeLowStockThreshold ? "font-semibold text-destructive" : ""}>
+                          Via insumos: {maxProducible}
+                        </span>
+
+                        {maxProducible <= 0 ? (
+                          <Badge variant="destructive">Esgotado</Badge>
+                        ) : (
+                          maxProducible <= recipeLowStockThreshold && (
+                            <Badge variant="destructive" className="gap-1">
+                              <AlertTriangle />
+                              Estoque baixo
+                            </Badge>
+                          )
+                        )}
+                      </div>
+                    ) : product.trackStock ? (
+                      <div className="flex items-center gap-2">
+                        <span className={product.quantity <= (product.lowStockThreshold ?? 5) ? "font-semibold text-destructive" : ""}>
+                          {product.quantity}
+                        </span>
 
                         {product.quantity <= 0 ? (
                           <Badge variant="destructive">Esgotado</Badge>
                         ) : (
                           product.quantity <= (product.lowStockThreshold ?? 5) && (
-                            <Badge variant="outline" className="gap-1">
+                            <Badge variant="destructive" className="gap-1">
                               <AlertTriangle />
                               Estoque baixo
                             </Badge>
@@ -175,12 +207,6 @@ export default function ProductPage() {
                     ) : (
                       <span className="text-muted-foreground">Ilimitado</span>
                     )}
-
-                    {product.recipe.length > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Via insumos: {getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0}
-                      </p>
-                    )}
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -188,7 +214,6 @@ export default function ProductPage() {
                       editTrigger={
                         <ProductFormDialog
                           categories={categories}
-                          suppliers={suppliers}
                           supplyItems={supplyItems}
                           product={product}
                           trigger={
@@ -202,7 +227,8 @@ export default function ProductPage() {
                     />
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
                 </TableBody>
               </Table>
             )}

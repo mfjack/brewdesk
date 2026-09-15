@@ -6,7 +6,7 @@ import { Header } from "@/_components/ui/header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { RowActions } from "@/_components/ui/row-actions";
-import { MessageCircle, Pencil, Plus } from "lucide-react";
+import { Link2, MessageCircle, Pencil, Plus } from "lucide-react";
 
 import { useGetSuppliers } from "./query/useGetSuppliers";
 import { useDeleteSupplier } from "./mutation/useDeleteSupplier";
@@ -15,6 +15,7 @@ import type { TSupplier } from "../order/interface";
 import { buildWhatsappLink } from "@/_lib/whatsapp-link";
 import { WEEKDAY_FULL_NAMES } from "@/_lib/delivery-schedule";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { shortenUrl } from "@/_lib/shorten-url";
 
 export default function SupplierPage() {
   const { data: suppliers } = useGetSuppliers();
@@ -51,7 +52,7 @@ export default function SupplierPage() {
                 <TableHead>Empresa</TableHead>
                 <TableHead>WhatsApp</TableHead>
                 <TableHead>Fornece</TableHead>
-                <TableHead>Pagamento</TableHead>
+                <TableHead>Link</TableHead>
                 <TableHead>Entrega</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -81,7 +82,21 @@ export default function SupplierPage() {
                     {supplier.suppliesDescription || "—"}
                   </TableCell>
 
-                  <TableCell className="text-muted-foreground">{supplier.paymentTerms || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {supplier.purchaseLink ? (
+                      <a
+                        href={supplier.purchaseLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 underline"
+                      >
+                        <Link2 size={14} />
+                        {shortenUrl(supplier.purchaseLink)}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
 
                   <TableCell className="text-muted-foreground">
                     {supplier.deliveryDays?.length > 0 || supplier.deliveryPeriod ? (

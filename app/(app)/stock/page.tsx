@@ -9,7 +9,7 @@ import { Badge } from "@/_components/ui/badge";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { RowActions } from "@/_components/ui/row-actions";
 import { SearchInput } from "@/_components/ui/search-input";
-import { AlertTriangle, Pencil, Plus, ShoppingCart } from "lucide-react";
+import { AlertTriangle, Link2, MessageCircle, Pencil, Plus, ShoppingCart } from "lucide-react";
 
 import { useGetSupplyItems } from "./query/useGetSupplyItems";
 import { useGetSuppliers } from "../supplier/query/useGetSuppliers";
@@ -25,6 +25,8 @@ import { toTitleCase } from "@/_lib/to-title-case";
 import { formatDate } from "@/_lib/format-date";
 import { buildShoppingListGroups } from "@/_lib/shopping-list";
 import { useShoppingListDismissals } from "@/_lib/use-shopping-list-dismissals";
+import { buildWhatsappLink } from "@/_lib/whatsapp-link";
+import { shortenUrl } from "@/_lib/shorten-url";
 
 const EXPIRY_WARNING_DAYS = 7;
 
@@ -77,8 +79,8 @@ export default function StockPage() {
     .map((group) => ({ ...group, items: group.items.filter((item) => !dismissedIds.has(item.id)) }))
     .filter((group) => group.items.length > 0);
 
-  const supplierName = (supplierId: number | null) =>
-    supplierId ? suppliers?.find((supplier) => supplier.id === supplierId)?.companyName : undefined;
+  const findSupplier = (supplierId: number | null) =>
+    supplierId ? suppliers?.find((supplier) => supplier.id === supplierId) : undefined;
 
   return (
     <>
@@ -154,7 +156,7 @@ export default function StockPage() {
                   supplyItem.minQuantity,
                   supplyItem.minQuantityUnit,
                 );
-                const itemSupplierName = supplierName(supplyItem.supplierId);
+                const itemSupplier = findSupplier(supplyItem.supplierId);
 
                 return (
                   <TableRow key={supplyItem.id}>
@@ -171,7 +173,7 @@ export default function StockPage() {
                         </span>
 
                         {isLowStock && (
-                          <Badge variant="outline" className="gap-1">
+                          <Badge variant="destructive" className="gap-1">
                             <AlertTriangle />
                             Estoque baixo
                           </Badge>
@@ -186,7 +188,37 @@ export default function StockPage() {
                     <TableCell>{formatCurrency(supplyItem.costPrice)}</TableCell>
 
                     <TableCell className="text-muted-foreground">
-                      {itemSupplierName ? toTitleCase(itemSupplierName) : "—"}
+                      {itemSupplier ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span>{toTitleCase(itemSupplier.companyName)}</span>
+
+                          {itemSupplier.whatsapp ? (
+                            <a
+                              href={buildWhatsappLink(itemSupplier.whatsapp)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs underline"
+                            >
+                              <MessageCircle size={12} />
+                              {itemSupplier.whatsapp}
+                            </a>
+                          ) : (
+                            itemSupplier.purchaseLink && (
+                              <a
+                                href={itemSupplier.purchaseLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs underline"
+                              >
+                                <Link2 size={12} />
+                                {shortenUrl(itemSupplier.purchaseLink)}
+                              </a>
+                            )
+                          )}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
                     </TableCell>
 
                     <TableCell>

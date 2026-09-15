@@ -142,7 +142,6 @@ export const backupStore = {
       ...omitIdAndEstablishment(row),
       establishment_id: establishmentId,
       category_id: categoryIdMap.get(Number(row.category_id)) ?? null,
-      supplier_id: row.supplier_id ? supplierIdMap.get(Number(row.supplier_id)) ?? null : null,
       recipe: (row.recipe as { supplyItemId: number }[] | null)?.map((item) => ({
         ...item,
         supplyItemId: supplyItemIdMap.get(Number(item.supplyItemId)) ?? item.supplyItemId,

@@ -93,7 +93,6 @@ export interface TProduct {
   trackStock: boolean;
   lowStockThreshold: number;
   category: TCategory;
-  supplierId: number | null;
   recipe: TRecipeItem[];
 }
 
@@ -102,7 +101,7 @@ export interface TSupplier {
   companyName: string;
   whatsapp: string | null;
   suppliesDescription: string | null;
-  paymentTerms: string | null;
+  purchaseLink: string | null;
   deliveryDays: Weekday[];
   deliveryPeriod: DeliveryPeriod | null;
 }

@@ -44,7 +44,7 @@ export function buildShoppingListGroups(supplyItems: TSupplyItem[], products: TP
   products
     .filter((product) => product.trackStock && product.recipe.length === 0 && product.quantity <= (product.lowStockThreshold ?? 5))
     .forEach((product) => {
-      pushItem(product.supplierId, {
+      pushItem(null, {
         id: `product-${product.id}`,
         name: product.name,
         quantityLabel: `${product.quantity} un. (mín. ${product.lowStockThreshold ?? 5} un.)`,

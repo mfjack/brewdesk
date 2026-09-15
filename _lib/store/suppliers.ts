@@ -10,7 +10,7 @@ function fromRow(row: {
   company_name: string;
   whatsapp: string | null;
   supplies_description: string | null;
-  payment_terms: string | null;
+  purchase_link: string | null;
   delivery_days: TSupplier["deliveryDays"];
   delivery_period: TSupplier["deliveryPeriod"];
 }): TSupplier {
@@ -19,7 +19,7 @@ function fromRow(row: {
     companyName: row.company_name,
     whatsapp: row.whatsapp,
     suppliesDescription: row.supplies_description,
-    paymentTerms: row.payment_terms,
+    purchaseLink: row.purchase_link,
     deliveryDays: row.delivery_days,
     deliveryPeriod: row.delivery_period,
   };
@@ -30,7 +30,7 @@ function toRow(input: TSupplierInput) {
     company_name: input.companyName.trim(),
     whatsapp: input.whatsapp?.trim() || null,
     supplies_description: input.suppliesDescription?.trim() || null,
-    payment_terms: input.paymentTerms?.trim() || null,
+    purchase_link: input.purchaseLink?.trim() || null,
     delivery_days: input.deliveryDays ?? [],
     delivery_period: input.deliveryPeriod || null,
   };
