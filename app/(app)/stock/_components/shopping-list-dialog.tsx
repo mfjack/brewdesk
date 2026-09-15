@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { MessageCircle, Printer, Trash2 } from "lucide-react";
+import { Link2, MessageCircle, Printer, Trash2 } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/_components/ui/dialog";
@@ -38,18 +38,29 @@ export function ShoppingListDialog({ trigger, groups, onClearList }: TShoppingLi
                     {group.supplier ? toTitleCase(group.supplier.companyName) : "Sem fornecedor definido"}
                   </p>
 
-                  {group.supplier?.whatsapp && (
-                    <a
-                      href={buildWhatsappLink(group.supplier.whatsapp, buildShoppingOrderMessage(group.items))}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button type="button" variant="outline" size="sm">
-                        <MessageCircle />
-                        Pedir
-                      </Button>
-                    </a>
-                  )}
+                  <div className="flex gap-2">
+                    {group.supplier?.whatsapp && (
+                      <a
+                        href={buildWhatsappLink(group.supplier.whatsapp, buildShoppingOrderMessage(group.items))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button type="button" variant="outline" size="sm">
+                          <MessageCircle />
+                          Pedir
+                        </Button>
+                      </a>
+                    )}
+
+                    {group.supplier?.purchaseLink && (
+                      <a href={group.supplier.purchaseLink} target="_blank" rel="noopener noreferrer">
+                        <Button type="button" variant="outline" size="sm">
+                          <Link2 />
+                          Comprar
+                        </Button>
+                      </a>
+                    )}
+                  </div>
                 </div>
 
                 <ul className="flex flex-col gap-1">

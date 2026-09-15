@@ -64,19 +64,6 @@ export function OrderPanel({
 
       {stockError && <p className="mx-4 mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{stockError}</p>}
 
-      {(() => {
-        const lowStockCount =
-          filteredProducts?.filter(
-            (product) => product.trackStock && product.quantity > 0 && product.quantity <= (product.lowStockThreshold ?? 5),
-          ).length ?? 0;
-
-        return lowStockCount > 0 ? (
-          <p className="mx-4 mt-4 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground">
-            {lowStockCount} produto(s) com estoque baixo.
-          </p>
-        ) : null;
-      })()}
-
       <div className="flex gap-3 px-4 pt-4 pb-2 rounded-xl overflow-x-auto no-scrollbar">
         {categories?.map((category: TCategory) => (
           <Button
@@ -106,6 +93,8 @@ export function OrderPanel({
                     ? product.quantity - quantity
                     : null;
               const outOfStock = available !== null && available <= 0;
+              const lowStockThreshold = product.recipe.length > 0 ? product.lowStockThreshold || 5 : (product.lowStockThreshold ?? 5);
+              const isLowStock = available !== null && available <= lowStockThreshold;
 
               return (
                 <Button
@@ -114,7 +103,11 @@ export function OrderPanel({
                   onClick={() => onAddProduct(product)}
                   key={product.id}
                   disabled={outOfStock}
-                  className="relative h-24"
+                  className={
+                    isLowStock
+                      ? "relative h-24 bg-destructive/10 hover:bg-destructive/15 dark:bg-destructive/15 dark:hover:bg-destructive/20"
+                      : "relative h-24"
+                  }
                 >
                   {quantity > 0 && (
                     <span
@@ -127,7 +120,11 @@ export function OrderPanel({
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-center text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
                     <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
-                    {outOfStock && <span className="text-[10px] font-semibold text-destructive">Esgotado</span>}
+                    {outOfStock ? (
+                      <span className="text-[10px] font-semibold text-destructive">Esgotado</span>
+                    ) : (
+                      isLowStock && <span className="text-[10px] font-semibold text-destructive">Restam {available}</span>
+                    )}
                   </div>
                 </Button>
               );

@@ -50,8 +50,8 @@ export default function SupplierPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Empresa</TableHead>
-                <TableHead>WhatsApp</TableHead>
                 <TableHead>Fornece</TableHead>
+                <TableHead>WhatsApp</TableHead>
                 <TableHead>Link</TableHead>
                 <TableHead>Entrega</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -64,6 +64,7 @@ export default function SupplierPage() {
                   <TableCell>
                     <p className="font-medium whitespace-normal">{toTitleCase(supplier.companyName)}</p>
                   </TableCell>
+                  <TableCell className="max-w-48 truncate text-muted-foreground">{supplier.suppliesDescription || "—"}</TableCell>
 
                   <TableCell>
                     {supplier.whatsapp ? (
@@ -76,10 +77,6 @@ export default function SupplierPage() {
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
-                  </TableCell>
-
-                  <TableCell className="max-w-48 truncate text-muted-foreground">
-                    {supplier.suppliesDescription || "—"}
                   </TableCell>
 
                   <TableCell className="text-muted-foreground">
