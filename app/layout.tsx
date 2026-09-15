@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { cookies } from "next/headers";
 import { ClientProvider } from "./client-provider";
 import { ThemeProvider } from "./theme-provider";
 import { cn } from "@/_lib/utils";
 import { Saira } from "next/font/google";
-import { SIDEBAR_COOKIE_NAME, SidebarInset, SidebarProvider } from "@/_components/ui/sidebar";
-import { AppSidebar } from "@/_components/app/app-sidebar";
-import { OperatorGate } from "@/_components/app/operator-gate";
-import { RoleGuard } from "@/_components/app/role-guard";
 
 const saira = Saira({
   subsets: ["latin"],
@@ -16,35 +11,21 @@ const saira = Saira({
 });
 
 export const metadata: Metadata = {
-  title: "BrewDesk",
-  description: "PDV offline para sua cafeteria",
+  title: "Tably",
+  description: "Sistema PDV para o seu negócio",
   manifest: "/manifest.webmanifest",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const sidebarDefaultOpen = cookieStore.get(SIDEBAR_COOKIE_NAME)?.value !== "false";
-
   return (
     <html lang="pt-BR" className={cn("antialiased select-none", saira.variable)} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <ClientProvider>
-            <OperatorGate>
-              <SidebarProvider defaultOpen={sidebarDefaultOpen}>
-                <AppSidebar />
-                <SidebarInset>
-                  <main>
-                    <RoleGuard>{children}</RoleGuard>
-                  </main>
-                </SidebarInset>
-              </SidebarProvider>
-            </OperatorGate>
-          </ClientProvider>
+          <ClientProvider>{children}</ClientProvider>
         </ThemeProvider>
       </body>
     </html>

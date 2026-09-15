@@ -1,20 +1,48 @@
-import type { TSupplyItem } from "@/app/order/interface";
-import { readStore, updateStore, writeStore } from "./storage";
+import type { TSupplyItem } from "@/app/(app)/order/interface";
+import { supabase } from "@/_lib/supabase/client";
+import { getEstablishmentId } from "@/_lib/supabase/establishment";
 import { roundToAvoidFloatDrift } from "@/_lib/supply-units";
+import { notifyStoreChange } from "@/_lib/store/notify-store-change";
 
 export type TSupplyItemInput = Partial<Omit<TSupplyItem, "id" | "initialQuantity" | "name" | "unit">> &
   Pick<TSupplyItem, "name" | "unit">;
 
-function buildSupplyItemFields(input: TSupplyItemInput): Omit<TSupplyItem, "id" | "initialQuantity"> {
+function fromRow(row: {
+  id: number;
+  name: string;
+  brand: string | null;
+  quantity: number;
+  initial_quantity: number;
+  unit: TSupplyItem["unit"];
+  min_quantity: number;
+  cost_price: number;
+  supplier_id: number | null;
+  expires_at: string | null;
+}): TSupplyItem {
+  return {
+    id: row.id,
+    name: row.name,
+    brand: row.brand,
+    quantity: Number(row.quantity),
+    initialQuantity: Number(row.initial_quantity),
+    unit: row.unit,
+    minQuantity: Number(row.min_quantity),
+    costPrice: Number(row.cost_price),
+    supplierId: row.supplier_id,
+    expiresAt: row.expires_at,
+  };
+}
+
+function toRow(input: TSupplyItemInput) {
   return {
     name: input.name.trim(),
     brand: input.brand?.trim() || null,
     quantity: Number(input.quantity ?? 0),
     unit: input.unit,
-    minQuantity: Number(input.minQuantity ?? 0),
-    costPrice: Number(input.costPrice ?? 0),
-    supplierId: input.supplierId ?? null,
-    expiresAt: input.expiresAt || null,
+    min_quantity: Number(input.minQuantity ?? 0),
+    cost_price: Number(input.costPrice ?? 0),
+    supplier_id: input.supplierId ?? null,
+    expires_at: input.expiresAt || null,
   };
 }
 
@@ -23,47 +51,54 @@ export function adjustSupplyItemStock(supplyItem: TSupplyItem, deltaInUnit: numb
 }
 
 export const supplyItemStore = {
-  getSupplyItems: () => {
-    return readStore().supplyItems;
-  },
+  getSupplyItems: async (): Promise<TSupplyItem[]> => {
+    const { data, error } = await supabase.from("supply_items").select("*").order("id");
 
-  createSupplyItem: (input: TSupplyItemInput) => {
-    const data = readStore();
-
-    const fields = buildSupplyItemFields(input);
-
-    const supplyItem: TSupplyItem = {
-      id: data.nextIds.supplyItem++,
-      ...fields,
-      initialQuantity: fields.quantity,
-    };
-
-    data.supplyItems.push(supplyItem);
-
-    writeStore(data);
-
-    return supplyItem;
-  },
-
-  updateSupplyItem: (supplyItemId: number, input: TSupplyItemInput) => {
-    const data = readStore();
-
-    const supplyItem = data.supplyItems.find((item) => item.id === supplyItemId);
-
-    if (!supplyItem) {
-      throw new Error("Insumo não encontrado");
+    if (error) {
+      throw new Error(error.message);
     }
 
-    Object.assign(supplyItem, buildSupplyItemFields(input));
-
-    writeStore(data);
-
-    return supplyItem;
+    return data.map(fromRow);
   },
 
-  deleteSupplyItem: (supplyItemId: number) => {
-    updateStore((data) => {
-      data.supplyItems = data.supplyItems.filter((item) => item.id !== supplyItemId);
-    });
+  createSupplyItem: async (input: TSupplyItemInput): Promise<TSupplyItem> => {
+    const row = toRow(input);
+    const establishmentId = await getEstablishmentId();
+
+    const { data, error } = await supabase
+      .from("supply_items")
+      .insert({ ...row, initial_quantity: row.quantity, establishment_id: establishmentId })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["supplyItems"]);
+
+    return fromRow(data);
+  },
+
+  updateSupplyItem: async (supplyItemId: number, input: TSupplyItemInput): Promise<TSupplyItem> => {
+    const { data, error } = await supabase.from("supply_items").update(toRow(input)).eq("id", supplyItemId).select().single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["supplyItems"]);
+
+    return fromRow(data);
+  },
+
+  deleteSupplyItem: async (supplyItemId: number): Promise<void> => {
+    const { error } = await supabase.from("supply_items").delete().eq("id", supplyItemId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["supplyItems"]);
   },
 };

@@ -1,7 +1,7 @@
 {
-  "name": "BrewDesk",
-  "short_name": "BrewDesk",
-  "description": "PDV offline para sua cafeteria",
+  "name": "Tably",
+  "short_name": "Tably",
+  "description": "Sistema PDV para o seu negócio",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

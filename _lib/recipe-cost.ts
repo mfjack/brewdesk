@@ -1,4 +1,4 @@
-import type { TOrderItem, TProduct, TRecipeItem, TSupplyItem } from "@/app/order/interface";
+import type { TOrderItem, TProduct, TRecipeItem, TSupplyItem } from "@/app/(app)/order/interface";
 
 export function getSupplyUnitCost(supplyItem: TSupplyItem): number {
   return supplyItem.quantity > 0 ? supplyItem.costPrice / supplyItem.quantity : 0;

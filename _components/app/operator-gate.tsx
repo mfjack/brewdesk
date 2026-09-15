@@ -5,7 +5,7 @@ import { LockKeyhole } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
-import { useGetSettings } from "@/app/settings/query/useGetSettings";
+import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
 import { toTitleCase } from "@/_lib/to-title-case";
 

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 
 import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
-import { useGetSettings } from "@/app/settings/query/useGetSettings";
+import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 import { isPathAllowed } from "@/_lib/app-pages";
 
 export function RoleGuard({ children }: { children: React.ReactNode }) {

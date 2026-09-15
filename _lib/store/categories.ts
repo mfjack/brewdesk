@@ -1,52 +1,61 @@
-import { readStore, updateStore, writeStore } from "./storage";
+import type { TCategory } from "@/app/(app)/order/interface";
+import { supabase } from "@/_lib/supabase/client";
+import { getEstablishmentId } from "@/_lib/supabase/establishment";
+import { notifyStoreChange } from "@/_lib/store/notify-store-change";
 
 export const categoryStore = {
-  getCategories: () => {
-    return readStore().categories;
-  },
+  getCategories: async (): Promise<TCategory[]> => {
+    const { data, error } = await supabase.from("categories").select("*").order("id");
 
-  createCategory: (name: string) => {
-    const category = {
-      id: 0,
-      name: name.trim(),
-    };
-
-    updateStore((data) => {
-      category.id = data.nextIds.category++;
-
-      data.categories.push(category);
-    });
-
-    return category;
-  },
-
-  updateCategory: (categoryId: number, name: string) => {
-    const data = readStore();
-
-    const category = data.categories.find((item) => item.id === categoryId);
-
-    if (!category) {
-      throw new Error("Categoria não encontrada");
+    if (error) {
+      throw new Error(error.message);
     }
 
-    category.name = name.trim();
-
-    data.products.forEach((product) => {
-      if (product.category.id === categoryId) {
-        product.category = category;
-      }
-    });
-
-    writeStore(data);
-
-    return category;
+    return data;
   },
 
-  deleteCategory: (categoryId: number) => {
-    updateStore((data) => {
-      data.categories = data.categories.filter((category) => category.id !== categoryId);
+  createCategory: async (name: string): Promise<TCategory> => {
+    const establishmentId = await getEstablishmentId();
 
-      data.products = data.products.filter((product) => product.category.id !== categoryId);
-    });
+    const { data, error } = await supabase
+      .from("categories")
+      .insert({ name: name.trim(), establishment_id: establishmentId })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["categories", "products"]);
+
+    return data;
+  },
+
+  updateCategory: async (categoryId: number, name: string): Promise<TCategory> => {
+    const { data, error } = await supabase
+      .from("categories")
+      .update({ name: name.trim() })
+      .eq("id", categoryId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["categories", "products"]);
+
+    return data;
+  },
+
+  deleteCategory: async (categoryId: number): Promise<void> => {
+    const { error } = await supabase.from("categories").delete().eq("id", categoryId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["categories", "products"]);
   },
 };

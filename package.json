@@ -1,5 +1,5 @@
 {
-  "name": "brewdesk",
+  "name": "tably",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,9 +10,14 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
+    "@tanstack/query-sync-storage-persister": "^5.102.8",
     "@tanstack/react-query": "^5.101.1",
+    "@tanstack/react-query-persist-client": "^5.102.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cn": "^0.3.0",
     "lucide-react": "^1.21.0",
     "next": "16.2.9",
     "next-themes": "^0.4.6",
@@ -32,6 +37,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "pg": "^8.23.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

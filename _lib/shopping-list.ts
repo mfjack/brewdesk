@@ -1,4 +1,4 @@
-import type { TProduct, TSupplier, TSupplyItem } from "@/app/order/interface";
+import type { TProduct, TSupplier, TSupplyItem } from "@/app/(app)/order/interface";
 import { formatUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 

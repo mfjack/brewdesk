@@ -15,11 +15,13 @@ import {
 } from "@/_components/ui/sidebar";
 import Image from "next/image";
 import { LogOut } from "lucide-react";
-import { useGetSettings } from "@/app/settings/query/useGetSettings";
+import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
 import { APP_PAGES } from "@/_lib/app-pages";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { Button } from "@/_components/ui/button";
+import { AccountInfo } from "./account-info";
+import { NetworkStatusBadge } from "./network-status-badge";
 
 export function AppSidebar() {
   const { data: settings } = useGetSettings();
@@ -48,7 +50,7 @@ export function AppSidebar() {
               />
             )}
 
-            <SidebarGroupLabel className="font-bold text-base">{settings?.name ?? "BrewDesk"}</SidebarGroupLabel>
+            <SidebarGroupLabel className="font-bold text-base">{settings?.name}</SidebarGroupLabel>
           </div>
 
           <SidebarGroupContent>
@@ -68,7 +70,9 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="gap-2 p-2">
+        <NetworkStatusBadge />
+
         {activeOperator && (
           <div className="flex items-center justify-between gap-2 px-2 py-1 text-xs text-muted-foreground">
             <span>
@@ -80,6 +84,7 @@ export function AppSidebar() {
             </Button>
           </div>
         )}
+        <AccountInfo />
       </SidebarFooter>
     </Sidebar>
   );
