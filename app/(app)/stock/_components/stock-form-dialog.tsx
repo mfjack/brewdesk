@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import type { ReactNode } from "react";
 
@@ -20,7 +20,7 @@ import {
 import { useCreateSupplyItem } from "../mutation/useCreateSupplyItem";
 import { useUpdateSupplyItem } from "../mutation/useUpdateSupplyItem";
 import type { TSupplier, TSupplyItem } from "../../order/interface";
-import { formatUnit, SUPPLY_UNITS, type SupplyUnit } from "@/_lib/supply-units";
+import { convertQuantity, formatUnit, getCompatibleUnits, SUPPLY_UNITS, type SupplyUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 interface TStockFormValues {
@@ -29,6 +29,7 @@ interface TStockFormValues {
   quantity: string;
   unit: string;
   minQuantity: string;
+  minQuantityUnit: string;
   costPrice: string;
   supplierId: number;
   expiresAt: string;
@@ -47,6 +48,7 @@ function buildDefaultValues(supplyItem?: TSupplyItem): TStockFormValues {
     quantity: supplyItem ? String(supplyItem.quantity) : "",
     unit: supplyItem?.unit ?? SUPPLY_UNITS[0],
     minQuantity: supplyItem ? String(supplyItem.minQuantity) : "",
+    minQuantityUnit: supplyItem?.unit ?? SUPPLY_UNITS[0],
     costPrice: supplyItem ? String(supplyItem.costPrice) : "",
     supplierId: supplyItem?.supplierId ?? 0,
     expiresAt: supplyItem?.expiresAt ?? "",
@@ -66,6 +68,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<TStockFormValues>({
     defaultValues: buildDefaultValues(supplyItem),
@@ -74,6 +77,14 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
   const isPending = createSupplyItem.isPending || updateSupplyItem.isPending;
 
   const unit = useWatch({ control, name: "unit" });
+  const minQuantityUnit = useWatch({ control, name: "minQuantityUnit" });
+  const compatibleMinQuantityUnits = getCompatibleUnits(unit);
+
+  useEffect(() => {
+    if (!compatibleMinQuantityUnits.includes(minQuantityUnit)) {
+      setValue("minQuantityUnit", unit);
+    }
+  }, [unit, minQuantityUnit, compatibleMinQuantityUnits, setValue]);
 
   function handleSubmitSupplyItem(data: TStockFormValues) {
     const payload = {
@@ -81,7 +92,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
       brand: data.brand || null,
       quantity: Number(data.quantity) || 0,
       unit: data.unit as SupplyUnit,
-      minQuantity: Number(data.minQuantity) || 0,
+      minQuantity: convertQuantity(Number(data.minQuantity) || 0, data.minQuantityUnit, data.unit),
       costPrice: Number(data.costPrice) || 0,
       supplierId: data.supplierId || null,
       expiresAt: data.expiresAt || null,
@@ -165,30 +176,50 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Estoque mínimo (alerta)</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Estoque mínimo (alerta)</label>
+            <div className="flex gap-2">
               <Input
                 type="number"
                 step="0.01"
                 min="0"
                 placeholder="Ex.: 500"
-                title={`Alertar quando o estoque (em ${formatUnit(unit)}) ficar menor ou igual a esse valor`}
+                title="Alertar quando o estoque ficar menor ou igual a esse valor"
+                className="flex-1"
                 {...register("minQuantity")}
               />
-            </div>
 
-            <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Valor total pago</label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Quanto custou essa compra toda"
-                title="Valor total pago por essa quantidade, não o preço por unidade"
-                {...register("costPrice")}
+              <Controller
+                control={control}
+                name="minQuantityUnit"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {compatibleMinQuantityUnits.map((unitOption) => (
+                        <SelectItem key={unitOption} value={unitOption}>
+                          {formatUnit(unitOption)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Valor total pago</label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Quanto custou essa compra toda"
+              title="Valor total pago por essa quantidade, não o preço por unidade"
+              {...register("costPrice")}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
