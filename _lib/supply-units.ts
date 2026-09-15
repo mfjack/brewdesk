@@ -43,6 +43,10 @@ export function convertQuantity(quantity: number, fromUnit: string, toUnit: stri
   return quantity;
 }
 
+export function isBelowMinQuantity(quantity: number, unit: string, minQuantity: number, minQuantityUnit: string): boolean {
+  return quantity <= convertQuantity(minQuantity, minQuantityUnit, unit);
+}
+
 const SMALLER_UNIT_FOR_DISPLAY: Record<string, string> = { kg: "g", L: "ml" };
 
 export function formatSupplyQuantity(quantity: number, unit: string): string {

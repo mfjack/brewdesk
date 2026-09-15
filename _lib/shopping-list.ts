@@ -1,5 +1,5 @@
 import type { TProduct, TSupplier, TSupplyItem } from "@/app/(app)/order/interface";
-import { formatUnit } from "@/_lib/supply-units";
+import { formatUnit, isBelowMinQuantity } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 export interface TShoppingListItem {
@@ -32,12 +32,12 @@ export function buildShoppingListGroups(supplyItems: TSupplyItem[], products: TP
   }
 
   supplyItems
-    .filter((item) => item.quantity <= item.minQuantity)
+    .filter((item) => isBelowMinQuantity(item.quantity, item.unit, item.minQuantity, item.minQuantityUnit))
     .forEach((item) => {
       pushItem(item.supplierId, {
         id: `supply-${item.id}`,
         name: item.name,
-        quantityLabel: `${Number(item.quantity.toFixed(2))}${formatUnit(item.unit)} (mín. ${Number(item.minQuantity.toFixed(2))}${formatUnit(item.unit)})`,
+        quantityLabel: `${Number(item.quantity.toFixed(2))}${formatUnit(item.unit)} (mín. ${Number(item.minQuantity.toFixed(2))}${formatUnit(item.minQuantityUnit)})`,
       });
     });
 

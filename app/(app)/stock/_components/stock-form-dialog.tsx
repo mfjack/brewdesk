@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import type { ReactNode } from "react";
 
@@ -20,7 +20,7 @@ import {
 import { useCreateSupplyItem } from "../mutation/useCreateSupplyItem";
 import { useUpdateSupplyItem } from "../mutation/useUpdateSupplyItem";
 import type { TSupplier, TSupplyItem } from "../../order/interface";
-import { convertQuantity, formatUnit, getCompatibleUnits, SUPPLY_UNITS, type SupplyUnit } from "@/_lib/supply-units";
+import { formatUnit, getCompatibleUnits, SUPPLY_UNITS, type SupplyUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 interface TStockFormValues {
@@ -48,7 +48,7 @@ function buildDefaultValues(supplyItem?: TSupplyItem): TStockFormValues {
     quantity: supplyItem ? String(supplyItem.quantity) : "",
     unit: supplyItem?.unit ?? SUPPLY_UNITS[0],
     minQuantity: supplyItem ? String(supplyItem.minQuantity) : "",
-    minQuantityUnit: supplyItem?.unit ?? SUPPLY_UNITS[0],
+    minQuantityUnit: supplyItem?.minQuantityUnit ?? supplyItem?.unit ?? SUPPLY_UNITS[0],
     costPrice: supplyItem ? String(supplyItem.costPrice) : "",
     supplierId: supplyItem?.supplierId ?? 0,
     expiresAt: supplyItem?.expiresAt ?? "",
@@ -78,7 +78,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
 
   const unit = useWatch({ control, name: "unit" });
   const minQuantityUnit = useWatch({ control, name: "minQuantityUnit" });
-  const compatibleMinQuantityUnits = getCompatibleUnits(unit);
+  const compatibleMinQuantityUnits = useMemo(() => getCompatibleUnits(unit), [unit]);
 
   useEffect(() => {
     if (!compatibleMinQuantityUnits.includes(minQuantityUnit)) {
@@ -92,7 +92,8 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
       brand: data.brand || null,
       quantity: Number(data.quantity) || 0,
       unit: data.unit as SupplyUnit,
-      minQuantity: convertQuantity(Number(data.minQuantity) || 0, data.minQuantityUnit, data.unit),
+      minQuantity: Number(data.minQuantity) || 0,
+      minQuantityUnit: data.minQuantityUnit as SupplyUnit,
       costPrice: Number(data.costPrice) || 0,
       supplierId: data.supplierId || null,
       expiresAt: data.expiresAt || null,
