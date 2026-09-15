@@ -94,6 +94,7 @@ export function MenuList({
   const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
   const isSplitBillEnabled = settings?.featureFlags.splitBill ?? true;
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
+  const isOrderTicketsEnabled = settings?.featureFlags.orderTickets ?? true;
 
   const availablePaymentMethods = isCreditSaleEnabled
     ? paymentMethodOptions
@@ -199,7 +200,7 @@ export function MenuList({
           {(() => {
             const isFirstSend = Object.keys(printedItemQuantities).length === 0;
             const hasUnprintedItems = order.orderItems.some((item) => (printedItemQuantities[item.id] ?? 0) < item.quantity);
-            const showSendButton = isFirstSend || hasUnprintedItems;
+            const showSendButton = isOrderTicketsEnabled && (isFirstSend || hasUnprintedItems);
 
             return (
               <div className="mx-4 mb-4 flex gap-2">

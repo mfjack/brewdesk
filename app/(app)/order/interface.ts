@@ -74,6 +74,7 @@ export interface TOrderPanel {
   order: TOrderResponse | null;
   stockError?: string | null;
   hideHeader?: boolean;
+  listLayout?: boolean;
 }
 
 export interface TCategory {
@@ -178,6 +179,7 @@ export interface TFeatureFlags {
   orderGrouping: boolean;
   splitBill: boolean;
   creditSale: boolean;
+  orderTickets: boolean;
 }
 
 export interface TStoreSettings {

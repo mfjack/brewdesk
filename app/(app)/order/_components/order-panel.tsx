@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { EmptyState } from "@/_components/ui/empty-state";
+import { SearchInput } from "@/_components/ui/search-input";
 import { formatCurrency } from "@/_lib/format-currency";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
@@ -22,23 +23,31 @@ export function OrderPanel({
   order,
   stockError,
   hideHeader,
+  listLayout,
 }: TOrderPanel) {
+  const [searchTerm, setSearchTerm] = useState("");
+
   const reservedQuantities = useMemo(
     () => (order && isDraftOrder(order) && products ? buildReservedSupplyQuantities(order.orderItems, products) : {}),
     [order, products],
   );
 
+  const visibleProducts =
+    listLayout && searchTerm.trim()
+      ? products?.filter((product) => product.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      : filteredProducts;
+
   const recipeAvailabilityByProductId = useMemo(() => {
     const map = new Map<number, number | null>();
 
-    filteredProducts?.forEach((product) => {
+    visibleProducts?.forEach((product) => {
       if (product.recipe.length > 0) {
         map.set(product.id, getMaxProducibleQuantity(product.recipe, supplyItems ?? [], reservedQuantities));
       }
     });
 
     return map;
-  }, [filteredProducts, supplyItems, reservedQuantities]);
+  }, [visibleProducts, supplyItems, reservedQuantities]);
 
   return (
     <section className={hideHeader ? "flex h-full w-full flex-col" : "flex flex-col w-full md:h-screen"}>
@@ -47,14 +56,16 @@ export function OrderPanel({
           <div className="flex flex-col p-4 w-full">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <Header title="PDV" />
-              <div className="flex gap-3">
-                <Button variant="secondary" asChild size="lg">
-                  <Link href="/order-detail">
-                    <ScrollText />
-                    Comandas
-                  </Link>
-                </Button>
-              </div>
+              {!listLayout && (
+                <div className="flex gap-3">
+                  <Button variant="secondary" asChild size="lg">
+                    <Link href="/order-detail">
+                      <ScrollText />
+                      Comandas
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -78,12 +89,18 @@ export function OrderPanel({
         ))}
       </div>
 
+      {listLayout && (
+        <div className="px-4 pb-2">
+          <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Buscar produto..." className="w-full" />
+        </div>
+      )}
+
       <div className="rounded-xl md:flex-1 md:overflow-y-auto no-scrollbar">
-        <div className="p-4 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {!filteredProducts || filteredProducts.length === 0 ? (
-            <EmptyState message="Nenhum produto cadastrado." className="col-span-full" />
+        <div className={listLayout ? "flex flex-col p-4 gap-2" : "p-4 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"}>
+          {!visibleProducts || visibleProducts.length === 0 ? (
+            <EmptyState message="Nenhum produto encontrado." className="col-span-full" />
           ) : (
-            filteredProducts.map((product: TProduct) => {
+            visibleProducts.map((product: TProduct) => {
               const orderItem = order?.orderItems?.find((item) => item.product.id === product.id);
               const quantity = orderItem?.quantity ?? 0;
               const available =
@@ -95,6 +112,42 @@ export function OrderPanel({
               const outOfStock = available !== null && available <= 0;
               const lowStockThreshold = product.recipe.length > 0 ? product.lowStockThreshold || 5 : (product.lowStockThreshold ?? 5);
               const isLowStock = available !== null && available <= lowStockThreshold;
+              const lowStockClassName = isLowStock
+                ? "bg-destructive/10 hover:bg-destructive/15 dark:bg-destructive/15 dark:hover:bg-destructive/20"
+                : "";
+
+              const stockLabel = outOfStock ? (
+                <span className="text-[10px] font-semibold text-destructive">Esgotado</span>
+              ) : (
+                isLowStock && <span className="text-[10px] font-semibold text-destructive">Restam {available}</span>
+              );
+
+              if (listLayout) {
+                return (
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    onClick={() => onAddProduct(product)}
+                    key={product.id}
+                    disabled={outOfStock}
+                    className={`h-auto w-full justify-between gap-3 px-4 py-3 ${lowStockClassName}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      {quantity > 0 && (
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow">
+                          {quantity}
+                        </span>
+                      )}
+                      <span className="text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
+                    </span>
+
+                    <span className="flex items-center gap-2">
+                      {stockLabel}
+                      <span className="text-sm font-medium">{formatCurrency(product.price)}</span>
+                    </span>
+                  </Button>
+                );
+              }
 
               return (
                 <Button
@@ -103,11 +156,7 @@ export function OrderPanel({
                   onClick={() => onAddProduct(product)}
                   key={product.id}
                   disabled={outOfStock}
-                  className={
-                    isLowStock
-                      ? "relative h-24 bg-destructive/10 hover:bg-destructive/15 dark:bg-destructive/15 dark:hover:bg-destructive/20"
-                      : "relative h-24"
-                  }
+                  className={`relative h-24 ${lowStockClassName}`}
                 >
                   {quantity > 0 && (
                     <span
@@ -120,11 +169,7 @@ export function OrderPanel({
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-center text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
                     <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
-                    {outOfStock ? (
-                      <span className="text-[10px] font-semibold text-destructive">Esgotado</span>
-                    ) : (
-                      isLowStock && <span className="text-[10px] font-semibold text-destructive">Restam {available}</span>
-                    )}
+                    {stockLabel}
                   </div>
                 </Button>
               );

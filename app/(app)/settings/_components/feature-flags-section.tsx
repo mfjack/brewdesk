@@ -12,6 +12,12 @@ import { useUpdateSettings } from "../mutation/useUpdateSettings";
 
 const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; description: string; defaultValue: boolean }[] = [
   {
+    key: "orderTickets",
+    label: "Comandas",
+    description: "Desative se o seu negócio não controla comandas. O PDV vira um caixa direto.",
+    defaultValue: true,
+  },
+  {
     key: "orderGrouping",
     label: "Junto com",
     description: "Permite vincular comandas separadas que devem ser servidas juntas.",
@@ -26,7 +32,7 @@ const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; des
   {
     key: "creditSale",
     label: "Venda fiado",
-    description: "Permite vender fiado, registrando o cliente e cobrando depois. Adiciona a página \"Fiado\" no menu.",
+    description: "Permite vender fiado, registrando o cliente e cobrando depois.",
     defaultValue: false,
   },
 ];

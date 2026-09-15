@@ -633,15 +633,16 @@ export default function OrderPageContent() {
 
       <section className="flex flex-col md:flex-row md:h-full print:hidden">
         <OrderPanel
-          categories={categories || []}
+          categories={isHydrated ? categories || [] : []}
           selectedCategory={effectiveCategory}
           handleCategoryClick={handleCategoryClick}
-          filteredProducts={filteredProducts}
-          products={products}
-          supplyItems={supplyItems}
+          filteredProducts={isHydrated ? filteredProducts : undefined}
+          products={isHydrated ? products : undefined}
+          supplyItems={isHydrated ? supplyItems : undefined}
           onAddProduct={handleAddProduct}
           order={currentOrder}
           stockError={stockError}
+          listLayout={!(settings?.featureFlags.orderTickets ?? true)}
         />
 
         <Separator className="h-px bg-border md:hidden" />
