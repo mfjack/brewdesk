@@ -16,9 +16,12 @@ import { buildWhatsappLink } from "@/_lib/whatsapp-link";
 import { WEEKDAY_FULL_NAMES } from "@/_lib/delivery-schedule";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { shortenUrl } from "@/_lib/shorten-url";
+import { useIsHydrated } from "@/_lib/use-is-hydrated";
 
 export default function SupplierPage() {
-  const { data: suppliers } = useGetSuppliers();
+  const { data: suppliersData } = useGetSuppliers();
+  const isHydrated = useIsHydrated();
+  const suppliers = isHydrated ? suppliersData : undefined;
   const deleteSupplier = useDeleteSupplier();
 
   function handleDeleteSupplier(supplierId: number) {

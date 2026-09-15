@@ -6,6 +6,7 @@ import { Switch } from "@/_components/ui/switch";
 import { Input } from "@/_components/ui/input";
 import { SettingRow } from "@/_components/ui/setting-row";
 import { ThemeToggle } from "@/_components/app/theme-toggle";
+import { useIsHydrated } from "@/_lib/use-is-hydrated";
 import type { TFeatureFlags, TStoreSettings } from "../../order/interface";
 
 import { useUpdateSettings } from "../mutation/useUpdateSettings";
@@ -39,6 +40,7 @@ const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; des
 
 export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | undefined }) {
   const updateSettings = useUpdateSettings();
+  const isHydrated = useIsHydrated();
   const [takeoutFeeInput, setTakeoutFeeInput] = useState<string | null>(null);
 
   function handleToggle(key: keyof TFeatureFlags, value: boolean) {
@@ -96,13 +98,16 @@ export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | u
             </div>
           }
         >
-          <Switch checked={settings?.featureFlags.takeout ?? true} onCheckedChange={(value) => handleToggle("takeout", value)} />
+          <Switch
+            checked={isHydrated && (settings?.featureFlags.takeout ?? true)}
+            onCheckedChange={(value) => handleToggle("takeout", value)}
+          />
         </SettingRow>
 
         {OTHER_FEATURE_FLAG_OPTIONS.map((option) => (
           <SettingRow key={option.key} label={option.label} description={option.description}>
             <Switch
-              checked={settings?.featureFlags[option.key] ?? option.defaultValue}
+              checked={isHydrated && (settings?.featureFlags[option.key] ?? option.defaultValue)}
               onCheckedChange={(value) => handleToggle(option.key, value)}
             />
           </SettingRow>

@@ -26,6 +26,7 @@ import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatDateTime } from "@/_lib/format-date";
+import { useIsHydrated } from "@/_lib/use-is-hydrated";
 
 function toDateInputValue(date: Date): string {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -46,8 +47,10 @@ export default function OrderDetailPage() {
   const [fiadoCustomerName, setFiadoCustomerName] = useState("");
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
-  const { data: orders = [] } = useGetOrders();
+  const { data: ordersData } = useGetOrders();
   const { data: settings } = useGetSettings();
+  const isHydrated = useIsHydrated();
+  const orders = useMemo(() => (isHydrated ? (ordersData ?? []) : []), [isHydrated, ordersData]);
 
   const availablePaymentMethods = settings?.featureFlags.creditSale
     ? paymentMethodOptions

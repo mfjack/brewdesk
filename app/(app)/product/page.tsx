@@ -20,12 +20,15 @@ import type { TProduct } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
 import { getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { useIsHydrated } from "@/_lib/use-is-hydrated";
 import Image from "next/image";
 
 export default function ProductPage() {
-  const { data: products } = useGetProducts();
+  const { data: productsData } = useGetProducts();
   const { data: categories } = useGetCategories();
   const { data: supplyItems } = useGetSupplyItems();
+  const isHydrated = useIsHydrated();
+  const products = isHydrated ? productsData : undefined;
   const deleteProduct = useDeleteProduct();
   const [searchTerm, setSearchTerm] = useState("");
 

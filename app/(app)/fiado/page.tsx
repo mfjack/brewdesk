@@ -19,17 +19,19 @@ import type { TOrderResponse } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
 import { formatDateTime } from "@/_lib/format-date";
 import { toTitleCase } from "@/_lib/to-title-case";
+import { useIsHydrated } from "@/_lib/use-is-hydrated";
 
 export default function FiadoPage() {
   const { data: settings } = useGetSettings();
-  const { data: orders } = useGetOrders();
+  const { data: ordersData } = useGetOrders();
   const setFiadoSettled = useSetFiadoSettled();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingOrder, setViewingOrder] = useState<TOrderResponse | null>(null);
+  const isHydrated = useIsHydrated();
 
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
-  const openOrders = useMemo(() => listOpenFiadoOrders(orders ?? []), [orders]);
+  const openOrders = useMemo(() => (isHydrated ? listOpenFiadoOrders(ordersData ?? []) : []), [isHydrated, ordersData]);
   const totalOwed = openOrders.reduce((sum, order) => sum + order.total, 0);
 
   const filteredOrders = openOrders.filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase()));

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +27,7 @@ import { NetworkStatusBadge } from "./network-status-badge";
 export function AppSidebar() {
   const { data: settings } = useGetSettings();
   const activeOperator = useActiveOperator();
+  const pathname = usePathname();
 
   const currentOperator = activeOperator ? settings?.operators.find((operator) => operator.id === activeOperator.id) : undefined;
 
@@ -57,10 +59,10 @@ export function AppSidebar() {
           </div>
 
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-4">
+            <SidebarMenu className="space-y-1">
               {visibleNavLinks.map(({ icon: Icon, label, path }) => (
                 <SidebarMenuItem key={path}>
-                  <SidebarMenuButton variant="outline" asChild>
+                  <SidebarMenuButton size="lg" isActive={pathname === path} asChild>
                     <Link href={path}>
                       <Icon />
                       <p>{label}</p>

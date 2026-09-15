@@ -72,7 +72,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
     control,
     reset,
     setValue,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<TStockFormValues>({
     defaultValues: buildDefaultValues(supplyItem),
   });
@@ -90,11 +90,18 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
   }, [unit, minQuantityUnit, compatibleMinQuantityUnits, setValue]);
 
   function handleSubmitSupplyItem(data: TStockFormValues) {
+    // Unit shown may just be an auto-converted display default; only treat it as a real change if the user touched it.
+    const isRealUnitChange = !supplyItem || Boolean(dirtyFields.unit);
+    const canonicalUnit = isRealUnitChange ? (data.unit as SupplyUnit) : supplyItem.unit;
+    const quantity = isRealUnitChange
+      ? Number(data.quantity) || 0
+      : convertQuantity(Number(data.quantity) || 0, data.unit, canonicalUnit);
+
     const payload = {
       name: data.name,
       brand: data.brand || null,
-      quantity: Number(data.quantity) || 0,
-      unit: data.unit as SupplyUnit,
+      quantity,
+      unit: canonicalUnit,
       minQuantity: Number(data.minQuantity) || 0,
       minQuantityUnit: data.minQuantityUnit as SupplyUnit,
       costPrice: Number(data.costPrice) || 0,
