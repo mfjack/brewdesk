@@ -34,6 +34,7 @@ import { getActiveOperator } from "@/_lib/operator-session";
 import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
 import { findOpenFiadoOrders } from "@/_lib/fiado";
+import { useSumupCharge } from "../mutation/useSumupCharge";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
@@ -84,6 +85,7 @@ export default function OrderPageContent() {
 
   const [fiadoCustomerName, setFiadoCustomerName] = useState("");
   const [fiadoTargetOrderId, setFiadoTargetOrderId] = useState<number | null>(null);
+  const [sumupCardType, setSumupCardType] = useState<"credit" | "debit">("credit");
 
   function handleFiadoCustomerNameChange(value: string) {
     setFiadoCustomerName(value);
@@ -108,6 +110,7 @@ export default function OrderPageContent() {
   const addOrderItem = useAddOrderItem();
   const removeOrderItem = useRemoveOrderItem();
   const updateOrderStatus = useUpdateOrderStatus();
+  const sumupCharge = useSumupCharge();
   const markOrderItemsPrinted = useMarkOrderItemsPrinted();
   const deleteOrder = useDeleteOrder();
 
@@ -539,6 +542,7 @@ export default function OrderPageContent() {
     setFiadoCustomerName(currentOrder.customerName ?? "");
     setFiadoTargetOrderId(null);
     setIsSplitOpen(false);
+    sumupCharge.reset();
     setIsPaymentDialogOpen(true);
   }
 
@@ -565,6 +569,24 @@ export default function OrderPageContent() {
 
         setIsPaymentDialogOpen(false);
         resetCart();
+
+        return;
+      }
+
+      if (paymentMethod === "SUMUP") {
+        const wasDraft = isDraftOrder(currentOrder);
+        const order = wasDraft ? await materializeDraftOrder(currentOrder, "") : currentOrder;
+
+        if (wasDraft) {
+          setCurrentOrder(order);
+        }
+
+        const result = await sumupCharge.charge(order.id, sumupCardType);
+
+        if (result.status === "successful") {
+          setIsPaymentDialogOpen(false);
+          resetCart();
+        }
 
         return;
       }
@@ -685,6 +707,10 @@ export default function OrderPageContent() {
             onFiadoTargetOrderIdChange={setFiadoTargetOrderId}
             onConfirmPayment={handleConfirmPayment}
             isConfirmingPayment={isSendingOrder}
+            sumupChargeState={sumupCharge.state}
+            sumupChargeError={sumupCharge.error}
+            sumupCardType={sumupCardType}
+            onSumupCardTypeChange={setSumupCardType}
             isSplitOpen={isSplitOpen}
             onSplitOpenChange={setIsSplitOpen}
             onConfirmSplitPayment={handleConfirmSplitPayment}
