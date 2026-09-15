@@ -1,7 +1,7 @@
 import type { TSupplyItem } from "@/app/(app)/order/interface";
 import { supabase } from "@/_lib/supabase/client";
 import { getEstablishmentId } from "@/_lib/supabase/establishment";
-import { roundToAvoidFloatDrift } from "@/_lib/supply-units";
+import { convertQuantity, roundToAvoidFloatDrift } from "@/_lib/supply-units";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
 
 export type TSupplyItemInput = Partial<Omit<TSupplyItem, "id" | "initialQuantity" | "name" | "unit">> &
@@ -84,7 +84,26 @@ export const supplyItemStore = {
   },
 
   updateSupplyItem: async (supplyItemId: number, input: TSupplyItemInput): Promise<TSupplyItem> => {
-    const { data, error } = await supabase.from("supply_items").update(toRow(input)).eq("id", supplyItemId).select().single();
+    const { data: existing, error: fetchError } = await supabase
+      .from("supply_items")
+      .select("unit, initial_quantity")
+      .eq("id", supplyItemId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(fetchError.message);
+    }
+
+    const row = toRow(input);
+    const initialQuantity =
+      existing.unit === row.unit ? existing.initial_quantity : convertQuantity(Number(existing.initial_quantity), existing.unit, row.unit);
+
+    const { data, error } = await supabase
+      .from("supply_items")
+      .update({ ...row, initial_quantity: initialQuantity })
+      .eq("id", supplyItemId)
+      .select()
+      .single();
 
     if (error) {
       throw new Error(error.message);

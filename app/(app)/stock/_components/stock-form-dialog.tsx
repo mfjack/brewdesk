@@ -90,13 +90,11 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
   }, [unit, minQuantityUnit, compatibleMinQuantityUnits, setValue]);
 
   function handleSubmitSupplyItem(data: TStockFormValues) {
-    const canonicalUnit = supplyItem && getCompatibleUnits(supplyItem.unit).includes(data.unit) ? supplyItem.unit : (data.unit as SupplyUnit);
-
     const payload = {
       name: data.name,
       brand: data.brand || null,
-      quantity: convertQuantity(Number(data.quantity) || 0, data.unit, canonicalUnit),
-      unit: canonicalUnit,
+      quantity: Number(data.quantity) || 0,
+      unit: data.unit as SupplyUnit,
       minQuantity: Number(data.minQuantity) || 0,
       minQuantityUnit: data.minQuantityUnit as SupplyUnit,
       costPrice: Number(data.costPrice) || 0,
