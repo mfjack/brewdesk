@@ -69,7 +69,7 @@ function buildDefaultValues(product: TProduct | undefined, supplyItems: TSupplyI
     lowStockThreshold: product ? String(product.lowStockThreshold) : "",
     categoryId: product?.category.id ?? 0,
     supplierId: product?.supplierId ?? 0,
-    trackStock: product?.trackStock ?? true,
+    trackStock: product?.trackStock ?? false,
     recipe:
       product?.recipe.map((item) => {
         const supplyItem = supplyItems?.find((supply) => supply.id === item.supplyItemId);
