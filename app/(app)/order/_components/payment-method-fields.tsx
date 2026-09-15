@@ -2,10 +2,12 @@ import Image from "next/image";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import { formatCurrency } from "@/_lib/format-currency";
+import { formatDateTime } from "@/_lib/format-date";
 import { computeChangeDue } from "../order-math";
 import { paymentMethodOptions } from "../payment-methods";
-import type { TPaymentMethod } from "../interface";
+import type { TOrderResponse, TPaymentMethod } from "../interface";
 
 interface TPaymentMethodFields {
   paymentMethod: TPaymentMethod;
@@ -14,6 +16,12 @@ interface TPaymentMethodFields {
   onAmountReceivedChange: (value: string) => void;
   total: number;
   pixQrCodeUrl?: string | null;
+  methods?: typeof paymentMethodOptions;
+  fiadoCustomerName?: string;
+  onFiadoCustomerNameChange?: (value: string) => void;
+  openFiadoMatches?: TOrderResponse[];
+  fiadoTargetOrderId?: number | null;
+  onFiadoTargetOrderIdChange?: (orderId: number | null) => void;
 }
 
 export function PaymentMethodFields({
@@ -23,6 +31,12 @@ export function PaymentMethodFields({
   onAmountReceivedChange,
   total,
   pixQrCodeUrl,
+  methods = paymentMethodOptions,
+  fiadoCustomerName,
+  onFiadoCustomerNameChange,
+  openFiadoMatches = [],
+  fiadoTargetOrderId,
+  onFiadoTargetOrderIdChange,
 }: TPaymentMethodFields) {
   const changeDue = paymentMethod === "CASH" && amountReceived ? computeChangeDue(Number(amountReceived), total) : null;
 
@@ -30,13 +44,13 @@ export function PaymentMethodFields({
     <div className="space-y-2">
       <p className="text-sm font-medium">Forma de pagamento</p>
 
-      <div className="flex gap-2">
-        {paymentMethodOptions.map(({ value, label, Icon }) => (
+      <div className="flex flex-wrap gap-2">
+        {methods.map(({ value, label, Icon }) => (
           <Button
             key={value}
             type="button"
             variant={paymentMethod === value ? "default" : "outline"}
-            className="flex-1"
+            className="flex-1 basis-[30%]"
             onClick={() => onPaymentMethodChange(value)}
           >
             <Icon />
@@ -57,6 +71,43 @@ export function PaymentMethodFields({
           />
 
           {changeDue !== null && <p className="text-sm text-muted-foreground">Troco: {formatCurrency(changeDue)}</p>}
+        </div>
+      )}
+
+      {paymentMethod === "FIADO" && (
+        <div className="space-y-1">
+          <Input
+            placeholder="Nome do cliente"
+            value={fiadoCustomerName ?? ""}
+            onChange={(e) => onFiadoCustomerNameChange?.(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">Necessário pra saber quem deve pagar depois.</p>
+
+          {openFiadoMatches.length > 0 && (
+            <div className="space-y-1 pt-1">
+              <label className="text-xs font-medium">Adicionar a qual comanda?</label>
+              <Select
+                value={fiadoTargetOrderId ? String(fiadoTargetOrderId) : "new"}
+                onValueChange={(value) => onFiadoTargetOrderIdChange?.(value === "new" ? null : Number(value))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">Nova comanda</SelectItem>
+                  {openFiadoMatches.map((order) => (
+                    <SelectItem key={order.id} value={String(order.id)}>
+                      Aberta em {formatDateTime(order.createdAt)} — {formatCurrency(order.total)} em aberto
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Já existe comanda fiado nesse nome. Se for a mesma pessoa, escolha ela; se for outra, deixe em &quot;Nova
+                comanda&quot;.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

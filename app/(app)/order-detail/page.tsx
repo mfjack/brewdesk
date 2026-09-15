@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useGetOrders } from "../order/query/useGetOrders";
 import { TOrderPayment, TOrderResponse, TPaymentMethod } from "../order/interface";
 import { buildOrderPayment, getChargedTakeoutFee, getGroupedOrders, isOrderPaid } from "../order/order-math";
-import { paymentMethodLabels } from "../order/payment-methods";
+import { paymentMethodLabels, paymentMethodOptions } from "../order/payment-methods";
 import { PaymentMethodFields } from "../order/_components/payment-method-fields";
 import { SplitBillCalculator } from "../order/_components/split-bill-calculator";
 import { GroupedOrdersBadge } from "../order/_components/grouped-orders-badge";
@@ -43,10 +43,15 @@ export default function OrderDetailPage() {
   const [selectedOrder, setSelectedOrder] = useState<TOrderResponse | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CREDIT");
   const [amountReceived, setAmountReceived] = useState("");
+  const [fiadoCustomerName, setFiadoCustomerName] = useState("");
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
   const { data: orders = [] } = useGetOrders();
   const { data: settings } = useGetSettings();
+
+  const availablePaymentMethods = settings?.featureFlags.creditSale
+    ? paymentMethodOptions
+    : paymentMethodOptions.filter((option) => option.value !== "FIADO");
 
   const updateOrderStatus = useUpdateOrderStatus();
 
@@ -77,6 +82,7 @@ export default function OrderDetailPage() {
     setSelectedOrder(order);
     setPaymentMethod("CREDIT");
     setAmountReceived("");
+    setFiadoCustomerName(order.customerName ?? "");
     setIsSplitOpen(false);
   }
 
@@ -89,13 +95,14 @@ export default function OrderDetailPage() {
   }
 
   async function handleConfirmPayment() {
-    if (!selectedOrder) {
+    if (!selectedOrder || (paymentMethod === "FIADO" && !fiadoCustomerName.trim())) {
       return;
     }
 
     await updateOrderStatus.mutateAsync({
       orderId: selectedOrder.id,
       status: "PAID",
+      ...(paymentMethod === "FIADO" ? { customerName: fiadoCustomerName } : {}),
       payments: [buildOrderPayment(paymentMethod, selectedOrder.total, Number(amountReceived) || 0)],
     });
 
@@ -371,7 +378,7 @@ export default function OrderDetailPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar">
+        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto no-scrollbar">
           <DialogHeader className="flex flex-col gap-0.5">
             <DialogTitle>Confirmar pagamento</DialogTitle>
             <DialogDescription>Confirme o recebimento do pagamento da comanda.</DialogDescription>
@@ -431,6 +438,9 @@ export default function OrderDetailPage() {
                     onAmountReceivedChange={setAmountReceived}
                     total={finalTotal}
                     pixQrCodeUrl={settings?.pixQrCodeUrl}
+                    methods={availablePaymentMethods}
+                    fiadoCustomerName={fiadoCustomerName}
+                    onFiadoCustomerNameChange={setFiadoCustomerName}
                   />
 
                   <Separator />
@@ -443,12 +453,17 @@ export default function OrderDetailPage() {
                     disabled={
                       updateOrderStatus.isPending ||
                       !selectedOrder ||
-                      (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)
+                      (paymentMethod === "CASH" && Number(amountReceived) < finalTotal) ||
+                      (paymentMethod === "FIADO" && !fiadoCustomerName.trim())
                     }
                   >
                     <DollarSign />
 
-                    {updateOrderStatus.isPending ? "Processando..." : "Pagamento Recebido"}
+                    {updateOrderStatus.isPending
+                      ? "Processando..."
+                      : paymentMethod === "FIADO"
+                        ? "Registrar fiado"
+                        : "Pagamento Recebido"}
                   </Button>
                 </>
               )}

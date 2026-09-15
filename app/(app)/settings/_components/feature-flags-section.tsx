@@ -10,9 +10,25 @@ import type { TFeatureFlags, TStoreSettings } from "../../order/interface";
 
 import { useUpdateSettings } from "../mutation/useUpdateSettings";
 
-const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; description: string }[] = [
-  { key: "orderGrouping", label: "Junto com", description: "Permite vincular comandas separadas que devem ser servidas juntas." },
-  { key: "splitBill", label: "Dividir conta", description: "Permite dividir o pagamento igualmente ou por item entre pessoas." },
+const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; description: string; defaultValue: boolean }[] = [
+  {
+    key: "orderGrouping",
+    label: "Junto com",
+    description: "Permite vincular comandas separadas que devem ser servidas juntas.",
+    defaultValue: true,
+  },
+  {
+    key: "splitBill",
+    label: "Dividir conta",
+    description: "Permite dividir o pagamento igualmente ou por item entre pessoas.",
+    defaultValue: true,
+  },
+  {
+    key: "creditSale",
+    label: "Venda fiado",
+    description: "Permite vender fiado, registrando o cliente e cobrando depois. Adiciona a página \"Fiado\" no menu.",
+    defaultValue: false,
+  },
 ];
 
 export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | undefined }) {
@@ -80,7 +96,7 @@ export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | u
         {OTHER_FEATURE_FLAG_OPTIONS.map((option) => (
           <SettingRow key={option.key} label={option.label} description={option.description}>
             <Switch
-              checked={settings?.featureFlags[option.key] ?? true}
+              checked={settings?.featureFlags[option.key] ?? option.defaultValue}
               onCheckedChange={(value) => handleToggle(option.key, value)}
             />
           </SettingRow>

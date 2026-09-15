@@ -3,7 +3,12 @@ import { supabase } from "@/_lib/supabase/client";
 import { getEstablishmentId } from "@/_lib/supabase/establishment";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
 
-export const defaultFeatureFlags: TStoreSettings["featureFlags"] = { takeout: true, orderGrouping: true, splitBill: true };
+export const defaultFeatureFlags: TStoreSettings["featureFlags"] = {
+  takeout: true,
+  orderGrouping: true,
+  splitBill: true,
+  creditSale: false,
+};
 export const defaultTakeoutFee = 2;
 
 interface TSettingsRow {

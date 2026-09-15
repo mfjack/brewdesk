@@ -29,6 +29,7 @@ interface TOrderRow {
   operator_name: string | null;
   payments: TOrderPayment[];
   group_id: number | null;
+  fiado_settled_at: string | null;
 }
 
 function fromRow(row: TOrderRow): TOrderResponse {
@@ -45,6 +46,7 @@ function fromRow(row: TOrderRow): TOrderResponse {
     operatorName: row.operator_name,
     payments: row.payments ?? [],
     groupId: row.group_id,
+    fiadoSettledAt: row.fiado_settled_at,
   };
 }
 
@@ -406,5 +408,22 @@ export const orderStore = {
     }
 
     notifyStoreChange(["orders", "products", "supplyItems"]);
+  },
+
+  setFiadoSettled: async (orderId: number, settled: boolean): Promise<TOrderResponse> => {
+    const { data, error } = await supabase
+      .from("orders")
+      .update({ fiado_settled_at: settled ? new Date().toISOString() : null })
+      .eq("id", orderId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["orders"]);
+
+    return fromRow(data as TOrderRow);
   },
 };

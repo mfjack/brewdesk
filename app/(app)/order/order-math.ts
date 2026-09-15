@@ -39,6 +39,10 @@ export function computeChangeDue(amountReceived: number, total: number): number 
 }
 
 export function buildOrderPayment(method: TPaymentMethod, amount: number, amountReceivedInput?: number | null): TOrderPayment {
+  if (method === "FIADO") {
+    return { method, amount, amountReceived: null, changeDue: null };
+  }
+
   if (method !== "CASH") {
     return { method, amount, amountReceived: amount, changeDue: 0 };
   }

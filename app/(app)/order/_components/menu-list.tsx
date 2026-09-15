@@ -17,6 +17,7 @@ import { SplitBillCalculator } from "./split-bill-calculator";
 import { GroupedOrdersBadge } from "./grouped-orders-badge";
 import { EditOrderDialog } from "./edit-order-dialog";
 
+import { paymentMethodOptions } from "../payment-methods";
 import { formatCurrency } from "@/_lib/format-currency";
 import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 
@@ -54,6 +55,11 @@ export function MenuList({
   onPaymentMethodChange,
   amountReceived,
   onAmountReceivedChange,
+  fiadoCustomerName,
+  onFiadoCustomerNameChange,
+  openFiadoMatches,
+  fiadoTargetOrderId,
+  onFiadoTargetOrderIdChange,
   onConfirmPayment,
   isConfirmingPayment,
   isSplitOpen,
@@ -87,6 +93,11 @@ export function MenuList({
   const isTakeoutEnabled = settings?.featureFlags.takeout ?? true;
   const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
   const isSplitBillEnabled = settings?.featureFlags.splitBill ?? true;
+  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
+
+  const availablePaymentMethods = isCreditSaleEnabled
+    ? paymentMethodOptions
+    : paymentMethodOptions.filter((option) => option.value !== "FIADO");
 
   const finalTotal = order?.total ?? 0;
 
@@ -312,7 +323,7 @@ export function MenuList({
           </Dialog>
 
           <Dialog open={isPaymentDialogOpen} onOpenChange={onPaymentDialogOpenChange}>
-            <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar">
+            <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto no-scrollbar">
               <DialogHeader className="flex flex-col gap-0.5">
                 <DialogTitle>Confirmar pagamento</DialogTitle>
                 <DialogDescription>
@@ -340,6 +351,12 @@ export function MenuList({
                     onAmountReceivedChange={onAmountReceivedChange}
                     total={finalTotal}
                     pixQrCodeUrl={settings?.pixQrCodeUrl}
+                    methods={availablePaymentMethods}
+                    fiadoCustomerName={fiadoCustomerName}
+                    onFiadoCustomerNameChange={onFiadoCustomerNameChange}
+                    openFiadoMatches={openFiadoMatches}
+                    fiadoTargetOrderId={fiadoTargetOrderId}
+                    onFiadoTargetOrderIdChange={onFiadoTargetOrderIdChange}
                   />
 
                   <Separator />
@@ -355,10 +372,20 @@ export function MenuList({
                       type="button"
                       size="lg"
                       onClick={onConfirmPayment}
-                      disabled={isConfirmingPayment || (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)}
+                      disabled={
+                        isConfirmingPayment ||
+                        (paymentMethod === "CASH" && Number(amountReceived) < finalTotal) ||
+                        (paymentMethod === "FIADO" && !fiadoCustomerName.trim())
+                      }
                     >
                       <DollarSign />
-                      {isConfirmingPayment ? "Processando..." : "Pagamento Recebido"}
+                      {isConfirmingPayment
+                        ? "Processando..."
+                        : paymentMethod === "FIADO"
+                          ? fiadoTargetOrderId !== null
+                            ? "Adicionar à comanda fiado"
+                            : "Registrar fiado"
+                          : "Pagamento Recebido"}
                     </Button>
                   </DialogFooter>
                 </>

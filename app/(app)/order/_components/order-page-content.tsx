@@ -32,6 +32,8 @@ import {
 } from "../order-math";
 import { getActiveOperator } from "@/_lib/operator-session";
 import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
+import { useIsHydrated } from "@/_lib/use-is-hydrated";
+import { findOpenFiadoOrders } from "@/_lib/fiado";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
@@ -80,6 +82,14 @@ export default function OrderPageContent() {
 
   const [amountReceived, setAmountReceived] = useState("");
 
+  const [fiadoCustomerName, setFiadoCustomerName] = useState("");
+  const [fiadoTargetOrderId, setFiadoTargetOrderId] = useState<number | null>(null);
+
+  function handleFiadoCustomerNameChange(value: string) {
+    setFiadoCustomerName(value);
+    setFiadoTargetOrderId(null);
+  }
+
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   const [isEditOrderDialogOpen, setIsEditOrderDialogOpen] = useState(false);
@@ -110,13 +120,18 @@ export default function OrderPageContent() {
     setPrintedItemQuantities(existingOrder.printedItemQuantities ?? {});
   }
 
-  const defaultCategory = categories?.length ? (categories.find((category: TCategory) => category.id === 1) ?? categories[0]) : null;
+  const isHydrated = useIsHydrated();
+  const defaultCategory =
+    isHydrated && categories?.length ? (categories.find((category: TCategory) => category.id === 1) ?? categories[0]) : null;
   const effectiveCategory = selectedCategory ?? defaultCategory;
 
   const filteredProducts = useMemo(
     () => (effectiveCategory ? products?.filter((product: TProduct) => product.category.id === effectiveCategory.id) : products),
     [products, effectiveCategory],
   );
+
+  const openFiadoMatches =
+    paymentMethod === "FIADO" && currentOrder && isDraftOrder(currentOrder) ? findOpenFiadoOrders(orders, fiadoCustomerName) : [];
 
   const groupableOrders = orders
     .filter((order) => !isOrderPaid(order) && order.status !== "OPEN" && order.id !== currentOrder?.id)
@@ -161,6 +176,24 @@ export default function OrderPageContent() {
     return order;
   }
 
+  async function mergeIntoExistingFiadoOrder(existingOrder: TOrderResponse, newItems: TOrderItem[]): Promise<TOrderResponse> {
+    let order = existingOrder;
+
+    for (const item of newItems) {
+      order = await addOrderItem.mutateAsync({
+        orderId: existingOrder.id,
+        productId: item.product.id,
+        quantity: item.quantity,
+      });
+    }
+
+    return updateOrderStatus.mutateAsync({
+      orderId: order.id,
+      status: "PAID",
+      payments: [buildOrderPayment("FIADO", order.total)],
+    });
+  }
+
   function computeAvailableStock(product: TProduct, orderItems: TOrderItem[], reservedQuantities: Record<number, number> = {}) {
     if (product.recipe.length > 0) {
       return getMaxProducibleQuantity(product.recipe, supplyItems ?? [], reservedQuantities);
@@ -196,6 +229,7 @@ export default function OrderPageContent() {
           operatorName: null,
           payments: [],
           groupId: null,
+          fiadoSettledAt: null,
         };
 
         const reservedQuantities = buildReservedSupplyQuantities(base.orderItems, products ?? []);
@@ -502,6 +536,8 @@ export default function OrderPageContent() {
 
     setPaymentMethod("CREDIT");
     setAmountReceived("");
+    setFiadoCustomerName(currentOrder.customerName ?? "");
+    setFiadoTargetOrderId(null);
     setIsSplitOpen(false);
     setIsPaymentDialogOpen(true);
   }
@@ -511,16 +547,36 @@ export default function OrderPageContent() {
       return;
     }
 
+    if (paymentMethod === "FIADO" && !fiadoCustomerName.trim()) {
+      return;
+    }
+
     sendingOrderRef.current = true;
     setIsSendingOrder(true);
 
     try {
-      const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, "") : currentOrder;
+      const targetFiadoOrder =
+        paymentMethod === "FIADO" && fiadoTargetOrderId
+          ? openFiadoMatches.find((order) => order.id === fiadoTargetOrderId)
+          : undefined;
+
+      if (targetFiadoOrder) {
+        await mergeIntoExistingFiadoOrder(targetFiadoOrder, currentOrder.orderItems);
+
+        setIsPaymentDialogOpen(false);
+        resetCart();
+
+        return;
+      }
+
+      const customerName = paymentMethod === "FIADO" ? fiadoCustomerName : "";
+      const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, customerName) : currentOrder;
 
       await updateOrderStatus.mutateAsync({
         orderId: order.id,
         status: "PAID",
         observation,
+        ...(paymentMethod === "FIADO" ? { customerName: fiadoCustomerName } : {}),
         payments: [buildOrderPayment(paymentMethod, order.total, Number(amountReceived) || 0)],
       });
 
@@ -621,6 +677,11 @@ export default function OrderPageContent() {
             onPaymentMethodChange={setPaymentMethod}
             amountReceived={amountReceived}
             onAmountReceivedChange={setAmountReceived}
+            fiadoCustomerName={fiadoCustomerName}
+            onFiadoCustomerNameChange={handleFiadoCustomerNameChange}
+            openFiadoMatches={openFiadoMatches}
+            fiadoTargetOrderId={fiadoTargetOrderId}
+            onFiadoTargetOrderIdChange={setFiadoTargetOrderId}
             onConfirmPayment={handleConfirmPayment}
             isConfirmingPayment={isSendingOrder}
             isSplitOpen={isSplitOpen}

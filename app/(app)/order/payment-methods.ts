@@ -1,4 +1,4 @@
-import { Banknote, CreditCard, Landmark, QrCode } from "lucide-react";
+import { Banknote, CreditCard, Handshake, Landmark, QrCode } from "lucide-react";
 import type { TPaymentMethod } from "./interface";
 
 export const paymentMethodOptions: { value: TPaymentMethod; label: string; Icon: typeof Banknote }[] = [
@@ -6,6 +6,7 @@ export const paymentMethodOptions: { value: TPaymentMethod; label: string; Icon:
   { value: "DEBIT", label: "Débito", Icon: Landmark },
   { value: "PIX", label: "Pix", Icon: QrCode },
   { value: "CASH", label: "Dinheiro", Icon: Banknote },
+  { value: "FIADO", label: "Fiado", Icon: Handshake },
 ];
 
 export const paymentMethodLabels: Record<TPaymentMethod, string> = Object.fromEntries(

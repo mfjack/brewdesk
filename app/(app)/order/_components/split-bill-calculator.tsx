@@ -11,6 +11,9 @@ import { formatCurrency } from "@/_lib/format-currency";
 import { buildOrderPayment, getChargedTakeoutFee } from "../order-math";
 import type { TOrderPayment, TOrderResponse, TPaymentMethod } from "../interface";
 import { PaymentMethodFields } from "./payment-method-fields";
+import { paymentMethodOptions } from "../payment-methods";
+
+const SPLIT_BILL_PAYMENT_METHODS = paymentMethodOptions.filter((option) => option.value !== "FIADO");
 
 interface TSplitBillCalculator {
   order: TOrderResponse;
@@ -200,6 +203,7 @@ export function SplitBillCalculator({ order, isOpen, onOpenChange, pixQrCodeUrl,
               onAmountReceivedChange={(value) => handlePersonAmountReceivedChange(personIndex, value)}
               total={perPersonTotals[personIndex]}
               pixQrCodeUrl={pixQrCodeUrl}
+              methods={SPLIT_BILL_PAYMENT_METHODS}
             />
           </div>
         ))}

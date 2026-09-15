@@ -29,9 +29,11 @@ export function AppSidebar() {
 
   const currentOperator = activeOperator ? settings?.operators.find((operator) => operator.id === activeOperator.id) : undefined;
 
-  const visibleNavLinks = activeOperator
-    ? APP_PAGES.filter((page) => currentOperator?.allowedRoutes.includes(page.path))
-    : APP_PAGES;
+  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
+
+  const visibleNavLinks = APP_PAGES.filter((page) => page.path !== "/fiado" || isCreditSaleEnabled).filter((page) =>
+    activeOperator ? currentOperator?.allowedRoutes.includes(page.path) : true,
+  );
 
   return (
     <Sidebar collapsible="offcanvas" className="print:hidden">
