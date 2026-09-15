@@ -122,7 +122,12 @@ export default function ProductPage() {
 
                   <TableCell className="text-muted-foreground">{toTitleCase(product.category.name)}</TableCell>
 
-                  <TableCell>{formatCurrency(product.price)}</TableCell>
+                  <TableCell>
+                    {formatCurrency(product.price)}
+                    {product.costPrice > 0 && (
+                      <p className="text-xs text-muted-foreground">Custo: {formatCurrency(product.costPrice)}</p>
+                    )}
+                  </TableCell>
 
                   <TableCell>
                     {product.costPrice > 0 && product.price > 0 ? (
