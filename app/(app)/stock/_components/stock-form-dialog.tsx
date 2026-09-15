@@ -20,7 +20,7 @@ import {
 import { useCreateSupplyItem } from "../mutation/useCreateSupplyItem";
 import { useUpdateSupplyItem } from "../mutation/useUpdateSupplyItem";
 import type { TSupplier, TSupplyItem } from "../../order/interface";
-import { formatUnit, getCompatibleUnits, SUPPLY_UNITS, type SupplyUnit } from "@/_lib/supply-units";
+import { convertQuantity, formatUnit, getCompatibleUnits, pickReadableUnit, SUPPLY_UNITS, type SupplyUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 interface TStockFormValues {
@@ -42,11 +42,14 @@ interface TStockFormDialog {
 }
 
 function buildDefaultValues(supplyItem?: TSupplyItem): TStockFormValues {
+  const displayUnit = supplyItem ? pickReadableUnit(supplyItem.quantity, supplyItem.unit) : SUPPLY_UNITS[0];
+  const displayQuantity = supplyItem ? convertQuantity(supplyItem.quantity, supplyItem.unit, displayUnit) : 0;
+
   return {
     name: supplyItem?.name ?? "",
     brand: supplyItem?.brand ?? "",
-    quantity: supplyItem ? String(supplyItem.quantity) : "",
-    unit: supplyItem?.unit ?? SUPPLY_UNITS[0],
+    quantity: supplyItem ? String(Number(displayQuantity.toFixed(2))) : "",
+    unit: displayUnit,
     minQuantity: supplyItem ? String(supplyItem.minQuantity) : "",
     minQuantityUnit: supplyItem?.minQuantityUnit ?? supplyItem?.unit ?? SUPPLY_UNITS[0],
     costPrice: supplyItem ? String(supplyItem.costPrice) : "",

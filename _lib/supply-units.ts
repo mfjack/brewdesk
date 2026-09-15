@@ -49,8 +49,12 @@ export function isBelowMinQuantity(quantity: number, unit: string, minQuantity: 
 
 const SMALLER_UNIT_FOR_DISPLAY: Record<string, string> = { kg: "g", L: "ml" };
 
+export function pickReadableUnit(quantity: number, unit: string): string {
+  return quantity < 1 && unit in SMALLER_UNIT_FOR_DISPLAY ? SMALLER_UNIT_FOR_DISPLAY[unit] : unit;
+}
+
 export function formatSupplyQuantity(quantity: number, unit: string): string {
-  const displayUnit = quantity < 1 && unit in SMALLER_UNIT_FOR_DISPLAY ? SMALLER_UNIT_FOR_DISPLAY[unit] : unit;
+  const displayUnit = pickReadableUnit(quantity, unit);
   const displayQuantity = convertQuantity(quantity, unit, displayUnit);
 
   return `${Number(displayQuantity.toFixed(2))}${formatUnit(displayUnit)}`;
