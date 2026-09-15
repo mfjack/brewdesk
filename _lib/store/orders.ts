@@ -108,6 +108,32 @@ async function fetchSupplyItemsByIds(ids: number[]): Promise<TSupplyItem[]> {
   }));
 }
 
+async function fetchProductsByIds(ids: number[]): Promise<TProduct[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase.from("products").select("*, category:categories(id, name)").in("id", ids);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data.map((row) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    photoUrl: row.photo_url,
+    price: Number(row.price),
+    costPrice: Number(row.cost_price),
+    quantity: Number(row.quantity),
+    trackStock: row.track_stock,
+    lowStockThreshold: Number(row.low_stock_threshold),
+    category: row.category,
+    recipe: row.recipe ?? [],
+  }));
+}
+
 async function fetchTakeoutFee(): Promise<number> {
   const { data, error } = await supabase.from("settings").select("takeout_fee").single();
 
@@ -122,12 +148,12 @@ function nextItemId(items: TOrderResponse["orderItems"]): number {
   return items.reduce((max, item) => Math.max(max, item.id), 0) + 1;
 }
 
-async function consumeRecipeStock(product: TProduct, quantitySold: number): Promise<void> {
+async function consumeRecipeStock(product: TProduct, quantitySold: number, preFetchedSupplyItems?: TSupplyItem[]): Promise<void> {
   if (product.recipe.length === 0) {
     return;
   }
 
-  const supplyItems = await fetchSupplyItemsByIds(product.recipe.map((item) => item.supplyItemId));
+  const supplyItems = preFetchedSupplyItems ?? (await fetchSupplyItemsByIds(product.recipe.map((item) => item.supplyItemId)));
 
   await Promise.all(
     product.recipe.map(async (recipeItem) => {
@@ -203,9 +229,11 @@ export const orderStore = {
       throw new Error(`Estoque insuficiente para "${product.name}".`);
     }
 
+    let recipeSupplyItems: TSupplyItem[] | undefined;
+
     if (product.recipe.length > 0) {
-      const supplyItems = await fetchSupplyItemsByIds(product.recipe.map((item) => item.supplyItemId));
-      const maxProducible = getMaxProducibleQuantity(product.recipe, supplyItems) ?? 0;
+      recipeSupplyItems = await fetchSupplyItemsByIds(product.recipe.map((item) => item.supplyItemId));
+      const maxProducible = getMaxProducibleQuantity(product.recipe, recipeSupplyItems) ?? 0;
 
       if (maxProducible < quantity) {
         throw new Error(`Estoque insuficiente para "${product.name}".`);
@@ -218,7 +246,7 @@ export const orderStore = {
     const takeoutFee = await fetchTakeoutFee();
     const total = computeOrderTotal(newOrderItems, order.isTakeout, takeoutFee);
 
-    await consumeRecipeStock(product, quantity);
+    await consumeRecipeStock(product, quantity, recipeSupplyItems);
 
     if (product.trackStock) {
       const { error } = await supabase.from("products").update({ quantity: product.quantity - quantity }).eq("id", productId);
@@ -378,9 +406,11 @@ export const orderStore = {
     const orderRow = await fetchOrderRow(orderId);
     const order = fromRow(orderRow);
 
+    const products = await fetchProductsByIds([...new Set(order.orderItems.map((item) => item.product.id))]);
+
     await Promise.all(
       order.orderItems.map(async (item) => {
-        const product = await fetchProduct(item.product.id);
+        const product = products.find((candidate) => candidate.id === item.product.id);
 
         if (!product) {
           return;
