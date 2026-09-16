@@ -69,12 +69,12 @@ export function OrderReceipt({
           Cliente: <span className="text-base font-medium uppercase">{order.customerName || "Sem nome"}</span>
         </p>
 
-        {order.operatorName && <p>Atendente: {toTitleCase(order.operatorName)}</p>}
-
         {order.isTakeout && <p className="mt-1 text-center text-base font-bold">*** PARA LEVAR ***</p>}
 
         {groupedCustomerNames.length > 0 && (
-          <p className="mt-1 text-center text-base font-bold">*** JUNTO COM: {groupedCustomerNames.join(", ").toUpperCase()} ***</p>
+          <p className="mt-1 text-center text-base font-bold">
+            *** JUNTO COM: {groupedCustomerNames.join(", ").toUpperCase()} ***
+          </p>
         )}
 
         {receiptObservation && (

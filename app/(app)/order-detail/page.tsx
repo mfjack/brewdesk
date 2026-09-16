@@ -172,10 +172,6 @@ export default function OrderDetailPage() {
                   <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
                     <span className="font-bold text-lg text-center">{toTitleCase(order.customerName)}</span>
 
-                    {order.operatorName && (
-                      <p className="text-xs text-center text-muted-foreground">Atendente: {toTitleCase(order.operatorName)}</p>
-                    )}
-
                     <GroupedOrdersBadge
                       groupedOrders={settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : []}
                       className="justify-center text-center"
@@ -247,9 +243,7 @@ export default function OrderDetailPage() {
                   <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
                     <span className="font-bold text-lg text-center">{toTitleCase(order.customerName)}</span>
 
-                    <p className="text-xs text-center text-muted-foreground">
-                      {formatDateTime(order.createdAt)}
-                    </p>
+                    <p className="text-xs text-center text-muted-foreground">{formatDateTime(order.createdAt)}</p>
 
                     {order.operatorName && (
                       <p className="text-xs text-center text-muted-foreground">Atendente: {toTitleCase(order.operatorName)}</p>
