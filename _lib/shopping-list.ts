@@ -32,12 +32,12 @@ export function buildShoppingListGroups(supplyItems: TSupplyItem[], products: TP
   }
 
   supplyItems
-    .filter((item) => isBelowMinQuantity(item.quantity, item.unit, item.minQuantity, item.minQuantityUnit))
+    .filter((item) => isBelowMinQuantity(item.quantity, item.minQuantity))
     .forEach((item) => {
       pushItem(item.supplierId, {
         id: `supply-${item.id}`,
         name: item.name,
-        quantityLabel: `${Number(item.quantity.toFixed(2))}${formatUnit(item.unit)} (mín. ${Number(item.minQuantity.toFixed(2))}${formatUnit(item.minQuantityUnit)})`,
+        quantityLabel: `${Number(item.quantity.toFixed(2))}${formatUnit(item.unit)} (mín. ${Number(item.minQuantity.toFixed(2))}${formatUnit(item.unit)})`,
       });
     });
 

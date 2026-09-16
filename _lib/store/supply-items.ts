@@ -1,7 +1,7 @@
 import type { TSupplyItem } from "@/app/(app)/order/interface";
 import { supabase } from "@/_lib/supabase/client";
 import { getEstablishmentId } from "@/_lib/supabase/establishment";
-import { convertQuantity, roundToAvoidFloatDrift } from "@/_lib/supply-units";
+import { roundToAvoidFloatDrift } from "@/_lib/supply-units";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
 
 export type TSupplyItemInput = Partial<Omit<TSupplyItem, "id" | "initialQuantity" | "name" | "unit">> &
@@ -15,7 +15,6 @@ function fromRow(row: {
   initial_quantity: number;
   unit: TSupplyItem["unit"];
   min_quantity: number;
-  min_quantity_unit: TSupplyItem["minQuantityUnit"];
   cost_price: number;
   supplier_id: number | null;
   expires_at: string | null;
@@ -28,7 +27,6 @@ function fromRow(row: {
     initialQuantity: Number(row.initial_quantity),
     unit: row.unit,
     minQuantity: Number(row.min_quantity),
-    minQuantityUnit: row.min_quantity_unit,
     costPrice: Number(row.cost_price),
     supplierId: row.supplier_id,
     expiresAt: row.expires_at,
@@ -42,7 +40,6 @@ function toRow(input: TSupplyItemInput) {
     quantity: Number(input.quantity ?? 0),
     unit: input.unit,
     min_quantity: Number(input.minQuantity ?? 0),
-    min_quantity_unit: input.minQuantityUnit ?? input.unit,
     cost_price: Number(input.costPrice ?? 0),
     supplier_id: input.supplierId ?? null,
     expires_at: input.expiresAt || null,
@@ -84,26 +81,7 @@ export const supplyItemStore = {
   },
 
   updateSupplyItem: async (supplyItemId: number, input: TSupplyItemInput): Promise<TSupplyItem> => {
-    const { data: existing, error: fetchError } = await supabase
-      .from("supply_items")
-      .select("unit, initial_quantity")
-      .eq("id", supplyItemId)
-      .single();
-
-    if (fetchError) {
-      throw new Error(fetchError.message);
-    }
-
-    const row = toRow(input);
-    const initialQuantity =
-      existing.unit === row.unit ? existing.initial_quantity : convertQuantity(Number(existing.initial_quantity), existing.unit, row.unit);
-
-    const { data, error } = await supabase
-      .from("supply_items")
-      .update({ ...row, initial_quantity: initialQuantity })
-      .eq("id", supplyItemId)
-      .select()
-      .single();
+    const { data, error } = await supabase.from("supply_items").update(toRow(input)).eq("id", supplyItemId).select().single();
 
     if (error) {
       throw new Error(error.message);

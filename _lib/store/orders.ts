@@ -101,7 +101,6 @@ async function fetchSupplyItemsByIds(ids: number[]): Promise<TSupplyItem[]> {
     initialQuantity: Number(row.initial_quantity),
     unit: row.unit,
     minQuantity: Number(row.min_quantity),
-    minQuantityUnit: row.min_quantity_unit,
     costPrice: Number(row.cost_price),
     supplierId: row.supplier_id,
     expiresAt: row.expires_at,

@@ -62,7 +62,7 @@ export default function StockPage() {
     deleteSupplyItem.mutate(supplyItemId);
   }
 
-  const lowStockItems = supplyItems?.filter((item) => isBelowMinQuantity(item.quantity, item.unit, item.minQuantity, item.minQuantityUnit)) ?? [];
+  const lowStockItems = supplyItems?.filter((item) => isBelowMinQuantity(item.quantity, item.minQuantity)) ?? [];
 
   const filteredSupplyItems = supplyItems?.filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -153,12 +153,7 @@ export default function StockPage() {
                 <TableBody>
                   {filteredSupplyItems?.map((supplyItem: TSupplyItem) => {
                 const expiryStatus = getExpiryStatus(supplyItem.expiresAt);
-                const isLowStock = isBelowMinQuantity(
-                  supplyItem.quantity,
-                  supplyItem.unit,
-                  supplyItem.minQuantity,
-                  supplyItem.minQuantityUnit,
-                );
+                const isLowStock = isBelowMinQuantity(supplyItem.quantity, supplyItem.minQuantity);
                 const itemSupplier = findSupplier(supplyItem.supplierId);
 
                 return (

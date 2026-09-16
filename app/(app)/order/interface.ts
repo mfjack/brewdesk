@@ -125,7 +125,6 @@ export interface TSupplyItem {
   initialQuantity: number;
   unit: SupplyUnit;
   minQuantity: number;
-  minQuantityUnit: SupplyUnit;
   costPrice: number;
   supplierId: number | null;
   expiresAt: string | null;

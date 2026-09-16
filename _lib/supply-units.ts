@@ -1,4 +1,4 @@
-export const SUPPLY_UNITS = ["kg", "g", "L", "ml", "unidade"] as const;
+export const SUPPLY_UNITS = ["g", "unidade"] as const;
 
 export type SupplyUnit = (typeof SUPPLY_UNITS)[number];
 
@@ -8,54 +8,14 @@ export function formatUnit(unit: string): string {
   return UNIT_LABELS[unit] ?? unit;
 }
 
-const WEIGHT_UNITS_IN_GRAMS: Record<string, number> = { kg: 1000, g: 1 };
-const VOLUME_UNITS_IN_ML: Record<string, number> = { L: 1000, ml: 1 };
-
-export function getCompatibleUnits(unit: string): readonly string[] {
-  if (unit in WEIGHT_UNITS_IN_GRAMS) {
-    return Object.keys(WEIGHT_UNITS_IN_GRAMS);
-  }
-
-  if (unit in VOLUME_UNITS_IN_ML) {
-    return Object.keys(VOLUME_UNITS_IN_ML);
-  }
-
-  return [unit];
-}
-
 export function roundToAvoidFloatDrift(value: number): number {
   return Math.round(value * 1e6) / 1e6;
 }
 
-export function convertQuantity(quantity: number, fromUnit: string, toUnit: string): number {
-  if (fromUnit === toUnit) {
-    return quantity;
-  }
-
-  if (fromUnit in WEIGHT_UNITS_IN_GRAMS && toUnit in WEIGHT_UNITS_IN_GRAMS) {
-    return roundToAvoidFloatDrift((quantity * WEIGHT_UNITS_IN_GRAMS[fromUnit]) / WEIGHT_UNITS_IN_GRAMS[toUnit]);
-  }
-
-  if (fromUnit in VOLUME_UNITS_IN_ML && toUnit in VOLUME_UNITS_IN_ML) {
-    return roundToAvoidFloatDrift((quantity * VOLUME_UNITS_IN_ML[fromUnit]) / VOLUME_UNITS_IN_ML[toUnit]);
-  }
-
-  return quantity;
-}
-
-export function isBelowMinQuantity(quantity: number, unit: string, minQuantity: number, minQuantityUnit: string): boolean {
-  return quantity <= convertQuantity(minQuantity, minQuantityUnit, unit);
-}
-
-const SMALLER_UNIT_FOR_DISPLAY: Record<string, string> = { kg: "g", L: "ml" };
-
-export function pickReadableUnit(quantity: number, unit: string): string {
-  return quantity < 1 && unit in SMALLER_UNIT_FOR_DISPLAY ? SMALLER_UNIT_FOR_DISPLAY[unit] : unit;
+export function isBelowMinQuantity(quantity: number, minQuantity: number): boolean {
+  return quantity <= minQuantity;
 }
 
 export function formatSupplyQuantity(quantity: number, unit: string): string {
-  const displayUnit = pickReadableUnit(quantity, unit);
-  const displayQuantity = convertQuantity(quantity, unit, displayUnit);
-
-  return `${Number(displayQuantity.toFixed(2))}${formatUnit(displayUnit)}`;
+  return `${Number(quantity.toFixed(2))}${formatUnit(unit)}`;
 }

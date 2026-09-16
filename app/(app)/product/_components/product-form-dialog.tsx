@@ -28,7 +28,7 @@ import type { TCategory, TProduct, TRecipeItem, TSupplyItem } from "../../order/
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatCurrency } from "@/_lib/format-currency";
 import { getMaxProducibleQuantity, getRecipeCost } from "@/_lib/recipe-cost";
-import { convertQuantity, type SupplyUnit } from "@/_lib/supply-units";
+import type { SupplyUnit } from "@/_lib/supply-units";
 
 interface TRecipeRowFormValues {
   supplyItemId: number;
@@ -68,14 +68,11 @@ function buildDefaultValues(product: TProduct | undefined, supplyItems: TSupplyI
     categoryId: product?.category.id ?? 0,
     trackStock: product?.trackStock ?? false,
     recipe:
-      product?.recipe.map((item) => {
-        const supplyItem = supplyItems?.find((supply) => supply.id === item.supplyItemId);
-        const nativeUnit = supplyItem?.unit ?? item.unit;
-        const displayUnit = item.unit || nativeUnit;
-        const displayQuantity = convertQuantity(item.quantity, nativeUnit, displayUnit);
-
-        return { supplyItemId: item.supplyItemId, quantity: String(displayQuantity), unit: displayUnit };
-      }) ?? [],
+      product?.recipe.map((item) => ({
+        supplyItemId: item.supplyItemId,
+        quantity: String(item.quantity),
+        unit: item.unit,
+      })) ?? [],
   };
 }
 
@@ -84,13 +81,12 @@ function parseRecipe(recipe: TRecipeRowFormValues[], supplyItems: TSupplyItem[])
     .filter((item) => item.supplyItemId > 0 && Number(item.quantity) > 0)
     .map((item) => {
       const supplyItem = supplyItems.find((supply) => supply.id === item.supplyItemId);
-      const nativeUnit = supplyItem?.unit ?? item.unit;
-      const unit = item.unit || nativeUnit;
+      const unit = supplyItem?.unit ?? (item.unit as SupplyUnit);
 
       return {
         supplyItemId: item.supplyItemId,
-        quantity: convertQuantity(Number(item.quantity), unit, nativeUnit),
-        unit: unit as SupplyUnit,
+        quantity: Number(item.quantity),
+        unit,
       };
     });
 }

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatCurrency } from "@/_lib/format-currency";
 import { getSupplyUnitCost } from "@/_lib/recipe-cost";
-import { convertQuantity, formatUnit, getCompatibleUnits } from "@/_lib/supply-units";
+import { formatUnit } from "@/_lib/supply-units";
 
 import type { TSupplyItem } from "../../order/interface";
 import type { TProductFormValues } from "./product-form-dialog";
@@ -30,15 +30,10 @@ function RecipeItemRow({
 }) {
   const supplyItemId = useWatch({ control, name: `recipe.${index}.supplyItemId` });
   const quantity = useWatch({ control, name: `recipe.${index}.quantity` });
-  const unit = useWatch({ control, name: `recipe.${index}.unit` });
   const supplyItem = supplyItems?.find((item) => item.id === supplyItemId);
-  const compatibleUnits = getCompatibleUnits(supplyItem?.unit ?? "unidade");
 
   const numericQuantity = Number(quantity) || 0;
-  const rowCost =
-    supplyItem && numericQuantity > 0
-      ? convertQuantity(numericQuantity, unit || supplyItem.unit, supplyItem.unit) * getSupplyUnitCost(supplyItem)
-      : 0;
+  const rowCost = supplyItem && numericQuantity > 0 ? numericQuantity * getSupplyUnitCost(supplyItem) : 0;
 
   return (
     <div className="flex flex-col gap-1">
@@ -80,26 +75,11 @@ function RecipeItemRow({
           <Input type="number" step="0.01" min="0" placeholder="0" {...register(`recipe.${index}.quantity`)} />
         </div>
 
-        <div className="flex w-20 flex-col gap-1">
+        <div className="flex w-16 flex-col gap-1">
           <label className="text-xs text-muted-foreground">Unidade</label>
-          <Controller
-            control={control}
-            name={`recipe.${index}.unit`}
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {compatibleUnits.map((unitOption) => (
-                    <SelectItem key={unitOption} value={unitOption}>
-                      {formatUnit(unitOption)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
+          <div className="flex h-10 items-center rounded-lg border border-input bg-input/30 px-2.5 text-sm text-muted-foreground">
+            {formatUnit(supplyItem?.unit ?? "")}
+          </div>
         </div>
 
         <Button type="button" variant="destructive" size="icon-sm" onClick={onRemove}>
