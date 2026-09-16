@@ -42,10 +42,9 @@ const dateRangeLabels: Record<DateRange, string> = {
   custom: "Personalizado",
 };
 
-const paymentMethodLabels = Object.fromEntries(paymentMethodOptions.map(({ value, label, Icon }) => [value, { label, Icon }])) as Record<
-  (typeof paymentMethodOptions)[number]["value"],
-  { label: string; Icon: LucideIcon }
->;
+const paymentMethodLabels = Object.fromEntries(
+  paymentMethodOptions.map(({ value, label, Icon }) => [value, { label, Icon }]),
+) as Record<(typeof paymentMethodOptions)[number]["value"], { label: string; Icon: LucideIcon }>;
 
 function PaymentMethodStatsGrid({ stats }: { stats: PaymentMethodStat[] }) {
   return (
@@ -148,7 +147,11 @@ export default function ReportPage() {
 
     const paymentSection = buildCsv(
       ["Forma de Pagamento", "Pedidos", "Total"],
-      reportData.paymentMethodStats.map((stat) => [paymentMethodLabels[stat.method].label, stat.count, formatCurrency(stat.total)]),
+      reportData.paymentMethodStats.map((stat) => [
+        paymentMethodLabels[stat.method].label,
+        stat.count,
+        formatCurrency(stat.total),
+      ]),
     );
 
     const closingSection = buildCsv(
@@ -264,355 +267,354 @@ export default function ReportPage() {
                 <p className="text-center text-muted-foreground text-sm py-12">Selecione as duas datas pra ver o relatório.</p>
               ) : (
                 <>
-                <div className="flex gap-4 w-full mb-4 flex-wrap">
-                  {cardDetails.map((cardDetail) => (
-                    <Card key={cardDetail.title} className="flex-1 min-w-50">
+                  <div className="flex gap-4 w-full mb-4 flex-wrap">
+                    {cardDetails.map((cardDetail) => (
+                      <Card key={cardDetail.title} className="flex-1 min-w-50">
+                        <CardContent className="flex flex-col gap-4">
+                          <div className="flex justify-between items-center gap-4">
+                            <p className="font-medium text-sm">{cardDetail.title}</p>
+                            <cardDetail.Icon size={16} />
+                          </div>
+                          <p className="text-lg font-semibold">{cardDetail.value}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-4 w-full mb-4 flex-wrap">
+                    <Card className="flex-1 min-w-50">
                       <CardContent className="flex flex-col gap-4">
                         <div className="flex justify-between items-center gap-4">
-                          <p className="font-medium text-sm">{cardDetail.title}</p>
-                          <cardDetail.Icon size={16} />
+                          <p className="font-medium text-sm">CMV</p>
+                          <Wallet size={16} />
                         </div>
-                        <p className="text-lg font-semibold">{cardDetail.value}</p>
+                        <p className="text-lg font-semibold">{formatCurrency(reportData.totalCost)}</p>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
 
-                <div className="flex gap-4 w-full mb-4 flex-wrap">
-                  <Card className="flex-1 min-w-50">
-                    <CardContent className="flex flex-col gap-4">
-                      <div className="flex justify-between items-center gap-4">
-                        <p className="font-medium text-sm">CMV</p>
-                        <Wallet size={16} />
-                      </div>
-                      <p className="text-lg font-semibold">{formatCurrency(reportData.totalCost)}</p>
-                    </CardContent>
-                  </Card>
+                    <Card className="flex-1 min-w-50">
+                      <CardContent className="flex flex-col gap-4">
+                        <div className="flex justify-between items-center gap-4">
+                          <p className="font-medium text-sm">Lucro Bruto</p>
+                          <TrendingUp size={16} />
+                        </div>
+                        <p className="text-lg font-semibold">{formatCurrency(reportData.grossProfit)}</p>
+                      </CardContent>
+                    </Card>
 
-                  <Card className="flex-1 min-w-50">
-                    <CardContent className="flex flex-col gap-4">
-                      <div className="flex justify-between items-center gap-4">
-                        <p className="font-medium text-sm">Lucro Bruto</p>
-                        <TrendingUp size={16} />
-                      </div>
-                      <p className="text-lg font-semibold">{formatCurrency(reportData.grossProfit)}</p>
-                    </CardContent>
-                  </Card>
+                    <Card className="flex-1 min-w-50">
+                      <CardContent className="flex flex-col gap-4">
+                        <div className="flex justify-between items-center gap-4">
+                          <p className="font-medium text-sm">Margem Bruta</p>
+                          <Percent size={16} />
+                        </div>
+                        <p className="text-lg font-semibold">{reportData.grossMarginPercent.toFixed(1)}%</p>
+                      </CardContent>
+                    </Card>
+                  </div>
 
-                  <Card className="flex-1 min-w-50">
-                    <CardContent className="flex flex-col gap-4">
-                      <div className="flex justify-between items-center gap-4">
-                        <p className="font-medium text-sm">Margem Bruta</p>
-                        <Percent size={16} />
-                      </div>
-                      <p className="text-lg font-semibold">{reportData.grossMarginPercent.toFixed(1)}%</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="mb-4">
-                  <Card>
-                    <CardContent className="flex flex-col gap-4 pt-4">
-                      <div>
-                        <p className="font-medium">Custo e Margem por Produto</p>
-                        <p className="text-xs text-muted-foreground">
-                          CMV % = quanto do preço de venda foi consumido pelo custo — quanto menor, melhor o preço
-                        </p>
-                      </div>
-
-                      <div className="max-h-96 space-y-2 overflow-y-auto no-scrollbar">
-                        {reportData.allProducts.length > 0 ? (
-                          reportData.allProducts.map((product) => (
-                            <div
-                              key={product.name}
-                              className="flex justify-between items-center p-2 bg-muted rounded-md gap-4"
-                            >
-                              <span className="font-medium text-sm">{product.name}</span>
-
-                              <div className="flex gap-4 text-right">
-                                <div>
-                                  <p className="text-sm font-semibold">{formatCurrency(product.cost)}</p>
-                                  <p className="text-xs text-muted-foreground">custo</p>
-                                </div>
-                                <div>
-                                  <p
-                                    className={`text-sm font-semibold ${product.cmvPercent > 50 ? "text-destructive" : ""}`}
-                                  >
-                                    {product.cmvPercent.toFixed(0)}%
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">CMV %</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-semibold">{formatCurrency(product.profit)}</p>
-                                  <p className="text-xs text-muted-foreground">lucro</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-semibold">{product.marginPercent.toFixed(0)}%</p>
-                                  <p className="text-xs text-muted-foreground">margem</p>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda neste período</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="mb-4">
-                  <Card>
-                    <CardContent className="flex flex-col gap-4">
-                      <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="mb-4">
+                    <Card>
+                      <CardContent className="flex flex-col gap-4">
                         <div>
-                          <p className="font-medium">Consulta por Produto</p>
-                          <p className="text-xs text-muted-foreground">Vendas de um item específico no período selecionado</p>
+                          <p className="font-medium">Custo e Margem por Produto</p>
+                          <p className="text-xs text-muted-foreground">
+                            CMV % = quanto do preço de venda foi consumido pelo custo — quanto menor, melhor o preço
+                          </p>
                         </div>
-                        <Select value={selectedProduct || ""} onValueChange={(value) => setSelectedProduct(value || null)}>
-                          <SelectTrigger className="w-full sm:w-60">
-                            <SelectValue placeholder="Selecione um produto" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Todos os produtos</SelectItem>
-                            {reportData?.allProducts.map((product) => (
-                              <SelectItem key={product.name} value={product.name}>
-                                {product.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
 
-                      {selectedProduct && productReportData && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="flex flex-col p-2 bg-muted rounded-md">
-                            <p className="text-xs text-muted-foreground">Quantidade Vendida</p>
-                            <p className="text-lg font-semibold">{productReportData.totalItemsSold}</p>
-                          </div>
-                          <div className="flex flex-col p-2 bg-muted rounded-md">
-                            <p className="text-xs text-muted-foreground">Faturamento</p>
-                            <p className="text-lg font-semibold">{formatCurrency(productReportData.totalRevenue)}</p>
-                          </div>
-                        </div>
-                      )}
+                        <div className="max-h-96 space-y-2 overflow-y-auto no-scrollbar">
+                          {reportData.allProducts.length > 0 ? (
+                            reportData.allProducts.map((product) => (
+                              <div key={product.name} className="flex justify-between items-center p-2 bg-muted rounded-md gap-4">
+                                <span className="font-medium text-sm">{product.name}</span>
 
-                      {selectedProduct && productReportData && (
-                        <div className="mb-4">
-                          <Card>
-                            <CardContent className="flex flex-col gap-4 pt-4">
-                              <div>
-                                <p className="font-medium">Horários de Pico - {selectedProduct}</p>
-                                <p className="text-xs text-muted-foreground">Vendas por hora deste produto</p>
+                                <div className="flex gap-4 text-right">
+                                  <div>
+                                    <p className="text-sm font-semibold">{formatCurrency(product.cost)}</p>
+                                    <p className="text-xs text-muted-foreground">custo</p>
+                                  </div>
+                                  <div>
+                                    <p className={`text-sm font-semibold ${product.cmvPercent > 50 ? "text-destructive" : ""}`}>
+                                      {product.cmvPercent.toFixed(0)}%
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">CMV %</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold">{formatCurrency(product.profit)}</p>
+                                    <p className="text-xs text-muted-foreground">lucro</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold">{product.marginPercent.toFixed(0)}%</p>
+                                    <p className="text-xs text-muted-foreground">margem</p>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="space-y-2 max-h-96 overflow-y-auto">
-                                {productReportData.hourlyPeaks
-                                  .filter((peak) => peak.orders > 0)
-                                  .sort((a, b) => b.revenue - a.revenue)
-                                  .map((peak) => {
-                                    const percentage =
-                                      productMaxHourlyRevenue > 0 ? (peak.revenue / productMaxHourlyRevenue) * 100 : 0;
-                                    return (
-                                      <div key={peak.hour} className="space-y-1">
-                                        <div className="flex justify-between items-center">
-                                          <span className="font-medium text-sm">{peak.hour}</span>
-                                          <div className="flex gap-2 text-right">
-                                            <span className="text-sm">{peak.orders} ped.</span>
-                                            <span className="text-sm font-semibold">{formatCurrency(peak.revenue)}</span>
+                            ))
+                          ) : (
+                            <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda neste período</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="mb-4">
+                    <Card>
+                      <CardContent className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                          <div>
+                            <p className="font-medium">Consulta por Produto</p>
+                            <p className="text-xs text-muted-foreground">Vendas de um item específico no período selecionado</p>
+                          </div>
+                          <Select value={selectedProduct || ""} onValueChange={(value) => setSelectedProduct(value || null)}>
+                            <SelectTrigger className="w-full sm:w-60">
+                              <SelectValue placeholder="Selecione um produto" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Todos os produtos</SelectItem>
+                              {reportData?.allProducts.map((product) => (
+                                <SelectItem key={product.name} value={product.name}>
+                                  {product.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {selectedProduct && productReportData && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col p-2 bg-muted rounded-md">
+                              <p className="text-xs text-muted-foreground">Quantidade Vendida</p>
+                              <p className="text-lg font-semibold">{productReportData.totalItemsSold}</p>
+                            </div>
+                            <div className="flex flex-col p-2 bg-muted rounded-md">
+                              <p className="text-xs text-muted-foreground">Faturamento</p>
+                              <p className="text-lg font-semibold">{formatCurrency(productReportData.totalRevenue)}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedProduct && productReportData && (
+                          <div className="mb-4">
+                            <Card>
+                              <CardContent className="flex flex-col gap-4">
+                                <div>
+                                  <p className="font-medium">Horários de Pico - {selectedProduct}</p>
+                                  <p className="text-xs text-muted-foreground">Vendas por hora deste produto</p>
+                                </div>
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
+                                  {productReportData.hourlyPeaks
+                                    .filter((peak) => peak.orders > 0)
+                                    .sort((a, b) => b.revenue - a.revenue)
+                                    .map((peak) => {
+                                      const percentage =
+                                        productMaxHourlyRevenue > 0 ? (peak.revenue / productMaxHourlyRevenue) * 100 : 0;
+                                      return (
+                                        <div key={peak.hour} className="space-y-1">
+                                          <div className="flex justify-between items-center">
+                                            <span className="font-medium text-sm">{peak.hour}</span>
+                                            <div className="flex gap-2 text-right">
+                                              <span className="text-sm">{peak.orders} ped.</span>
+                                              <span className="text-sm font-semibold">{formatCurrency(peak.revenue)}</span>
+                                            </div>
+                                          </div>
+                                          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                                            <div
+                                              className="h-full bg-foreground/70 rounded-full transition-all"
+                                              style={{ width: `${percentage}%` }}
+                                            ></div>
                                           </div>
                                         </div>
-                                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                                          <div
-                                            className="h-full bg-foreground/70 rounded-full transition-all"
-                                            style={{ width: `${percentage}%` }}
-                                          ></div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                {productReportData.hourlyPeaks.filter((peak) => peak.orders > 0).length === 0 && (
-                                  <p className="text-center text-muted-foreground text-sm py-4">
-                                    Nenhuma venda deste produto neste período
-                                  </p>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="mb-4">
-                  <Card>
-                    <CardContent className="flex flex-col gap-4 pt-4">
-                      <div className="flex items-center justify-between gap-4 flex-wrap">
-                        <div>
-                          <p className="font-medium">Fechamento de Caixa</p>
-                          <p className="text-xs text-muted-foreground">
-                            Confira o valor recebido por operador e forma de pagamento no período selecionado
-                          </p>
-                        </div>
-
-                        <Select value={closingOperator} onValueChange={setClosingOperator}>
-                          <SelectTrigger className="w-full sm:w-60">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ALL">Todos os operadores</SelectItem>
-                            {reportData.operatorStats.map((stat) => (
-                              <SelectItem key={stat.operatorName} value={stat.operatorName}>
-                                {stat.operatorName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <PaymentMethodStatsGrid stats={closingStats.paymentMethodStats} />
-
-                      <div className="flex items-center justify-between border-t border-border pt-3">
-                        <span className="text-sm font-medium">Total do período</span>
-                        <span className="text-base font-bold">{formatCurrency(closingStats.totalRevenue)}</span>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Conferência de dinheiro em espécie</p>
-
-                        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-                          <div className="flex-1">
-                            <p className="text-xs text-muted-foreground">Esperado (vendas em dinheiro)</p>
-                            <p className="text-sm font-semibold">{formatCurrency(expectedCash)}</p>
+                                      );
+                                    })}
+                                  {productReportData.hourlyPeaks.filter((peak) => peak.orders > 0).length === 0 && (
+                                    <p className="text-center text-muted-foreground text-sm py-4">
+                                      Nenhuma venda deste produto neste período
+                                    </p>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
                           </div>
-
-                          <div className="flex-1 flex flex-col gap-1">
-                            <label className="text-xs text-muted-foreground">Contado na gaveta</label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="0,00"
-                              value={countedCash}
-                              onChange={(e) => setCountedCash(e.target.value)}
-                            />
-                          </div>
-                        </div>
-
-                        {cashDifference !== null && (
-                          <p
-                            className={`text-sm font-medium ${
-                              cashDifference === 0 ? "text-muted-foreground" : cashDifference < 0 ? "text-destructive" : "text-foreground"
-                            }`}
-                          >
-                            {cashDifference === 0
-                              ? "Confere certinho."
-                              : cashDifference < 0
-                                ? `Faltam ${formatCurrency(Math.abs(cashDifference))}`
-                                : `Sobram ${formatCurrency(cashDifference)}`}
-                          </p>
                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                      </CardContent>
+                    </Card>
+                  </div>
 
-                <div className="flex flex-col md:flex-row w-full gap-4 mb-4">
-                  <div className="mb-4 w-full">
+                  <div className="mb-4">
                     <Card>
-                      <CardContent className="flex flex-col gap-4 pt-4">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp size={18} />
-                          <p className="font-medium">Produtos Mais Vendidos</p>
+                      <CardContent className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                          <div>
+                            <p className="font-medium">Fechamento de Caixa</p>
+                            <p className="text-xs text-muted-foreground">
+                              Confira o valor recebido por operador e forma de pagamento no período selecionado
+                            </p>
+                          </div>
+
+                          <Select value={closingOperator} onValueChange={setClosingOperator}>
+                            <SelectTrigger className="w-full sm:w-60">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ALL">Todos os operadores</SelectItem>
+                              {reportData.operatorStats.map((stat) => (
+                                <SelectItem key={stat.operatorName} value={stat.operatorName}>
+                                  {stat.operatorName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
+
+                        <PaymentMethodStatsGrid stats={closingStats.paymentMethodStats} />
+
+                        <div className="flex items-center justify-between border-t border-border pt-3">
+                          <span className="text-sm font-medium">Total do período</span>
+                          <span className="text-base font-bold">{formatCurrency(closingStats.totalRevenue)}</span>
+                        </div>
+
+                        <Separator />
+
                         <div className="space-y-2">
-                          {reportData.topProducts.length > 0 ? (
-                            reportData.topProducts.map((product, index) => (
-                              <div
-                                key={product.name}
-                                className="flex justify-between items-center p-2 bg-muted rounded-md hover:bg-muted/80 transition-colors"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Badge variant="secondary" className="text-xs">
-                                    #{index + 1}
-                                  </Badge>
-                                  <span className="font-medium text-sm">{product.name}</span>
-                                </div>
-                                <div className="flex gap-4">
-                                  <div className="text-right">
-                                    <p className="text-sm font-semibold">{product.quantity}</p>
-                                    <p className="text-xs text-muted-foreground">unidades</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-sm font-semibold">{formatCurrency(product.revenue)}</p>
-                                    <p className="text-xs text-muted-foreground">faturamento</p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda neste período</p>
+                          <p className="text-sm font-medium">Conferência de dinheiro em espécie</p>
+
+                          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                            <div className="flex-1">
+                              <p className="text-xs text-muted-foreground">Esperado (vendas em dinheiro)</p>
+                              <p className="text-sm font-semibold">{formatCurrency(expectedCash)}</p>
+                            </div>
+
+                            <div className="flex-1 flex flex-col gap-1">
+                              <label className="text-xs text-muted-foreground">Contado na gaveta</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0,00"
+                                value={countedCash}
+                                onChange={(e) => setCountedCash(e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          {cashDifference !== null && (
+                            <p
+                              className={`text-sm font-medium ${
+                                cashDifference === 0
+                                  ? "text-muted-foreground"
+                                  : cashDifference < 0
+                                    ? "text-destructive"
+                                    : "text-foreground"
+                              }`}
+                            >
+                              {cashDifference === 0
+                                ? "Confere certinho."
+                                : cashDifference < 0
+                                  ? `Faltam ${formatCurrency(Math.abs(cashDifference))}`
+                                  : `Sobram ${formatCurrency(cashDifference)}`}
+                            </p>
                           )}
                         </div>
                       </CardContent>
                     </Card>
                   </div>
 
-                  <div className="mb-4 w-full">
+                  <div className="flex flex-col md:flex-row w-full gap-4 mb-4">
+                    <div className="mb-4 w-full">
+                      <Card>
+                        <CardContent className="flex flex-col gap-4">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp size={18} />
+                            <p className="font-medium">Produtos Mais Vendidos</p>
+                          </div>
+                          <div className="space-y-2">
+                            {reportData.topProducts.length > 0 ? (
+                              reportData.topProducts.map((product, index) => (
+                                <div
+                                  key={product.name}
+                                  className="flex justify-between items-center p-2 bg-muted rounded-md hover:bg-muted/80 transition-colors"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="secondary" className="text-xs">
+                                      #{index + 1}
+                                    </Badge>
+                                    <span className="font-medium text-sm">{product.name}</span>
+                                  </div>
+                                  <div className="flex gap-4">
+                                    <div className="text-right">
+                                      <p className="text-sm font-semibold">{product.quantity}</p>
+                                      <p className="text-xs text-muted-foreground">unidades</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm font-semibold">{formatCurrency(product.revenue)}</p>
+                                      <p className="text-xs text-muted-foreground">faturamento</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda neste período</p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="mb-4 w-full">
+                      <Card>
+                        <CardContent className="flex flex-col gap-4">
+                          <div className="flex items-center gap-2">
+                            <TrendingDown size={18} />
+                            <p className="font-medium">Produtos Menos Vendidos</p>
+                          </div>
+                          <div className="space-y-2">
+                            {reportData.bottomProducts.length > 0 ? (
+                              reportData.bottomProducts.map((product, index) => (
+                                <div
+                                  key={product.name}
+                                  className="flex justify-between items-center p-2 bg-muted rounded-md hover:bg-muted/80 transition-colors"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="outline" className="text-xs">
+                                      {reportData.bottomProducts.length - index}º
+                                    </Badge>
+                                    <span className="font-medium text-sm">{product.name}</span>
+                                  </div>
+                                  <div className="flex gap-4">
+                                    <div className="text-right">
+                                      <p className="text-sm font-semibold">{product.quantity}</p>
+                                      <p className="text-xs text-muted-foreground">unidades</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm font-semibold">{formatCurrency(product.revenue)}</p>
+                                      <p className="text-xs text-muted-foreground">faturamento</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda neste período</p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  <div>
                     <Card>
-                      <CardContent className="flex flex-col gap-4 pt-4">
-                        <div className="flex items-center gap-2">
-                          <TrendingDown size={18} />
-                          <p className="font-medium">Produtos Menos Vendidos</p>
+                      <CardContent className="flex flex-col gap-4">
+                        <div>
+                          <p className="font-medium">Horários de Pico</p>
+                          <p className="text-xs text-muted-foreground">Faturamento por hora do dia</p>
                         </div>
-                        <div className="space-y-2">
-                          {reportData.bottomProducts.length > 0 ? (
-                            reportData.bottomProducts.map((product, index) => (
-                              <div
-                                key={product.name}
-                                className="flex justify-between items-center p-2 bg-muted rounded-md hover:bg-muted/80 transition-colors"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Badge variant="outline" className="text-xs">
-                                    {reportData.bottomProducts.length - index}º
-                                  </Badge>
-                                  <span className="font-medium text-sm">{product.name}</span>
-                                </div>
-                                <div className="flex gap-4">
-                                  <div className="text-right">
-                                    <p className="text-sm font-semibold">{product.quantity}</p>
-                                    <p className="text-xs text-muted-foreground">unidades</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-sm font-semibold">{formatCurrency(product.revenue)}</p>
-                                    <p className="text-xs text-muted-foreground">faturamento</p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-center text-muted-foreground text-sm py-4">Nenhuma venda neste período</p>
-                          )}
-                        </div>
+
+                        <HourlyBarChart data={reportData.hourlyPeaks} />
                       </CardContent>
                     </Card>
                   </div>
-                </div>
-
-                <div>
-                  <Card>
-                    <CardContent className="flex flex-col gap-4 pt-4">
-                      <div>
-                        <p className="font-medium">Horários de Pico</p>
-                        <p className="text-xs text-muted-foreground">Faturamento por hora do dia</p>
-                      </div>
-
-                      <HourlyBarChart data={reportData.hourlyPeaks} />
-                    </CardContent>
-                  </Card>
-                </div>
                 </>
               )}
             </TabsContent>
