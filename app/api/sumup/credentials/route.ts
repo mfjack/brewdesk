@@ -38,12 +38,11 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const clientId = String(body.clientId ?? "").trim();
-  const clientSecret = String(body.clientSecret ?? "").trim();
+  const apiKey = String(body.apiKey ?? "").trim();
   const merchantCode = String(body.merchantCode ?? "").trim();
 
-  if (!clientId || !clientSecret || !merchantCode) {
-    return NextResponse.json({ error: "Preencha Client ID, Client Secret e Merchant Code." }, { status: 400 });
+  if (!apiKey || !merchantCode) {
+    return NextResponse.json({ error: "Preencha a API Key e o Merchant Code." }, { status: 400 });
   }
 
   const admin = createSupabaseAdminClient();
@@ -51,8 +50,7 @@ export async function POST(request: Request) {
   const { error } = await admin.from("sumup_credentials").upsert(
     {
       establishment_id: establishmentId,
-      client_id: clientId,
-      client_secret: clientSecret,
+      api_key: apiKey,
       merchant_code: merchantCode,
       updated_at: new Date().toISOString(),
     },

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   const { data: credentialsRow, error: credentialsError } = await admin
     .from("sumup_credentials")
-    .select("client_id, client_secret, merchant_code, reader_id")
+    .select("api_key, merchant_code, reader_id")
     .eq("establishment_id", establishmentId)
     .maybeSingle();
 
@@ -50,8 +50,7 @@ export async function POST(request: Request) {
   try {
     const checkout = await createSumupReaderCheckout(
       {
-        clientId: credentialsRow.client_id,
-        clientSecret: credentialsRow.client_secret,
+        apiKey: credentialsRow.api_key,
         merchantCode: credentialsRow.merchant_code,
       },
       credentialsRow.reader_id,

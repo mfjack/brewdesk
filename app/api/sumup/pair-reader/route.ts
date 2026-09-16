@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
   const { data: credentialsRow, error: fetchError } = await admin
     .from("sumup_credentials")
-    .select("client_id, client_secret, merchant_code")
+    .select("api_key, merchant_code")
     .eq("establishment_id", establishmentId)
     .maybeSingle();
 
@@ -37,8 +37,7 @@ export async function POST(request: Request) {
   try {
     const reader = await pairSumupReader(
       {
-        clientId: credentialsRow.client_id,
-        clientSecret: credentialsRow.client_secret,
+        apiKey: credentialsRow.api_key,
         merchantCode: credentialsRow.merchant_code,
       },
       pairingCode,

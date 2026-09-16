@@ -7,13 +7,15 @@ import { Nfc } from "lucide-react";
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
 import { useGetSumupStatus } from "../../order/query/useGetSumupStatus";
+import { useIsHydrated } from "@/_lib/use-is-hydrated";
 
 export function SumupSection() {
   const queryClient = useQueryClient();
-  const { data: status } = useGetSumupStatus();
+  const { data: statusData } = useGetSumupStatus();
+  const isHydrated = useIsHydrated();
+  const status = isHydrated ? statusData : undefined;
 
-  const [clientId, setClientId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [merchantCode, setMerchantCode] = useState("");
   const [isSavingCredentials, setIsSavingCredentials] = useState(false);
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function SumupSection() {
     const response = await fetch("/api/sumup/credentials", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientId, clientSecret, merchantCode }),
+      body: JSON.stringify({ apiKey, merchantCode }),
     });
 
     const data = await response.json();
@@ -42,8 +44,7 @@ export function SumupSection() {
       return;
     }
 
-    setClientId("");
-    setClientSecret("");
+    setApiKey("");
     setMerchantCode("");
     setIsSavingCredentials(false);
     queryClient.invalidateQueries({ queryKey: ["sumupStatus"] });
@@ -79,9 +80,8 @@ export function SumupSection() {
       <div>
         <p className="text-sm font-medium">Maquininha (SumUp)</p>
         <p className="text-xs text-muted-foreground">
-          Cobra direto na maquininha Solo pareada, sem digitar o valor duas vezes. Precisa de um app cadastrado em{" "}
-          <span className="font-medium text-foreground">developer.sumup.com</span> com acesso liberado aos escopos de
-          pagamento.
+          Cobra direto na maquininha Solo/Smart pareada, sem digitar o valor duas vezes. Precisa de uma API Key gerada em{" "}
+          <span className="font-medium text-foreground">me.sumup.com/settings/developer</span>.
         </p>
       </div>
 
@@ -98,16 +98,8 @@ export function SumupSection() {
       </div>
 
       <div className="flex flex-col gap-2 rounded-lg border border-input p-3">
-        <label className="text-sm font-medium">Client ID</label>
-        <Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Client ID da SumUp" />
-
-        <label className="text-sm font-medium">Client Secret</label>
-        <Input
-          type="password"
-          value={clientSecret}
-          onChange={(e) => setClientSecret(e.target.value)}
-          placeholder="Client Secret da SumUp"
-        />
+        <label className="text-sm font-medium">API Key</label>
+        <Input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sup_sk_..." />
 
         <label className="text-sm font-medium">Merchant Code</label>
         <Input value={merchantCode} onChange={(e) => setMerchantCode(e.target.value)} placeholder="Ex.: MQEXXXXXXX" />
@@ -117,7 +109,7 @@ export function SumupSection() {
         <Button
           type="button"
           onClick={handleSaveCredentials}
-          disabled={isSavingCredentials || !clientId.trim() || !clientSecret.trim() || !merchantCode.trim()}
+          disabled={isSavingCredentials || !apiKey.trim() || !merchantCode.trim()}
         >
           {isSavingCredentials ? "Salvando..." : "Salvar credenciais"}
         </Button>
