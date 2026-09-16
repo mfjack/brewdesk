@@ -81,7 +81,24 @@ export const supplyItemStore = {
   },
 
   updateSupplyItem: async (supplyItemId: number, input: TSupplyItemInput): Promise<TSupplyItem> => {
-    const { data, error } = await supabase.from("supply_items").update(toRow(input)).eq("id", supplyItemId).select().single();
+    const row = toRow(input);
+
+    const { data: existing, error: fetchError } = await supabase
+      .from("supply_items")
+      .select("initial_quantity")
+      .eq("id", supplyItemId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(fetchError.message);
+    }
+
+    // initial_quantity only gets reset here when it was never properly set (still 0)
+    // despite there being real stock — otherwise it stays fixed as the cost basis for
+    // getSupplyUnitCost until the item is recreated or restocked through a dedicated flow.
+    const updatePayload = Number(existing.initial_quantity) === 0 ? { ...row, initial_quantity: row.quantity } : row;
+
+    const { data, error } = await supabase.from("supply_items").update(updatePayload).eq("id", supplyItemId).select().single();
 
     if (error) {
       throw new Error(error.message);
