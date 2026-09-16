@@ -17,6 +17,7 @@ import { WEEKDAY_FULL_NAMES } from "@/_lib/delivery-schedule";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { shortenUrl } from "@/_lib/shorten-url";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
+import Link from "next/link";
 
 export default function SupplierPage() {
   const { data: suppliersData } = useGetSuppliers();
@@ -71,12 +72,12 @@ export default function SupplierPage() {
 
                   <TableCell>
                     {supplier.whatsapp ? (
-                      <a href={buildWhatsappLink(supplier.whatsapp)} target="_blank" rel="noopener noreferrer">
+                      <Link href={buildWhatsappLink(supplier.whatsapp)} target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="sm" type="button">
                           <MessageCircle />
                           {supplier.whatsapp}
                         </Button>
-                      </a>
+                      </Link>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
@@ -84,7 +85,7 @@ export default function SupplierPage() {
 
                   <TableCell className="text-muted-foreground">
                     {supplier.purchaseLink ? (
-                      <a
+                      <Link
                         href={supplier.purchaseLink}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -92,7 +93,7 @@ export default function SupplierPage() {
                       >
                         <Link2 size={14} />
                         {shortenUrl(supplier.purchaseLink)}
-                      </a>
+                      </Link>
                     ) : (
                       "—"
                     )}

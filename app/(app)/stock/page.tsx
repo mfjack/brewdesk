@@ -28,6 +28,7 @@ import { useShoppingListDismissals } from "@/_lib/use-shopping-list-dismissals";
 import { buildWhatsappLink } from "@/_lib/whatsapp-link";
 import { shortenUrl } from "@/_lib/shorten-url";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
+import Link from "next/link";
 
 const EXPIRY_WARNING_DAYS = 7;
 
@@ -90,180 +91,180 @@ export default function StockPage() {
       <ShoppingListPrintView groups={shoppingListGroups} />
 
       <section className="flex flex-col h-screen print:hidden">
-      <div className="flex items-center justify-between p-4 flex-wrap gap-2">
-        <Header
-          title="Estoque"
-          description={lowStockItems.length > 0 ? `${lowStockItems.length} insumo(s) com estoque baixo` : undefined}
-        />
-
-        <div className="flex gap-2">
-          <ShoppingListDialog
-            groups={shoppingListGroups}
-            onClearList={clearList}
-            trigger={
-              <Button size="lg" variant="outline">
-                <ShoppingCart />
-                Lista de compras
-              </Button>
-            }
+        <div className="flex items-center justify-between p-4 flex-wrap gap-2">
+          <Header
+            title="Estoque"
+            description={lowStockItems.length > 0 ? `${lowStockItems.length} insumo(s) com estoque baixo` : undefined}
           />
 
-          <StockFormDialog
-            suppliers={suppliers}
-            trigger={
-              <Button size="lg">
-                <Plus />
-                Adicionar insumo
-              </Button>
-            }
-          />
-        </div>
-      </div>
-
-      <Separator className="h-px w-full" />
-
-      <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-        {supplyItems?.length === 0 ? (
-          <EmptyState message="Nenhum insumo cadastrado." />
-        ) : (
-          <>
-            <SearchInput
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Filtrar por nome do insumo..."
-              className="mb-4 max-w-100"
+          <div className="flex gap-2">
+            <ShoppingListDialog
+              groups={shoppingListGroups}
+              onClearList={clearList}
+              trigger={
+                <Button size="lg" variant="outline">
+                  <ShoppingCart />
+                  Lista de compras
+                </Button>
+              }
             />
 
-            {filteredSupplyItems?.length === 0 ? (
-              <EmptyState message="Nenhum insumo encontrado com esse nome." />
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Insumo</TableHead>
-                    <TableHead>Marca</TableHead>
-                    <TableHead>Quantidade</TableHead>
-                    <TableHead>Custo</TableHead>
-                    <TableHead>Fornecedor</TableHead>
-                    <TableHead>Validade</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
+            <StockFormDialog
+              suppliers={suppliers}
+              trigger={
+                <Button size="lg">
+                  <Plus />
+                  Adicionar insumo
+                </Button>
+              }
+            />
+          </div>
+        </div>
 
-                <TableBody>
-                  {filteredSupplyItems?.map((supplyItem: TSupplyItem) => {
-                const expiryStatus = getExpiryStatus(supplyItem.expiresAt);
-                const isLowStock = isBelowMinQuantity(supplyItem.quantity, supplyItem.minQuantity);
-                const itemSupplier = findSupplier(supplyItem.supplierId);
+        <Separator className="h-px w-full" />
 
-                return (
-                  <TableRow key={supplyItem.id}>
-                    <TableCell className="font-medium whitespace-normal">{toTitleCase(supplyItem.name)}</TableCell>
+        <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
+          {supplyItems?.length === 0 ? (
+            <EmptyState message="Nenhum insumo cadastrado." />
+          ) : (
+            <>
+              <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Filtrar por nome do insumo..."
+                className="mb-4 max-w-100"
+              />
 
-                    <TableCell className="text-muted-foreground">
-                      {supplyItem.brand ? toTitleCase(supplyItem.brand) : "—"}
-                    </TableCell>
+              {filteredSupplyItems?.length === 0 ? (
+                <EmptyState message="Nenhum insumo encontrado com esse nome." />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Insumo</TableHead>
+                      <TableHead>Marca</TableHead>
+                      <TableHead>Quantidade</TableHead>
+                      <TableHead>Custo</TableHead>
+                      <TableHead>Fornecedor</TableHead>
+                      <TableHead>Validade</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
 
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className={isLowStock ? "font-semibold text-destructive" : ""}>
-                          {formatSupplyQuantity(supplyItem.quantity, supplyItem.unit)}
-                        </span>
+                  <TableBody>
+                    {filteredSupplyItems?.map((supplyItem: TSupplyItem) => {
+                      const expiryStatus = getExpiryStatus(supplyItem.expiresAt);
+                      const isLowStock = isBelowMinQuantity(supplyItem.quantity, supplyItem.minQuantity);
+                      const itemSupplier = findSupplier(supplyItem.supplierId);
 
-                        {isLowStock && (
-                          <Badge variant="destructive" className="gap-1">
-                            <AlertTriangle />
-                            Estoque baixo
-                          </Badge>
-                        )}
-                      </div>
+                      return (
+                        <TableRow key={supplyItem.id}>
+                          <TableCell className="font-medium whitespace-normal">{toTitleCase(supplyItem.name)}</TableCell>
 
-                      <p className="text-xs text-muted-foreground">
-                        Cadastrado: {formatSupplyQuantity(supplyItem.initialQuantity, supplyItem.unit)}
-                      </p>
-                    </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {supplyItem.brand ? toTitleCase(supplyItem.brand) : "—"}
+                          </TableCell>
 
-                    <TableCell>{formatCurrency(supplyItem.costPrice)}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className={isLowStock ? "font-semibold text-destructive" : ""}>
+                                {formatSupplyQuantity(supplyItem.quantity, supplyItem.unit)}
+                              </span>
 
-                    <TableCell className="text-muted-foreground">
-                      {itemSupplier ? (
-                        <div className="flex flex-col gap-0.5">
-                          <span>{toTitleCase(itemSupplier.companyName)}</span>
+                              {isLowStock && (
+                                <Badge variant="destructive" className="gap-1">
+                                  <AlertTriangle />
+                                  Estoque baixo
+                                </Badge>
+                              )}
+                            </div>
 
-                          {itemSupplier.whatsapp ? (
-                            <a
-                              href={buildWhatsappLink(itemSupplier.whatsapp)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs underline"
-                            >
-                              <MessageCircle size={12} />
-                              {itemSupplier.whatsapp}
-                            </a>
-                          ) : (
-                            itemSupplier.purchaseLink && (
-                              <a
-                                href={itemSupplier.purchaseLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs underline"
-                              >
-                                <Link2 size={12} />
-                                {shortenUrl(itemSupplier.purchaseLink)}
-                              </a>
-                            )
-                          )}
-                        </div>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
+                            <p className="text-xs text-muted-foreground">
+                              Cadastrado: {formatSupplyQuantity(supplyItem.initialQuantity, supplyItem.unit)}
+                            </p>
+                          </TableCell>
 
-                    <TableCell>
-                      {supplyItem.expiresAt ? (
-                        <div className="flex items-center gap-2">
-                          <span className={expiryStatus ? "font-semibold text-destructive" : "text-muted-foreground"}>
-                            {formatDate(`${supplyItem.expiresAt}T00:00:00`)}
-                          </span>
+                          <TableCell>{formatCurrency(supplyItem.costPrice)}</TableCell>
 
-                          {expiryStatus === "expired" && <Badge variant="destructive">Vencido</Badge>}
-                          {expiryStatus === "soon" && (
-                            <Badge variant="outline" className="gap-1">
-                              <AlertTriangle />
-                              Vence em breve
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {itemSupplier ? (
+                              <div className="flex flex-col gap-0.5">
+                                <span>{toTitleCase(itemSupplier.companyName)}</span>
 
-                    <TableCell className="text-right">
-                      <RowActions
-                        editTrigger={
-                          <StockFormDialog
-                            suppliers={suppliers}
-                            supplyItem={supplyItem}
-                            trigger={
-                              <Button variant="outline" size="icon-sm">
-                                <Pencil />
-                              </Button>
-                            }
-                          />
-                        }
-                        onDelete={() => handleDeleteSupplyItem(supplyItem.id)}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-                </TableBody>
-              </Table>
-            )}
-          </>
-        )}
-      </div>
+                                {itemSupplier.whatsapp ? (
+                                  <Link
+                                    href={buildWhatsappLink(itemSupplier.whatsapp)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs underline"
+                                  >
+                                    <MessageCircle size={12} />
+                                    {itemSupplier.whatsapp}
+                                  </Link>
+                                ) : (
+                                  itemSupplier.purchaseLink && (
+                                    <Link
+                                      href={itemSupplier.purchaseLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs underline"
+                                    >
+                                      <Link2 size={12} />
+                                      {shortenUrl(itemSupplier.purchaseLink)}
+                                    </Link>
+                                  )
+                                )}
+                              </div>
+                            ) : (
+                              "—"
+                            )}
+                          </TableCell>
+
+                          <TableCell>
+                            {supplyItem.expiresAt ? (
+                              <div className="flex items-center gap-2">
+                                <span className={expiryStatus ? "font-semibold text-destructive" : "text-muted-foreground"}>
+                                  {formatDate(`${supplyItem.expiresAt}T00:00:00`)}
+                                </span>
+
+                                {expiryStatus === "expired" && <Badge variant="destructive">Vencido</Badge>}
+                                {expiryStatus === "soon" && (
+                                  <Badge variant="outline" className="gap-1">
+                                    <AlertTriangle />
+                                    Vence em breve
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            <RowActions
+                              editTrigger={
+                                <StockFormDialog
+                                  suppliers={suppliers}
+                                  supplyItem={supplyItem}
+                                  trigger={
+                                    <Button variant="outline" size="icon-sm">
+                                      <Pencil />
+                                    </Button>
+                                  }
+                                />
+                              }
+                              onDelete={() => handleDeleteSupplyItem(supplyItem.id)}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </>
+          )}
+        </div>
       </section>
     </>
   );

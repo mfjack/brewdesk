@@ -4,11 +4,20 @@ import type { ReactNode } from "react";
 import { Link2, MessageCircle, Printer, Trash2 } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/_components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/_components/ui/dialog";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { buildWhatsappLink } from "@/_lib/whatsapp-link";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { buildShoppingOrderMessage, type TShoppingListGroup } from "@/_lib/shopping-list";
+import Link from "next/link";
 
 interface TShoppingListDialog {
   trigger: ReactNode;
@@ -32,7 +41,10 @@ export function ShoppingListDialog({ trigger, groups, onClearList }: TShoppingLi
         ) : (
           <div className="flex flex-col gap-4">
             {groups.map((group) => (
-              <div key={group.supplier?.id ?? "sem-fornecedor"} className="flex flex-col gap-2 rounded-lg border border-input p-3">
+              <div
+                key={group.supplier?.id ?? "sem-fornecedor"}
+                className="flex flex-col gap-2 rounded-lg border border-input p-3"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold">
                     {group.supplier ? toTitleCase(group.supplier.companyName) : "Sem fornecedor definido"}
@@ -40,7 +52,7 @@ export function ShoppingListDialog({ trigger, groups, onClearList }: TShoppingLi
 
                   <div className="flex gap-2">
                     {group.supplier?.whatsapp && (
-                      <a
+                      <Link
                         href={buildWhatsappLink(group.supplier.whatsapp, buildShoppingOrderMessage(group.items))}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -49,16 +61,16 @@ export function ShoppingListDialog({ trigger, groups, onClearList }: TShoppingLi
                           <MessageCircle />
                           Pedir
                         </Button>
-                      </a>
+                      </Link>
                     )}
 
                     {group.supplier?.purchaseLink && (
-                      <a href={group.supplier.purchaseLink} target="_blank" rel="noopener noreferrer">
+                      <Link href={group.supplier.purchaseLink} target="_blank" rel="noopener noreferrer">
                         <Button type="button" variant="outline" size="sm">
                           <Link2 />
                           Comprar
                         </Button>
-                      </a>
+                      </Link>
                     )}
                   </div>
                 </div>
