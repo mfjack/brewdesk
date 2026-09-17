@@ -23,6 +23,7 @@ import { ReportReceipt } from "./_components/report-receipt";
 import { formatCurrency } from "@/_lib/format-currency";
 import { formatDate } from "@/_lib/format-date";
 import { buildCsv, downloadCsv } from "@/_lib/csv";
+import { buildAndDownloadPdf } from "@/_lib/pdf";
 
 const HourlyBarChart = dynamic(() => import("./_components/hourly-bar-chart").then((mod) => mod.HourlyBarChart), {
   ssr: false,
@@ -173,6 +174,64 @@ export default function ReportPage() {
     downloadCsv(`tably-relatorio-${fileRangeLabel}-${new Date().toISOString().slice(0, 10)}.csv`, csv);
   }
 
+  function handleExportPdf() {
+    if (!reportData) {
+      return;
+    }
+
+    const fileRangeLabel = dateRange === "custom" && hasCustomRange ? `${customRange.start}_a_${customRange.end}` : dateRange;
+
+    buildAndDownloadPdf(`tably-relatorio-${fileRangeLabel}-${new Date().toISOString().slice(0, 10)}.pdf`, "Relatório Tably", activeRangeLabel, [
+      {
+        title: "Resumo",
+        headers: ["Métrica", "Valor"],
+        rows: [
+          ["Total de Vendas", formatCurrency(reportData.totalRevenue)],
+          ["Pedidos", reportData.ordersCount],
+          ["Ticket Médio", formatCurrency(reportData.averageTicket)],
+          ["Itens Vendidos", reportData.totalItemsSold],
+          ["CMV", formatCurrency(reportData.totalCost)],
+          ["Lucro Bruto", formatCurrency(reportData.grossProfit)],
+          ["Margem Bruta", `${reportData.grossMarginPercent.toFixed(1)}%`],
+        ],
+      },
+      {
+        title: "Produtos",
+        headers: ["Produto", "Quantidade", "Faturamento", "Custo", "CMV %", "Lucro", "Margem"],
+        rows: reportData.allProducts.map((product) => [
+          product.name,
+          product.quantity,
+          formatCurrency(product.revenue),
+          formatCurrency(product.cost),
+          `${product.cmvPercent.toFixed(1)}%`,
+          formatCurrency(product.profit),
+          `${product.marginPercent.toFixed(1)}%`,
+        ]),
+      },
+      {
+        title: "Formas de Pagamento",
+        headers: ["Forma de Pagamento", "Pedidos", "Total"],
+        rows: reportData.paymentMethodStats.map((stat) => [
+          paymentMethodLabels[stat.method].label,
+          stat.count,
+          formatCurrency(stat.total),
+        ]),
+      },
+      {
+        title: "Fechamento por Operador",
+        headers: ["Operador", "Forma de Pagamento", "Pedidos", "Total"],
+        rows: reportData.operatorStats.flatMap((operatorStat) =>
+          operatorStat.paymentMethodStats.map((stat) => [
+            operatorStat.operatorName,
+            paymentMethodLabels[stat.method].label,
+            stat.count,
+            formatCurrency(stat.total),
+          ]),
+        ),
+      },
+    ]);
+  }
+
   const cardDetails: CardDetail[] = [
     {
       title: "Total de Vendas",
@@ -213,6 +272,11 @@ export default function ReportPage() {
             <Button variant="outline" size="lg" onClick={handleExportCsv}>
               <Download />
               Exportar CSV
+            </Button>
+
+            <Button variant="outline" size="lg" onClick={handleExportPdf}>
+              <Download />
+              Exportar PDF
             </Button>
 
             <Button size="lg" onClick={() => window.print()}>
