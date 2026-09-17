@@ -138,7 +138,7 @@ export function MenuList({
   }, [hasItems, isSending, onSendOrder]);
 
   return (
-    <div className="w-full md:h-screen md:w-1/2">
+    <div className="w-full min-w-0 md:h-screen md:w-1/2">
       {order && (
         <div className="flex flex-col md:h-full">
           {order.customerName && (

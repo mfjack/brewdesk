@@ -47,7 +47,9 @@ function ProductButton({
       onClick={onClick}
       disabled={outOfStock}
       className={
-        listLayout ? `h-auto w-full justify-between gap-3 px-4 py-3 ${lowStockClassName}` : `relative h-24 ${lowStockClassName}`
+        listLayout
+          ? `h-auto w-full justify-between gap-3 px-4 py-3 ${lowStockClassName}`
+          : `relative h-28 min-w-32 ${lowStockClassName}`
       }
     >
       {listLayout ? (
@@ -115,7 +117,7 @@ export function OrderPanel({
   }, [visibleProducts, supplyItems, reservedQuantities]);
 
   return (
-    <section className={hideHeader ? "flex h-full w-full flex-col" : "flex flex-col w-full md:h-screen"}>
+    <section className={hideHeader ? "flex h-full w-full min-w-0 flex-col" : "flex min-w-0 flex-col w-full md:h-screen"}>
       {!hideHeader && (
         <>
           <div className="flex flex-col p-4 w-full">
@@ -160,12 +162,12 @@ export function OrderPanel({
         </div>
       )}
 
-      <div className="rounded-xl md:flex-1 md:overflow-y-auto no-scrollbar">
+      <div className="@container rounded-xl md:flex-1 md:overflow-y-auto no-scrollbar">
         <div
           className={
             listLayout
               ? "flex flex-col p-4 gap-2"
-              : "p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+              : "p-4 grid grid-cols-2 @md:grid-cols-3 @2xl:grid-cols-4 @5xl:grid-cols-5 gap-4"
           }
         >
           {!visibleProducts || visibleProducts.length === 0 ? (
