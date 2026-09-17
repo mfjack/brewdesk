@@ -12,6 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/_components/ui/sidebar";
 import Image from "next/image";
 import { LogOut } from "lucide-react";
@@ -26,6 +27,7 @@ import { NetworkStatusBadge } from "./network-status-badge";
 export function AppSidebar() {
   const { data: settings } = useGetSettings();
   const activeOperator = useActiveOperator();
+  const { setOpen } = useSidebar();
 
   const currentOperator = activeOperator ? settings?.operators.find((operator) => operator.id === activeOperator.id) : undefined;
 
@@ -61,7 +63,7 @@ export function AppSidebar() {
               {visibleNavLinks.map(({ icon: Icon, label, path }) => (
                 <SidebarMenuItem key={path}>
                   <SidebarMenuButton variant="outline" asChild>
-                    <Link href={path}>
+                    <Link href={path} onClick={() => setOpen(false)}>
                       <Icon />
                       <p>{label}</p>
                     </Link>
