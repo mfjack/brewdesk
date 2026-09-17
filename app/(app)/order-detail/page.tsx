@@ -13,9 +13,8 @@ import Link from "next/link";
 import { useGetOrders } from "../order/query/useGetOrders";
 import { TOrderPayment, TOrderResponse, TPaymentMethod } from "../order/interface";
 import { buildOrderPayment, getChargedTakeoutFee, getGroupedOrders, isOrderPaid } from "../order/order-math";
-import { paymentMethodLabels, paymentMethodOptions } from "../order/payment-methods";
-import { PaymentMethodFields } from "../order/_components/payment-method-fields";
-import { SplitBillCalculator } from "../order/_components/split-bill-calculator";
+import { paymentMethodLabels } from "../order/payment-methods";
+import { PaymentDialog } from "../order/_components/payment-dialog";
 import { GroupedOrdersBadge } from "../order/_components/grouped-orders-badge";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Header } from "@/_components/ui/header";
@@ -52,10 +51,6 @@ export default function OrderDetailPage() {
   const isHydrated = useIsHydrated();
   const orders = useMemo(() => (isHydrated ? (ordersData ?? []) : []), [isHydrated, ordersData]);
 
-  const availablePaymentMethods = settings?.featureFlags.creditSale
-    ? paymentMethodOptions
-    : paymentMethodOptions.filter((option) => option.value !== "FIADO");
-
   const updateOrderStatus = useUpdateOrderStatus();
 
   const openOrdersCount = useMemo(() => orders.filter((order) => !isOrderPaid(order)).length, [orders]);
@@ -78,8 +73,6 @@ export default function OrderDetailPage() {
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [orders, historySearchTerm, historyDate],
   );
-
-  const finalTotal = selectedOrder?.total ?? 0;
 
   function handleOpenPayment(order: TOrderResponse) {
     setSelectedOrder(order);
@@ -367,107 +360,22 @@ export default function OrderDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <PaymentDialog
         open={Boolean(selectedOrder)}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleClosePayment();
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto no-scrollbar">
-          <DialogHeader className="flex flex-col gap-0.5">
-            <DialogTitle>Confirmar pagamento</DialogTitle>
-            <DialogDescription>Confirme o recebimento do pagamento da comanda.</DialogDescription>
-          </DialogHeader>
-
-          {selectedOrder && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex gap-1">
-                  <p className="text-sm text-muted-foreground">Cliente: </p>
-                  <p className="font-bold text-sm">{toTitleCase(selectedOrder.customerName)}</p>
-                </div>
-                <div className="space-y-1.5">
-                  {selectedOrder.orderItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
-                      <div className="flex gap-2">
-                        <span className="font-semibold">{item.quantity}x</span>
-                        <span>{toTitleCase(item.product.name)}</span>
-                      </div>
-
-                      <span className="font-medium">{formatCurrency(item.subtotal)}</span>
-                    </div>
-                  ))}
-
-                  {selectedOrder.isTakeout && (
-                    <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-                      <span>Embalagem para levar</span>
-                      <span className="font-medium">{formatCurrency(getChargedTakeoutFee(selectedOrder))}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold">Total</span>
-                  <span className="text-xl font-bold">{formatCurrency(finalTotal)}</span>
-                </div>
-              </div>
-
-              {settings?.featureFlags.splitBill && (
-                <SplitBillCalculator
-                  order={selectedOrder}
-                  isOpen={isSplitOpen}
-                  onOpenChange={setIsSplitOpen}
-                  pixQrCodeUrl={settings?.pixQrCodeUrl}
-                  onConfirmSplitPayment={handleConfirmSplitPayment}
-                  isConfirming={updateOrderStatus.isPending}
-                />
-              )}
-
-              {!isSplitOpen && (
-                <>
-                  <Separator />
-
-                  <PaymentMethodFields
-                    paymentMethod={paymentMethod}
-                    onPaymentMethodChange={setPaymentMethod}
-                    amountReceived={amountReceived}
-                    onAmountReceivedChange={setAmountReceived}
-                    total={finalTotal}
-                    pixQrCodeUrl={settings?.pixQrCodeUrl}
-                    methods={availablePaymentMethods}
-                    fiadoCustomerName={fiadoCustomerName}
-                    onFiadoCustomerNameChange={setFiadoCustomerName}
-                  />
-
-                  <Separator />
-
-                  <Button
-                    className="w-full"
-                    type="button"
-                    size="lg"
-                    onClick={handleConfirmPayment}
-                    disabled={
-                      updateOrderStatus.isPending ||
-                      !selectedOrder ||
-                      (paymentMethod === "CASH" && Number(amountReceived) < finalTotal) ||
-                      (paymentMethod === "FIADO" && !fiadoCustomerName.trim())
-                    }
-                  >
-                    <DollarSign />
-
-                    {updateOrderStatus.isPending
-                      ? "Processando..."
-                      : paymentMethod === "FIADO"
-                        ? "Registrar fiado"
-                        : "Pagamento Recebido"}
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+        onOpenChange={(open) => !open && handleClosePayment()}
+        order={selectedOrder}
+        paymentMethod={paymentMethod}
+        onPaymentMethodChange={setPaymentMethod}
+        amountReceived={amountReceived}
+        onAmountReceivedChange={setAmountReceived}
+        fiadoCustomerName={fiadoCustomerName}
+        onFiadoCustomerNameChange={setFiadoCustomerName}
+        isSplitOpen={isSplitOpen}
+        onSplitOpenChange={setIsSplitOpen}
+        onConfirmSplitPayment={handleConfirmSplitPayment}
+        onConfirmPayment={handleConfirmPayment}
+        isConfirmingPayment={updateOrderStatus.isPending}
+      />
     </section>
   );
 }

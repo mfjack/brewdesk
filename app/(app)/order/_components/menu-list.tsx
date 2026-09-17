@@ -12,15 +12,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 import { TMenuList, TOrderItem } from "../interface";
 import { DRAFT_ORDER_ID } from "../order-math";
-import { PaymentMethodFields } from "./payment-method-fields";
-import { SplitBillCalculator } from "./split-bill-calculator";
+import { PaymentDialog } from "./payment-dialog";
 import { GroupedOrdersBadge } from "./grouped-orders-badge";
 import { EditOrderDialog } from "./edit-order-dialog";
 
-import { paymentMethodOptions } from "../payment-methods";
 import { formatCurrency } from "@/_lib/format-currency";
 import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
-import { useGetSumupStatus } from "../query/useGetSumupStatus";
 
 import { Input } from "@/_components/ui/input";
 import { toTitleCase } from "@/_lib/to-title-case";
@@ -94,32 +91,10 @@ export function MenuList({
   const isExistingOrder = order?.id !== undefined && order.id !== DRAFT_ORDER_ID;
 
   const { data: settings } = useGetSettings();
-  const { data: sumupStatus } = useGetSumupStatus();
 
   const isTakeoutEnabled = settings?.featureFlags.takeout ?? true;
   const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
-  const isSplitBillEnabled = settings?.featureFlags.splitBill ?? true;
-  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
   const isOrderTicketsEnabled = settings?.featureFlags.orderTickets ?? true;
-  const isSumupPaired = sumupStatus?.readerStatus === "paired";
-
-  const availablePaymentMethods = paymentMethodOptions.filter((option) => {
-    if (option.value === "FIADO") {
-      return isCreditSaleEnabled;
-    }
-
-    if (option.value === "SUMUP") {
-      return isSumupPaired;
-    }
-
-    if ((option.value === "CREDIT" || option.value === "DEBIT") && isSumupPaired) {
-      return false;
-    }
-
-    return true;
-  });
-
-  const finalTotal = order?.total ?? 0;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -342,95 +317,30 @@ export function MenuList({
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isPaymentDialogOpen} onOpenChange={onPaymentDialogOpenChange}>
-            <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto no-scrollbar">
-              <DialogHeader className="flex flex-col gap-0.5">
-                <DialogTitle>Confirmar pagamento</DialogTitle>
-                <DialogDescription>
-                  Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda.
-                </DialogDescription>
-              </DialogHeader>
-
-              {isSplitBillEnabled && order && (
-                <SplitBillCalculator
-                  order={order}
-                  isOpen={isSplitOpen}
-                  onOpenChange={onSplitOpenChange}
-                  pixQrCodeUrl={settings?.pixQrCodeUrl}
-                  onConfirmSplitPayment={onConfirmSplitPayment}
-                  isConfirming={isConfirmingPayment}
-                />
-              )}
-
-              {!isSplitOpen && (
-                <>
-                  <PaymentMethodFields
-                    paymentMethod={paymentMethod}
-                    onPaymentMethodChange={onPaymentMethodChange}
-                    amountReceived={amountReceived}
-                    onAmountReceivedChange={onAmountReceivedChange}
-                    total={finalTotal}
-                    pixQrCodeUrl={settings?.pixQrCodeUrl}
-                    methods={availablePaymentMethods}
-                    fiadoCustomerName={fiadoCustomerName}
-                    onFiadoCustomerNameChange={onFiadoCustomerNameChange}
-                    openFiadoMatches={openFiadoMatches}
-                    fiadoTargetOrderId={fiadoTargetOrderId}
-                    onFiadoTargetOrderIdChange={onFiadoTargetOrderIdChange}
-                    sumupCardType={sumupCardType}
-                    onSumupCardTypeChange={onSumupCardTypeChange}
-                  />
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold">Total</span>
-                    <span className="text-xl font-bold">{formatCurrency(finalTotal)}</span>
-                  </div>
-
-                  {paymentMethod === "SUMUP" && (sumupChargeState === "waiting" || sumupChargeState === "charging") && (
-                    <p className="rounded-md bg-muted px-3 py-2 text-center text-sm text-muted-foreground">
-                      Aguardando pagamento na maquininha...
-                    </p>
-                  )}
-
-                  {paymentMethod === "SUMUP" && sumupChargeState === "failed" && sumupChargeError && (
-                    <p className="rounded-md bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
-                      {sumupChargeError}
-                    </p>
-                  )}
-
-                  <DialogFooter>
-                    <Button
-                      className="w-full"
-                      type="button"
-                      size="lg"
-                      onClick={onConfirmPayment}
-                      disabled={
-                        isConfirmingPayment ||
-                        (paymentMethod === "CASH" && Number(amountReceived) < finalTotal) ||
-                        (paymentMethod === "FIADO" && !fiadoCustomerName.trim()) ||
-                        (paymentMethod === "SUMUP" && (sumupChargeState === "charging" || sumupChargeState === "waiting"))
-                      }
-                    >
-                      <DollarSign />
-                      {paymentMethod === "SUMUP"
-                        ? sumupChargeState === "charging" || sumupChargeState === "waiting"
-                          ? "Aguardando..."
-                          : "Cobrar na maquininha"
-                        : isConfirmingPayment
-                          ? "Processando..."
-                          : paymentMethod === "FIADO"
-                            ? fiadoTargetOrderId !== null
-                              ? "Adicionar à comanda fiado"
-                              : "Registrar fiado"
-                            : "Pagamento Recebido"}
-                    </Button>
-                  </DialogFooter>
-                </>
-              )}
-            </DialogContent>
-          </Dialog>
+          <PaymentDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={onPaymentDialogOpenChange}
+            order={order}
+            description="Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda."
+            paymentMethod={paymentMethod}
+            onPaymentMethodChange={onPaymentMethodChange}
+            amountReceived={amountReceived}
+            onAmountReceivedChange={onAmountReceivedChange}
+            fiadoCustomerName={fiadoCustomerName}
+            onFiadoCustomerNameChange={onFiadoCustomerNameChange}
+            openFiadoMatches={openFiadoMatches}
+            fiadoTargetOrderId={fiadoTargetOrderId}
+            onFiadoTargetOrderIdChange={onFiadoTargetOrderIdChange}
+            sumupCardType={sumupCardType}
+            onSumupCardTypeChange={onSumupCardTypeChange}
+            sumupChargeState={sumupChargeState}
+            sumupChargeError={sumupChargeError}
+            isSplitOpen={isSplitOpen}
+            onSplitOpenChange={onSplitOpenChange}
+            onConfirmSplitPayment={onConfirmSplitPayment}
+            onConfirmPayment={onConfirmPayment}
+            isConfirmingPayment={isConfirmingPayment}
+          />
 
           <Dialog open={isCancelDialogOpen} onOpenChange={onCancelDialogOpenChange}>
             <DialogContent className="sm:max-w-md">
