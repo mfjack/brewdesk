@@ -115,6 +115,7 @@ export interface TSupplier {
   purchaseLink: string | null;
   deliveryDays: Weekday[];
   deliveryPeriod: DeliveryPeriod | null;
+  observation: string | null;
 }
 
 export interface TSupplyItem {

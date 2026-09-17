@@ -13,6 +13,7 @@ function fromRow(row: {
   purchase_link: string | null;
   delivery_days: TSupplier["deliveryDays"];
   delivery_period: TSupplier["deliveryPeriod"];
+  observation: string | null;
 }): TSupplier {
   return {
     id: row.id,
@@ -22,6 +23,7 @@ function fromRow(row: {
     purchaseLink: row.purchase_link,
     deliveryDays: row.delivery_days,
     deliveryPeriod: row.delivery_period,
+    observation: row.observation,
   };
 }
 
@@ -33,6 +35,7 @@ function toRow(input: TSupplierInput) {
     purchase_link: input.purchaseLink?.trim() || null,
     delivery_days: input.deliveryDays ?? [],
     delivery_period: input.deliveryPeriod || null,
+    observation: input.observation?.trim() || null,
   };
 }
 

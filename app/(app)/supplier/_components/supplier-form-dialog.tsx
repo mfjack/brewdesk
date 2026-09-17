@@ -4,11 +4,13 @@ import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import type { ReactNode } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
 import { Label } from "@/_components/ui/label";
+import { Textarea } from "@/_components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import {
   Dialog,
@@ -33,6 +35,7 @@ const supplierFormSchema = z.object({
   purchaseLink: z.string(),
   deliveryDays: z.array(z.string()),
   deliveryPeriod: z.string(),
+  observation: z.string(),
 });
 
 type TSupplierFormValues = z.infer<typeof supplierFormSchema>;
@@ -50,6 +53,7 @@ function buildDefaultValues(supplier?: TSupplier): TSupplierFormValues {
     purchaseLink: supplier?.purchaseLink ?? "",
     deliveryDays: supplier?.deliveryDays ?? [],
     deliveryPeriod: supplier?.deliveryPeriod ?? "",
+    observation: supplier?.observation ?? "",
   };
 }
 
@@ -59,6 +63,7 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
   const whatsappId = useId();
   const suppliesDescriptionId = useId();
   const purchaseLinkId = useId();
+  const observationId = useId();
 
   const [open, setOpen] = useState(false);
 
@@ -86,12 +91,18 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
       purchaseLink: data.purchaseLink || null,
       deliveryDays: data.deliveryDays as Weekday[],
       deliveryPeriod: (data.deliveryPeriod || null) as DeliveryPeriod | null,
+      observation: data.observation || null,
     };
 
     if (supplier) {
       updateSupplier.mutate({ id: supplier.id, ...payload }, { onSuccess: () => setOpen(false) });
     } else {
-      createSupplier.mutate(payload, { onSuccess: () => setOpen(false) });
+      createSupplier.mutate(payload, {
+        onSuccess: () => {
+          setOpen(false);
+          toast.success("Fornecedor adicionado.");
+        },
+      });
     }
   }
 
@@ -220,6 +231,16 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
                   </SelectContent>
                 </Select>
               )}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label htmlFor={observationId}>Observações</Label>
+            <Textarea
+              id={observationId}
+              placeholder="Ex.: prefere contato por telefone, pedido mínimo de R$ 200"
+              rows={3}
+              {...register("observation")}
             />
           </div>
 

@@ -54,6 +54,7 @@ export default function SupplierPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Empresa</TableHead>
+                <TableHead>Observações</TableHead>
                 <TableHead>Fornece</TableHead>
                 <TableHead>WhatsApp</TableHead>
                 <TableHead>Link</TableHead>
@@ -68,6 +69,7 @@ export default function SupplierPage() {
                   <TableCell>
                     <p className="font-medium whitespace-normal">{toTitleCase(supplier.companyName)}</p>
                   </TableCell>
+                  <TableCell className="max-w-48 truncate text-muted-foreground">{supplier.observation || "—"}</TableCell>
                   <TableCell className="max-w-48 truncate text-muted-foreground">{supplier.suppliesDescription || "—"}</TableCell>
 
                   <TableCell>
@@ -129,6 +131,7 @@ export default function SupplierPage() {
                         />
                       }
                       onDelete={() => handleDeleteSupplier(supplier.id)}
+                      deleteConfirmTitle={`Excluir "${toTitleCase(supplier.companyName)}"?`}
                     />
                   </TableCell>
                 </TableRow>
