@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import type { ReactNode } from "react";
 
 import { Button } from "@/_components/ui/button";
@@ -102,7 +103,12 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
     if (supplyItem) {
       updateSupplyItem.mutate({ id: supplyItem.id, ...payload }, { onSuccess: () => setOpen(false) });
     } else {
-      createSupplyItem.mutate(payload, { onSuccess: () => setOpen(false) });
+      createSupplyItem.mutate(payload, {
+        onSuccess: () => {
+          setOpen(false);
+          toast.success("Insumo adicionado.");
+        },
+      });
     }
   }
 

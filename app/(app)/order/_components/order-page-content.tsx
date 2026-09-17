@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { MenuList } from "./menu-list";
 import { OrderPanel } from "./order-panel";
@@ -466,6 +467,8 @@ export default function OrderPageContent() {
       setPrintJob({ order: orderWithPrintedItems, mode: "full" });
 
       setPrintedItemQuantities(printedQty);
+
+      toast.success("Pedido enviado.");
 
       schedulePrint(orderWithPrintedItems, "full", printedQty, () => resetCart());
     } catch (error) {

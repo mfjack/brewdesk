@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClientProvider } from "./client-provider";
 import { ThemeProvider } from "./theme-provider";
+import { Toaster } from "@/_components/ui/sonner";
 import { cn } from "@/_lib/utils";
 import { Saira } from "next/font/google";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClientProvider>{children}</ClientProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

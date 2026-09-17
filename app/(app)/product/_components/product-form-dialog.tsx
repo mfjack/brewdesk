@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import type { ReactNode } from "react";
 
 import { Button } from "@/_components/ui/button";
@@ -190,7 +191,13 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
     if (product) {
       updateProduct.mutate({ id: product.id, ...payload }, { onSuccess: () => setOpen(false), onError });
     } else {
-      createProduct.mutate(payload, { onSuccess: () => setOpen(false), onError });
+      createProduct.mutate(payload, {
+        onSuccess: () => {
+          setOpen(false);
+          toast.success("Produto adicionado.");
+        },
+        onError,
+      });
     }
   }
 

@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import type { ReactNode } from "react";
 
 import { Button } from "@/_components/ui/button";
@@ -55,7 +56,12 @@ export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
     if (category) {
       updateCategory.mutate({ id: category.id, name: data.name }, { onSuccess: () => setOpen(false) });
     } else {
-      createCategory.mutate(data.name, { onSuccess: () => setOpen(false) });
+      createCategory.mutate(data.name, {
+        onSuccess: () => {
+          setOpen(false);
+          toast.success("Categoria adicionada.");
+        },
+      });
     }
   }
 
