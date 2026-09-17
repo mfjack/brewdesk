@@ -12,7 +12,7 @@ import { Input } from "@/_components/ui/input";
 import { Label } from "@/_components/ui/label";
 import { Badge } from "@/_components/ui/badge";
 import { Switch } from "@/_components/ui/switch";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { APP_PAGES } from "@/_lib/app-pages";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
@@ -41,6 +41,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [routesError, setRoutesError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [operatorPendingDeletion, setOperatorPendingDeletion] = useState<{ id: number; name: string } | null>(null);
 
   const {
     register,
@@ -76,12 +77,18 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
     );
   }
 
-  function handleDeleteOperator(operatorId: number) {
+  function handleConfirmDeleteOperator() {
+    if (!operatorPendingDeletion) {
+      return;
+    }
+
     setDeleteError(null);
 
-    deleteOperator.mutate(operatorId, {
+    deleteOperator.mutate(operatorPendingDeletion.id, {
       onError: (error) => setDeleteError(error instanceof Error ? error.message : "Não foi possível excluir o operador."),
     });
+
+    setOperatorPendingDeletion(null);
   }
 
   return (
@@ -108,7 +115,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
                   type="button"
                   variant="destructive"
                   size="icon-sm"
-                  onClick={() => handleDeleteOperator(operator.id)}
+                  onClick={() => setOperatorPendingDeletion({ id: operator.id, name: operator.name })}
                   disabled={deleteOperator.isPending}
                 >
                   <Trash2 />
@@ -214,6 +221,25 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(operatorPendingDeletion)} onOpenChange={(open) => !open && setOperatorPendingDeletion(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{`Excluir "${operatorPendingDeletion ? toTitleCase(operatorPendingDeletion.name) : ""}"?`}</DialogTitle>
+            <DialogDescription>Essa ação não pode ser desfeita.</DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex-row gap-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setOperatorPendingDeletion(null)}>
+              Cancelar
+            </Button>
+
+            <Button type="button" variant="destructive" className="flex-1" onClick={handleConfirmDeleteOperator}>
+              Excluir
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

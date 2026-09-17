@@ -232,6 +232,7 @@ export default function ProductPage() {
                         />
                       }
                       onDelete={() => handleDeleteProduct(product.id)}
+                      deleteConfirmTitle={`Excluir "${toTitleCase(product.name)}"?`}
                     />
                   </TableCell>
                 </TableRow>

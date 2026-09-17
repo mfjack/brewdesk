@@ -254,6 +254,7 @@ export default function StockPage() {
                                 />
                               }
                               onDelete={() => handleDeleteSupplyItem(supplyItem.id)}
+                              deleteConfirmTitle={`Excluir "${toTitleCase(supplyItem.name)}"?`}
                             />
                           </TableCell>
                         </TableRow>

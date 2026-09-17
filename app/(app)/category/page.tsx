@@ -90,6 +90,7 @@ export default function CategoryPage() {
                             />
                           }
                           onDelete={() => handleDeleteCategory(category.id)}
+                          deleteConfirmTitle={`Excluir "${toTitleCase(category.name)}"?`}
                         />
                       </TableCell>
                     </TableRow>
