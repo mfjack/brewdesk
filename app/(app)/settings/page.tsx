@@ -7,7 +7,6 @@ import { useGetSettings } from "./query/useGetSettings";
 import { GeneralInfoForm } from "./_components/general-info-form";
 import { OperatorsSection } from "./_components/operators-section";
 import { FeatureFlagsSection } from "./_components/feature-flags-section";
-import { SumupSection } from "./_components/sumup-section";
 import { ThermalPrinterSection } from "./_components/thermal-printer-section";
 import { AccountSection } from "./_components/account-section";
 
@@ -32,10 +31,6 @@ export default function SettingsPage() {
         <Separator className="my-6 max-w-lg" />
 
         <FeatureFlagsSection settings={settings} />
-
-        <Separator className="my-6 max-w-lg" />
-
-        <SumupSection />
 
         <Separator className="my-6 max-w-lg" />
 

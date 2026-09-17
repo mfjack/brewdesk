@@ -60,10 +60,6 @@ export function MenuList({
   onFiadoTargetOrderIdChange,
   onConfirmPayment,
   isConfirmingPayment,
-  sumupChargeState,
-  sumupChargeError,
-  sumupCardType,
-  onSumupCardTypeChange,
   isSplitOpen,
   onSplitOpenChange,
   onConfirmSplitPayment,
@@ -331,10 +327,6 @@ export function MenuList({
             openFiadoMatches={openFiadoMatches}
             fiadoTargetOrderId={fiadoTargetOrderId}
             onFiadoTargetOrderIdChange={onFiadoTargetOrderIdChange}
-            sumupCardType={sumupCardType}
-            onSumupCardTypeChange={onSumupCardTypeChange}
-            sumupChargeState={sumupChargeState}
-            sumupChargeError={sumupChargeError}
             isSplitOpen={isSplitOpen}
             onSplitOpenChange={onSplitOpenChange}
             onConfirmSplitPayment={onConfirmSplitPayment}

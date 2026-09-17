@@ -22,8 +22,6 @@ interface TPaymentMethodFields {
   openFiadoMatches?: TOrderResponse[];
   fiadoTargetOrderId?: number | null;
   onFiadoTargetOrderIdChange?: (orderId: number | null) => void;
-  sumupCardType?: "credit" | "debit";
-  onSumupCardTypeChange?: (cardType: "credit" | "debit") => void;
 }
 
 export function PaymentMethodFields({
@@ -39,8 +37,6 @@ export function PaymentMethodFields({
   openFiadoMatches = [],
   fiadoTargetOrderId,
   onFiadoTargetOrderIdChange,
-  sumupCardType = "credit",
-  onSumupCardTypeChange,
 }: TPaymentMethodFields) {
   const changeDue = paymentMethod === "CASH" && amountReceived ? computeChangeDue(Number(amountReceived), total) : null;
 
@@ -112,33 +108,6 @@ export function PaymentMethodFields({
               </p>
             </div>
           )}
-        </div>
-      )}
-
-      {paymentMethod === "SUMUP" && (
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Cliente vai pagar no</label>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant={sumupCardType === "credit" ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => onSumupCardTypeChange?.("credit")}
-            >
-              Crédito
-            </Button>
-            <Button
-              type="button"
-              variant={sumupCardType === "debit" ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => onSumupCardTypeChange?.("debit")}
-            >
-              Débito
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            A maquininha já pede o cartão direto nessa opção, sem precisar escolher nela.
-          </p>
         </div>
       )}
 

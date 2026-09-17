@@ -1,6 +1,5 @@
 import type { SupplyUnit } from "@/_lib/supply-units";
 import type { Weekday, DeliveryPeriod } from "@/_lib/delivery-schedule";
-import type { TSumupChargeState } from "@/_lib/sumup/client";
 
 export interface TMenuList {
   order: TOrderResponse | null;
@@ -53,10 +52,6 @@ export interface TMenuList {
   onFiadoTargetOrderIdChange: (orderId: number | null) => void;
   onConfirmPayment: () => void;
   isConfirmingPayment: boolean;
-  sumupChargeState?: TSumupChargeState;
-  sumupChargeError?: string | null;
-  sumupCardType?: "credit" | "debit";
-  onSumupCardTypeChange?: (cardType: "credit" | "debit") => void;
   isSplitOpen: boolean;
   onSplitOpenChange: (open: boolean) => void;
   onConfirmSplitPayment: (payments: TOrderPayment[]) => void | Promise<void>;
@@ -147,7 +142,7 @@ export interface TOrderItem {
 
 export type TOrderStatus = "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID";
 
-export type TPaymentMethod = "CREDIT" | "DEBIT" | "PIX" | "CASH" | "FIADO" | "SUMUP";
+export type TPaymentMethod = "CREDIT" | "DEBIT" | "PIX" | "CASH" | "FIADO";
 
 export interface TOrderPayment {
   method: TPaymentMethod;

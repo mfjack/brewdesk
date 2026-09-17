@@ -10,9 +10,7 @@ import { getChargedTakeoutFee } from "../order-math";
 import { formatCurrency } from "@/_lib/format-currency";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
-import { useGetSumupStatus } from "../query/useGetSumupStatus";
 import type { TOrderPayment, TOrderResponse, TPaymentMethod } from "../interface";
-import type { TSumupChargeState } from "@/_lib/sumup/client";
 
 export interface TPaymentDialog {
   open: boolean;
@@ -30,11 +28,6 @@ export interface TPaymentDialog {
   openFiadoMatches?: TOrderResponse[];
   fiadoTargetOrderId?: number | null;
   onFiadoTargetOrderIdChange?: (orderId: number | null) => void;
-
-  sumupCardType?: "credit" | "debit";
-  onSumupCardTypeChange?: (cardType: "credit" | "debit") => void;
-  sumupChargeState?: TSumupChargeState;
-  sumupChargeError?: string | null;
 
   isSplitOpen: boolean;
   onSplitOpenChange: (open: boolean) => void;
@@ -61,11 +54,6 @@ export function PaymentDialog({
   fiadoTargetOrderId,
   onFiadoTargetOrderIdChange,
 
-  sumupCardType,
-  onSumupCardTypeChange,
-  sumupChargeState,
-  sumupChargeError,
-
   isSplitOpen,
   onSplitOpenChange,
   onConfirmSplitPayment,
@@ -74,24 +62,13 @@ export function PaymentDialog({
   isConfirmingPayment,
 }: TPaymentDialog) {
   const { data: settings } = useGetSettings();
-  const { data: sumupStatus } = useGetSumupStatus();
 
   const isSplitBillEnabled = settings?.featureFlags.splitBill ?? true;
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
-  const supportsSumup = Boolean(onSumupCardTypeChange);
-  const isSumupPaired = supportsSumup && sumupStatus?.readerStatus === "paired";
 
   const availablePaymentMethods = paymentMethodOptions.filter((option) => {
     if (option.value === "FIADO") {
       return isCreditSaleEnabled;
-    }
-
-    if (option.value === "SUMUP") {
-      return isSumupPaired;
-    }
-
-    if ((option.value === "CREDIT" || option.value === "DEBIT") && isSumupPaired) {
-      return false;
     }
 
     return true;
@@ -169,21 +146,7 @@ export function PaymentDialog({
                   openFiadoMatches={openFiadoMatches}
                   fiadoTargetOrderId={fiadoTargetOrderId}
                   onFiadoTargetOrderIdChange={onFiadoTargetOrderIdChange}
-                  sumupCardType={sumupCardType}
-                  onSumupCardTypeChange={onSumupCardTypeChange}
                 />
-
-                {paymentMethod === "SUMUP" && (sumupChargeState === "waiting" || sumupChargeState === "charging") && (
-                  <p className="rounded-md bg-muted px-3 py-2 text-center text-sm text-muted-foreground">
-                    Aguardando pagamento na maquininha...
-                  </p>
-                )}
-
-                {paymentMethod === "SUMUP" && sumupChargeState === "failed" && sumupChargeError && (
-                  <p className="rounded-md bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
-                    {sumupChargeError}
-                  </p>
-                )}
 
                 <DialogFooter>
                   <Button
@@ -194,22 +157,17 @@ export function PaymentDialog({
                     disabled={
                       isConfirmingPayment ||
                       (paymentMethod === "CASH" && Number(amountReceived) < finalTotal) ||
-                      (paymentMethod === "FIADO" && !fiadoCustomerName.trim()) ||
-                      (paymentMethod === "SUMUP" && (sumupChargeState === "charging" || sumupChargeState === "waiting"))
+                      (paymentMethod === "FIADO" && !fiadoCustomerName.trim())
                     }
                   >
                     <DollarSign />
-                    {paymentMethod === "SUMUP"
-                      ? sumupChargeState === "charging" || sumupChargeState === "waiting"
-                        ? "Aguardando..."
-                        : "Cobrar na maquininha"
-                      : isConfirmingPayment
-                        ? "Processando..."
-                        : paymentMethod === "FIADO"
-                          ? fiadoTargetOrderId != null
-                            ? "Adicionar à comanda fiado"
-                            : "Registrar fiado"
-                          : "Pagamento Recebido"}
+                    {isConfirmingPayment
+                      ? "Processando..."
+                      : paymentMethod === "FIADO"
+                        ? fiadoTargetOrderId != null
+                          ? "Adicionar à comanda fiado"
+                          : "Registrar fiado"
+                        : "Pagamento Recebido"}
                   </Button>
                 </DialogFooter>
               </>

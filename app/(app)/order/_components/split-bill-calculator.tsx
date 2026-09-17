@@ -13,9 +13,7 @@ import type { TOrderPayment, TOrderResponse, TPaymentMethod } from "../interface
 import { PaymentMethodFields } from "./payment-method-fields";
 import { paymentMethodOptions } from "../payment-methods";
 
-const SPLIT_BILL_PAYMENT_METHODS = paymentMethodOptions.filter(
-  (option) => option.value !== "FIADO" && option.value !== "SUMUP",
-);
+const SPLIT_BILL_PAYMENT_METHODS = paymentMethodOptions.filter((option) => option.value !== "FIADO");
 
 interface TSplitBillCalculator {
   order: TOrderResponse;
