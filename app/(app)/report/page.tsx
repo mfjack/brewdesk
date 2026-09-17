@@ -335,7 +335,7 @@ export default function ReportPage() {
                                     <p className="text-xs text-muted-foreground">custo</p>
                                   </div>
                                   <div>
-                                    <p className={`text-sm font-semibold ${product.cmvPercent > 50 ? "text-destructive" : ""}`}>
+                                    <p className={`text-sm font-semibold ${product.cmvPercent > 35 ? "text-destructive" : ""}`}>
                                       {product.cmvPercent.toFixed(0)}%
                                     </p>
                                     <p className="text-xs text-muted-foreground">CMV %</p>

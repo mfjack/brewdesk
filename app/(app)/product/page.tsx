@@ -110,6 +110,7 @@ export default function ProductPage() {
                   {filteredProducts?.map((product: TProduct) => {
                 const maxProducible = product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : null;
                 const recipeLowStockThreshold = product.lowStockThreshold || 5;
+                const isOutOfStock = maxProducible !== null ? maxProducible <= 0 : product.trackStock && product.quantity <= 0;
 
                 return (
                 <TableRow key={product.id}>
@@ -140,16 +141,16 @@ export default function ProductPage() {
 
                   <TableCell>
                     {formatCurrency(product.price)}
-                    {product.costPrice > 0 && (
+                    {!isOutOfStock && product.costPrice > 0 && (
                       <p className="text-xs text-muted-foreground">Custo: {formatCurrency(product.costPrice)}</p>
                     )}
                   </TableCell>
 
                   <TableCell>
-                    {product.costPrice > 0 && product.price > 0 ? (
+                    {!isOutOfStock && product.costPrice > 0 && product.price > 0 ? (
                       <span
                         className={`text-sm font-medium ${
-                          (product.costPrice / product.price) * 100 > 40 ? "text-destructive" : ""
+                          (product.costPrice / product.price) * 100 > 35 ? "text-destructive" : ""
                         }`}
                       >
                         {((product.costPrice / product.price) * 100).toFixed(0)}%
@@ -160,7 +161,7 @@ export default function ProductPage() {
                   </TableCell>
 
                   <TableCell>
-                    {product.costPrice > 0 ? (
+                    {!isOutOfStock && product.costPrice > 0 ? (
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">{formatCurrency(product.price - product.costPrice)}</span>
                         <span className="text-xs text-muted-foreground">
@@ -168,43 +169,47 @@ export default function ProductPage() {
                         </span>
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">Sem custo</span>
+                      <span className="text-xs text-muted-foreground">{isOutOfStock ? "—" : "Sem custo"}</span>
                     )}
                   </TableCell>
 
                   <TableCell>
                     {maxProducible !== null ? (
                       <div className="flex items-center gap-2">
-                        <span className={maxProducible <= recipeLowStockThreshold ? "font-semibold text-destructive" : ""}>
-                          Via insumos: {maxProducible}
-                        </span>
-
                         {maxProducible <= 0 ? (
                           <Badge variant="destructive">Esgotado</Badge>
                         ) : (
-                          maxProducible <= recipeLowStockThreshold && (
-                            <Badge variant="destructive" className="gap-1">
-                              <AlertTriangle />
-                              Estoque baixo
-                            </Badge>
-                          )
+                          <>
+                            <span className={maxProducible <= recipeLowStockThreshold ? "font-semibold text-destructive" : ""}>
+                              Via insumos: {maxProducible}
+                            </span>
+
+                            {maxProducible <= recipeLowStockThreshold && (
+                              <Badge variant="destructive" className="gap-1">
+                                <AlertTriangle />
+                                Estoque baixo
+                              </Badge>
+                            )}
+                          </>
                         )}
                       </div>
                     ) : product.trackStock ? (
                       <div className="flex items-center gap-2">
-                        <span className={product.quantity <= (product.lowStockThreshold ?? 5) ? "font-semibold text-destructive" : ""}>
-                          {product.quantity}
-                        </span>
-
                         {product.quantity <= 0 ? (
                           <Badge variant="destructive">Esgotado</Badge>
                         ) : (
-                          product.quantity <= (product.lowStockThreshold ?? 5) && (
-                            <Badge variant="destructive" className="gap-1">
-                              <AlertTriangle />
-                              Estoque baixo
-                            </Badge>
-                          )
+                          <>
+                            <span className={product.quantity <= (product.lowStockThreshold ?? 5) ? "font-semibold text-destructive" : ""}>
+                              {product.quantity}
+                            </span>
+
+                            {product.quantity <= (product.lowStockThreshold ?? 5) && (
+                              <Badge variant="destructive" className="gap-1">
+                                <AlertTriangle />
+                                Estoque baixo
+                              </Badge>
+                            )}
+                          </>
                         )}
                       </div>
                     ) : (

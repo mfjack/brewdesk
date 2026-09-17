@@ -1,8 +1,9 @@
-import type { TSupplyItem } from "@/app/(app)/order/interface";
+import type { TRecipeItem, TSupplyItem } from "@/app/(app)/order/interface";
 import { supabase } from "@/_lib/supabase/client";
 import { getEstablishmentId } from "@/_lib/supabase/establishment";
 import { roundToAvoidFloatDrift } from "@/_lib/supply-units";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
+import { getRecipeCost } from "@/_lib/recipe-cost";
 
 export type TSupplyItemInput = Partial<Omit<TSupplyItem, "id" | "initialQuantity" | "name" | "unit">> &
   Pick<TSupplyItem, "name" | "unit">;
@@ -50,6 +51,42 @@ export function adjustSupplyItemStock(supplyItem: TSupplyItem, deltaInUnit: numb
   supplyItem.quantity = roundToAvoidFloatDrift(supplyItem.quantity - deltaInUnit);
 }
 
+async function recalculateProductCostsForSupplyItem(supplyItemId: number): Promise<void> {
+  const [{ data: supplyItemRows, error: supplyItemsError }, { data: productRows, error: productsError }] = await Promise.all([
+    supabase.from("supply_items").select("*"),
+    supabase.from("products").select("id, recipe"),
+  ]);
+
+  if (supplyItemsError) {
+    throw new Error(supplyItemsError.message);
+  }
+
+  if (productsError) {
+    throw new Error(productsError.message);
+  }
+
+  const allSupplyItems = supplyItemRows.map(fromRow);
+
+  const affectedProducts = productRows.filter((product) =>
+    (product.recipe as TRecipeItem[]).some((item) => item.supplyItemId === supplyItemId),
+  );
+
+  if (affectedProducts.length === 0) {
+    return;
+  }
+
+  await Promise.all(
+    affectedProducts.map((product) =>
+      supabase
+        .from("products")
+        .update({ cost_price: getRecipeCost(product.recipe as TRecipeItem[], allSupplyItems) })
+        .eq("id", product.id),
+    ),
+  );
+
+  notifyStoreChange(["products"]);
+}
+
 export const supplyItemStore = {
   getSupplyItems: async (): Promise<TSupplyItem[]> => {
     const { data, error } = await supabase.from("supply_items").select("*").order("id");
@@ -83,28 +120,23 @@ export const supplyItemStore = {
   updateSupplyItem: async (supplyItemId: number, input: TSupplyItemInput): Promise<TSupplyItem> => {
     const row = toRow(input);
 
-    const { data: existing, error: fetchError } = await supabase
+    // initial_quantity always tracks the quantity entered here — editing the stock form
+    // is how you (re)register a supply item's count, and getSupplyUnitCost uses it as the
+    // cost basis for that registration.
+    const { data, error } = await supabase
       .from("supply_items")
-      .select("initial_quantity")
+      .update({ ...row, initial_quantity: row.quantity })
       .eq("id", supplyItemId)
+      .select()
       .single();
-
-    if (fetchError) {
-      throw new Error(fetchError.message);
-    }
-
-    // initial_quantity only gets reset here when it was never properly set (still 0)
-    // despite there being real stock — otherwise it stays fixed as the cost basis for
-    // getSupplyUnitCost until the item is recreated or restocked through a dedicated flow.
-    const updatePayload = Number(existing.initial_quantity) === 0 ? { ...row, initial_quantity: row.quantity } : row;
-
-    const { data, error } = await supabase.from("supply_items").update(updatePayload).eq("id", supplyItemId).select().single();
 
     if (error) {
       throw new Error(error.message);
     }
 
     notifyStoreChange(["supplyItems"]);
+
+    await recalculateProductCostsForSupplyItem(supplyItemId);
 
     return fromRow(data);
   },

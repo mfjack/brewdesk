@@ -56,13 +56,21 @@ interface TProductFormDialog {
   product?: TProduct;
 }
 
-function buildDefaultValues(product: TProduct | undefined, supplyItems: TSupplyItem[] | undefined): TProductFormValues {
+function buildManualCostPriceInput(product: TProduct): string {
+  if (product.trackStock && product.quantity > 0) {
+    return String(product.costPrice * product.quantity);
+  }
+
+  return String(product.costPrice);
+}
+
+function buildDefaultValues(product: TProduct | undefined): TProductFormValues {
   return {
     name: product?.name ?? "",
     description: product?.description ?? "",
     photoUrl: product?.photoUrl ?? null,
     price: product ? String(product.price) : "",
-    costPrice: product ? String(product.costPrice) : "",
+    costPrice: product ? buildManualCostPriceInput(product) : "",
     quantity: product ? String(product.quantity) : "",
     lowStockThreshold: product ? String(product.lowStockThreshold) : "",
     categoryId: product?.category.id ?? 0,
@@ -109,7 +117,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
     setValue,
     formState: { errors },
   } = useForm<TProductFormValues>({
-    defaultValues: buildDefaultValues(product, supplyItems),
+    defaultValues: buildDefaultValues(product),
   });
 
   const {
@@ -128,7 +136,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
   const maxProducible = hasRecipe ? getMaxProducibleQuantity(parsedRecipe, supplyItems ?? []) : null;
 
   function syncFormToProduct() {
-    reset(buildDefaultValues(product, supplyItems));
+    reset(buildDefaultValues(product));
     setPhotoFieldKey((key) => key + 1);
     setFormError(null);
   }
@@ -145,7 +153,10 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
     setFormError(null);
 
     const recipe = parseRecipe(data.recipe, supplyItems ?? []);
-    const costPrice = recipe.length > 0 ? getRecipeCost(recipe, supplyItems ?? []) : Number(data.costPrice) || 0;
+    const manualBatchCost = Number(data.costPrice) || 0;
+    const manualQuantity = data.trackStock ? Number(data.quantity) || 0 : 0;
+    const manualUnitCost = manualQuantity > 0 ? manualBatchCost / manualQuantity : manualBatchCost;
+    const costPrice = recipe.length > 0 ? getRecipeCost(recipe, supplyItems ?? []) : manualUnitCost;
 
     const payload = {
       name: data.name,
@@ -244,8 +255,8 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder="Quanto custou pra você"
-                  title="Usado no relatório de CMV e margem"
+                  placeholder="Quanto custou pra fazer todo o lote"
+                  title="Custo total pra produzir a quantidade em estoque informada abaixo. Dividido pela quantidade pra calcular o CMV."
                   {...register("costPrice")}
                 />
               )}
