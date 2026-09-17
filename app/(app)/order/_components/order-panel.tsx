@@ -96,7 +96,13 @@ export function OrderPanel({
       )}
 
       <div className="rounded-xl md:flex-1 md:overflow-y-auto no-scrollbar">
-        <div className={listLayout ? "flex flex-col p-4 gap-2" : "p-4 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"}>
+        <div
+          className={
+            listLayout
+              ? "flex flex-col p-4 gap-2"
+              : "p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+          }
+        >
           {!visibleProducts || visibleProducts.length === 0 ? (
             <EmptyState message="Nenhum produto encontrado." className="col-span-full" />
           ) : (
@@ -112,9 +118,10 @@ export function OrderPanel({
               const outOfStock = available !== null && available <= 0;
               const lowStockThreshold = product.recipe.length > 0 ? product.lowStockThreshold || 5 : (product.lowStockThreshold ?? 5);
               const isLowStock = available !== null && available <= lowStockThreshold;
-              const lowStockClassName = isLowStock
-                ? "bg-destructive/10 hover:bg-destructive/15 dark:bg-destructive/15 dark:hover:bg-destructive/20"
-                : "";
+              const lowStockClassName =
+                isLowStock && !outOfStock
+                  ? "bg-destructive/10 hover:bg-destructive/15 dark:bg-destructive/15 dark:hover:bg-destructive/20"
+                  : "";
 
               const stockLabel = outOfStock ? (
                 <span className="text-[10px] font-semibold text-destructive">Esgotado</span>
