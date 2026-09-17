@@ -39,6 +39,8 @@ import { useSumupCharge } from "../mutation/useSumupCharge";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
 import { OrderReceipt } from "@/app/(app)/order/_components/order-receipt";
+import { buildReceiptBytes } from "@/_lib/receipt-encoder";
+import { isThermalPrintingEnabled, printThermalReceipt } from "@/_lib/thermal-printer";
 
 type PrintJob = {
   order: TOrderResponse;
@@ -149,12 +151,44 @@ export default function OrderPageContent() {
     setSelectedCategory(category || null);
   }
 
-  function schedulePrint(orderIdToMark: number, printedQty: Record<number, number>, onAfterPrint?: () => void) {
+  function schedulePrint(
+    order: TOrderResponse,
+    mode: "full" | "additional",
+    printedQty: Record<number, number>,
+    onAfterPrint?: () => void,
+  ) {
     setTimeout(async () => {
-      window.print();
+      let printedViaThermal = false;
+
+      if (isThermalPrintingEnabled()) {
+        try {
+          const bytes = buildReceiptBytes({
+            order,
+            settings,
+            observation,
+            printMode: mode,
+            printedItemQuantities: printedQty,
+            groupedCustomerNames: getGroupedOrders(order, orders).map((groupedOrder) => groupedOrder.customerName),
+          });
+
+          if (bytes) {
+            await printThermalReceipt(bytes);
+          }
+
+          printedViaThermal = true;
+        } catch (error) {
+          setStockError(
+            `Não foi possível imprimir na impressora térmica${error instanceof Error ? ` (${error.message})` : ""}. Imprimindo pelo navegador.`,
+          );
+        }
+      }
+
+      if (!printedViaThermal) {
+        window.print();
+      }
 
       await markOrderItemsPrinted.mutateAsync({
-        orderId: orderIdToMark,
+        orderId: order.id,
         printedItemQuantities: printedQty,
       });
 
@@ -433,7 +467,7 @@ export default function OrderPageContent() {
 
       setPrintedItemQuantities(printedQty);
 
-      schedulePrint(updatedOrder.id, printedQty, () => resetCart());
+      schedulePrint(orderWithPrintedItems, "full", printedQty, () => resetCart());
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
     } finally {
@@ -455,12 +489,14 @@ export default function OrderPageContent() {
       printedQty[item.id] = item.quantity;
     });
 
+    const orderForAdditionalPrint = { ...currentOrder, printedItemQuantities: printedItemQuantities };
+
     setPrintJob({
-      order: { ...currentOrder, printedItemQuantities: printedItemQuantities },
+      order: orderForAdditionalPrint,
       mode: "additional",
     });
 
-    schedulePrint(currentOrder.id, printedQty, () => setPrintedItemQuantities(printedQty));
+    schedulePrint(orderForAdditionalPrint, "additional", printedQty, () => setPrintedItemQuantities(printedQty));
   }
 
   function clearCartState() {
@@ -500,7 +536,7 @@ export default function OrderPageContent() {
       setIsEditOrderDialogOpen(false);
       setPrintJob({ order: orderForPrint, mode: "full" });
 
-      schedulePrint(currentOrder.id, printedQty);
+      schedulePrint(orderForPrint, "full", printedQty);
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível reenviar o pedido.");
     } finally {
