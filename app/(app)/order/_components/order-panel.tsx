@@ -49,7 +49,7 @@ function ProductButton({
       className={
         listLayout
           ? `h-auto w-full justify-between gap-3 px-4 py-3 ${lowStockClassName}`
-          : `relative h-28 min-w-32 ${lowStockClassName}`
+          : `relative h-28 min-w-32 bg-muted hover:bg-muted-foreground/20 ${lowStockClassName}`
       }
     >
       {listLayout ? (
@@ -185,9 +185,10 @@ export function OrderPanel({
               const outOfStock = available !== null && available <= 0;
               const lowStockThreshold = product.lowStockThreshold ?? 5;
               const isLowStock = available !== null && available <= lowStockThreshold;
-              const lowStockClassName =
-                isLowStock && !outOfStock
-                  ? "bg-destructive/15 hover:bg-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/25"
+              const lowStockClassName = outOfStock
+                ? "bg-muted dark:bg-muted-foreground/25"
+                : isLowStock
+                  ? "bg-destructive/5 hover:bg-destructive/10 dark:bg-destructive/10 dark:hover:bg-destructive/25"
                   : "";
 
               const stockLabel = outOfStock ? (
