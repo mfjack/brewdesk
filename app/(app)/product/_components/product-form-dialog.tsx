@@ -166,7 +166,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
       costPrice,
       quantity: data.trackStock ? Number(data.quantity) || 0 : 0,
       trackStock: data.trackStock,
-      lowStockThreshold: data.trackStock ? Number(data.lowStockThreshold) || 0 : 0,
+      lowStockThreshold: data.trackStock || recipe.length > 0 ? Number(data.lowStockThreshold) || 5 : 0,
       category,
       recipe,
     };
@@ -308,12 +308,14 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
             />
           </SettingRow>
 
-          {trackStock && (
+          {(trackStock || hasRecipe) && (
             <div className="flex gap-2">
-              <div className="flex flex-1 flex-col gap-1">
-                <label className="text-sm font-medium">Quantidade em estoque</label>
-                <Input type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
-              </div>
+              {trackStock && (
+                <div className="flex flex-1 flex-col gap-1">
+                  <label className="text-sm font-medium">Quantidade em estoque</label>
+                  <Input type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
+                </div>
+              )}
 
               <div className="flex flex-1 flex-col gap-1">
                 <label className="text-sm font-medium">Alertar com estoque baixo</label>
@@ -321,7 +323,11 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
                   type="number"
                   min="0"
                   placeholder="Ex.: 5"
-                  title="Alertar quando o estoque ficar menor ou igual a esse valor"
+                  title={
+                    hasRecipe && !trackStock
+                      ? "Alertar quando der pra fazer só essa quantidade ou menos com o estoque de insumos atual"
+                      : "Alertar quando o estoque ficar menor ou igual a esse valor"
+                  }
                   {...register("lowStockThreshold")}
                 />
               </div>

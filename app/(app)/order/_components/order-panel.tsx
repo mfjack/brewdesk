@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { EmptyState } from "@/_components/ui/empty-state";
@@ -11,6 +12,70 @@ import { isDraftOrder } from "../order-math";
 import { ScrollText } from "lucide-react";
 import { Header } from "@/_components/ui/header";
 import Link from "next/link";
+
+function QuantityBadge({ quantity, className = "" }: { quantity: number; className?: string }) {
+  return (
+    <span
+      className={`flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow ${className}`}
+    >
+      {quantity}
+    </span>
+  );
+}
+
+function ProductButton({
+  product,
+  quantity,
+  outOfStock,
+  lowStockClassName,
+  stockLabel,
+  listLayout,
+  onClick,
+}: {
+  product: TProduct;
+  quantity: number;
+  outOfStock: boolean;
+  lowStockClassName: string;
+  stockLabel: ReactNode;
+  listLayout: boolean | undefined;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      size="lg"
+      variant="secondary"
+      onClick={onClick}
+      disabled={outOfStock}
+      className={
+        listLayout ? `h-auto w-full justify-between gap-3 px-4 py-3 ${lowStockClassName}` : `relative h-24 ${lowStockClassName}`
+      }
+    >
+      {listLayout ? (
+        <>
+          <span className="flex items-center gap-2">
+            {quantity > 0 && <QuantityBadge quantity={quantity} />}
+            <span className="text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
+          </span>
+
+          <span className="flex items-center gap-2">
+            {stockLabel}
+            <span className="text-sm font-medium">{formatCurrency(product.price)}</span>
+          </span>
+        </>
+      ) : (
+        <>
+          {quantity > 0 && <QuantityBadge quantity={quantity} className="absolute -top-2 -right-2 z-10" />}
+
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-center text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
+            <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
+            {stockLabel}
+          </div>
+        </>
+      )}
+    </Button>
+  );
+}
 
 export function OrderPanel({
   categories,
@@ -116,11 +181,11 @@ export function OrderPanel({
                     ? product.quantity - quantity
                     : null;
               const outOfStock = available !== null && available <= 0;
-              const lowStockThreshold = product.recipe.length > 0 ? product.lowStockThreshold || 5 : (product.lowStockThreshold ?? 5);
+              const lowStockThreshold = product.lowStockThreshold ?? 5;
               const isLowStock = available !== null && available <= lowStockThreshold;
               const lowStockClassName =
                 isLowStock && !outOfStock
-                  ? "bg-destructive/10 hover:bg-destructive/15 dark:bg-destructive/15 dark:hover:bg-destructive/20"
+                  ? "bg-destructive/15 hover:bg-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/25"
                   : "";
 
               const stockLabel = outOfStock ? (
@@ -129,56 +194,17 @@ export function OrderPanel({
                 isLowStock && <span className="text-[10px] font-semibold text-destructive">Restam {available}</span>
               );
 
-              if (listLayout) {
-                return (
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    onClick={() => onAddProduct(product)}
-                    key={product.id}
-                    disabled={outOfStock}
-                    className={`h-auto w-full justify-between gap-3 px-4 py-3 ${lowStockClassName}`}
-                  >
-                    <span className="flex items-center gap-2">
-                      {quantity > 0 && (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow">
-                          {quantity}
-                        </span>
-                      )}
-                      <span className="text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
-                    </span>
-
-                    <span className="flex items-center gap-2">
-                      {stockLabel}
-                      <span className="text-sm font-medium">{formatCurrency(product.price)}</span>
-                    </span>
-                  </Button>
-                );
-              }
-
               return (
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  onClick={() => onAddProduct(product)}
+                <ProductButton
                   key={product.id}
-                  disabled={outOfStock}
-                  className={`relative h-24 ${lowStockClassName}`}
-                >
-                  {quantity > 0 && (
-                    <span
-                      className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center
-                      rounded-full bg-primary text-xs font-bold text-primary-foreground shadow"
-                    >
-                      {quantity}
-                    </span>
-                  )}
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-center text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
-                    <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
-                    {stockLabel}
-                  </div>
-                </Button>
+                  product={product}
+                  quantity={quantity}
+                  outOfStock={outOfStock}
+                  lowStockClassName={lowStockClassName}
+                  stockLabel={stockLabel}
+                  listLayout={listLayout}
+                  onClick={() => onAddProduct(product)}
+                />
               );
             })
           )}
