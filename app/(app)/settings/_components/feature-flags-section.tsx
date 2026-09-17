@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { Switch } from "@/_components/ui/switch";
 import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { SettingRow } from "@/_components/ui/setting-row";
 import { ThemeToggle } from "@/_components/app/theme-toggle";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
@@ -41,6 +42,7 @@ const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; des
 export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | undefined }) {
   const updateSettings = useUpdateSettings();
   const isHydrated = useIsHydrated();
+  const takeoutFeeId = useId();
   const [takeoutFeeInput, setTakeoutFeeInput] = useState<string | null>(null);
 
   function handleToggle(key: keyof TFeatureFlags, value: boolean) {
@@ -60,7 +62,7 @@ export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | u
     setTakeoutFeeInput(null);
   }
 
-  const takeoutFeeDisplayValue = takeoutFeeInput ?? (settings ? String(settings.takeoutFee) : "");
+  const takeoutFeeDisplayValue = takeoutFeeInput ?? (settings && settings.takeoutFee > 0 ? String(settings.takeoutFee) : "");
 
   return (
     <div className="max-w-lg space-y-3">
@@ -79,15 +81,19 @@ export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | u
           description="Permite marcar a comanda como para levar e cobrar a embalagem."
           extra={
             <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground whitespace-nowrap">Valor da embalagem</label>
+              <Label htmlFor={takeoutFeeId} className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                Valor da embalagem
+              </Label>
               <div className="relative w-24">
                 <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                   R$
                 </span>
                 <Input
+                  id={takeoutFeeId}
                   type="number"
                   min={0}
                   step="0.01"
+                  inputMode="decimal"
                   className="pl-7"
                   placeholder="0,00"
                   value={takeoutFeeDisplayValue}

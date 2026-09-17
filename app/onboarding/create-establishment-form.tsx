@@ -1,25 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { supabase } from "@/_lib/supabase/client";
+
+const createEstablishmentFormSchema = z.object({
+  name: z.string().trim().min(1, "Campo obrigatório."),
+});
+
+type TCreateEstablishmentFormValues = z.infer<typeof createEstablishmentFormSchema>;
 
 export function CreateEstablishmentForm() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const nameId = useId();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<TCreateEstablishmentFormValues>({
+    resolver: zodResolver(createEstablishmentFormSchema),
+    defaultValues: { name: "" },
+  });
 
-    if (!name.trim()) {
-      return;
-    }
-
+  async function handleCreateEstablishment(data: TCreateEstablishmentFormValues) {
     setIsSubmitting(true);
     setError(null);
 
@@ -36,7 +49,7 @@ export function CreateEstablishmentForm() {
 
     const { data: establishment, error: establishmentError } = await supabase
       .from("establishments")
-      .insert({ name: name.trim(), owner_user_id: user.id })
+      .insert({ name: data.name, owner_user_id: user.id })
       .select()
       .single();
 
@@ -49,7 +62,7 @@ export function CreateEstablishmentForm() {
 
     const { error: settingsError } = await supabase
       .from("settings")
-      .insert({ establishment_id: establishment.id, name: name.trim() });
+      .insert({ establishment_id: establishment.id, name: data.name });
 
     if (settingsError) {
       setError(settingsError.message);
@@ -63,20 +76,24 @@ export function CreateEstablishmentForm() {
   }
 
   return (
-    <form className="flex w-full max-w-sm flex-col gap-3" onSubmit={handleSubmit}>
-      <Input
-        autoFocus
-        placeholder="Nome do estabelecimento"
-        value={name}
-        onChange={(event) => {
-          setName(event.target.value);
-          setError(null);
-        }}
-      />
+    <form className="flex w-full max-w-sm flex-col gap-3" onSubmit={handleSubmit(handleCreateEstablishment)} noValidate>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor={nameId} className="sr-only">
+          Nome do estabelecimento
+        </Label>
+        <Input
+          id={nameId}
+          autoFocus
+          autoComplete="organization"
+          placeholder="Nome do estabelecimento"
+          aria-invalid={Boolean(errors.name)}
+          {...register("name")}
+        />
+      </div>
 
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {(errors.name || error) && <p className="text-xs text-destructive">{errors.name?.message ?? error}</p>}
 
-      <Button type="submit" size="lg" disabled={isSubmitting || !name.trim()}>
+      <Button type="submit" size="lg" disabled={isSubmitting}>
         {isSubmitting ? "Criando..." : "Criar estabelecimento"}
       </Button>
     </form>

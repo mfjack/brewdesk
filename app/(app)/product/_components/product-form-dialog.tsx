@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import type { ReactNode } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { Textarea } from "@/_components/ui/textarea";
 import { Switch } from "@/_components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
@@ -30,24 +33,27 @@ import { formatCurrency } from "@/_lib/format-currency";
 import { getMaxProducibleQuantity, getRecipeCost } from "@/_lib/recipe-cost";
 import type { SupplyUnit } from "@/_lib/supply-units";
 
-interface TRecipeRowFormValues {
-  supplyItemId: number;
-  quantity: string;
-  unit: string;
-}
+const productFormSchema = z.object({
+  name: z.string().trim().min(1, "Campo obrigatório."),
+  description: z.string(),
+  photoUrl: z.string().nullable(),
+  price: z.string().trim().min(1, "Campo obrigatório."),
+  costPrice: z.string(),
+  quantity: z.string(),
+  lowStockThreshold: z.string(),
+  categoryId: z.number().min(1, "Campo obrigatório."),
+  trackStock: z.boolean(),
+  recipe: z.array(
+    z.object({
+      supplyItemId: z.number(),
+      quantity: z.string(),
+      unit: z.string(),
+    }),
+  ),
+});
 
-export interface TProductFormValues {
-  name: string;
-  description: string;
-  photoUrl: string | null;
-  price: string;
-  costPrice: string;
-  quantity: string;
-  lowStockThreshold: string;
-  categoryId: number;
-  trackStock: boolean;
-  recipe: TRecipeRowFormValues[];
-}
+export type TProductFormValues = z.infer<typeof productFormSchema>;
+type TRecipeRowFormValues = TProductFormValues["recipe"][number];
 
 interface TProductFormDialog {
   categories: TCategory[] | undefined;
@@ -101,6 +107,13 @@ function parseRecipe(recipe: TRecipeRowFormValues[], supplyItems: TSupplyItem[])
 
 export function ProductFormDialog({ categories, supplyItems, trigger, product }: TProductFormDialog) {
   const isEditing = Boolean(product);
+  const nameId = useId();
+  const descriptionId = useId();
+  const priceId = useId();
+  const costPriceId = useId();
+  const categoryId = useId();
+  const quantityId = useId();
+  const lowStockThresholdId = useId();
 
   const [open, setOpen] = useState(false);
   const [photoFieldKey, setPhotoFieldKey] = useState(0);
@@ -117,6 +130,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
     setValue,
     formState: { errors },
   } = useForm<TProductFormValues>({
+    resolver: zodResolver(productFormSchema),
     defaultValues: buildDefaultValues(product),
   });
 
@@ -201,16 +215,16 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
           </DialogDescription>
         </DialogHeader>
 
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitProduct)}>
+        <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitProduct)} noValidate>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Nome do produto</label>
-            <Input {...register("name", { required: true })} />
-            {errors.name && <p className="text-xs text-destructive">Campo obrigatório.</p>}
+            <Label htmlFor={nameId}>Nome do produto</Label>
+            <Input id={nameId} autoComplete="off" aria-invalid={Boolean(errors.name)} {...register("name")} />
+            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Descrição</label>
-            <Textarea placeholder="Opcional" rows={3} {...register("description")} />
+            <Label htmlFor={descriptionId}>Descrição</Label>
+            <Textarea id={descriptionId} placeholder="Opcional" rows={3} {...register("description")} />
           </div>
 
           <Controller
@@ -228,23 +242,26 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
             )}
           />
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Preço de venda</label>
+              <Label htmlFor={priceId}>Preço de venda</Label>
               <Input
+                id={priceId}
                 type="number"
                 step="0.01"
                 min="0"
                 placeholder="Quanto o cliente paga"
-                {...register("price", { required: true })}
+                aria-invalid={Boolean(errors.price)}
+                {...register("price")}
               />
-              {errors.price && <p className="text-xs text-destructive">Campo obrigatório.</p>}
+              {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
             </div>
 
             <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Preço de custo</label>
+              <Label htmlFor={costPriceId}>Preço de custo</Label>
               {hasRecipe ? (
                 <div
+                  id={costPriceId}
                   className="flex h-10 items-center rounded-lg border border-input bg-input/30 px-2.5 text-sm"
                   title="Calculado pela ficha técnica"
                 >
@@ -252,6 +269,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
                 </div>
               ) : (
                 <Input
+                  id={costPriceId}
                   type="number"
                   step="0.01"
                   min="0"
@@ -277,14 +295,13 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
           />
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Categoria</label>
+            <Label htmlFor={categoryId}>Categoria</Label>
             <Controller
               control={control}
               name="categoryId"
-              rules={{ required: true }}
               render={({ field }) => (
                 <Select value={field.value ? String(field.value) : ""} onValueChange={(value) => field.onChange(Number(value))}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id={categoryId} className="w-full" aria-invalid={Boolean(errors.categoryId)}>
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                   <SelectContent>
@@ -297,7 +314,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
                 </Select>
               )}
             />
-            {errors.categoryId && <p className="text-xs text-destructive">Campo obrigatório.</p>}
+            {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message}</p>}
           </div>
 
           <SettingRow label="Controlar estoque" description="Diminui automaticamente a cada venda no PDV.">
@@ -309,17 +326,18 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
           </SettingRow>
 
           {(trackStock || hasRecipe) && (
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               {trackStock && (
                 <div className="flex flex-1 flex-col gap-1">
-                  <label className="text-sm font-medium">Quantidade em estoque</label>
-                  <Input type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
+                  <Label htmlFor={quantityId}>Quantidade em estoque</Label>
+                  <Input id={quantityId} type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
                 </div>
               )}
 
               <div className="flex flex-1 flex-col gap-1">
-                <label className="text-sm font-medium">Alertar com estoque baixo</label>
+                <Label htmlFor={lowStockThresholdId}>Alertar com estoque baixo</Label>
                 <Input
+                  id={lowStockThresholdId}
                   type="number"
                   min="0"
                   placeholder="Ex.: 5"

@@ -1,21 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { LockKeyhole } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 import { setActiveOperator, useActiveOperator } from "@/_lib/operator-session";
 import { toTitleCase } from "@/_lib/to-title-case";
 
+const pinFormSchema = z.object({
+  pin: z.string().length(4, "Digite os 4 dígitos do PIN."),
+});
+
+type TPinFormValues = z.infer<typeof pinFormSchema>;
+
 export function OperatorGate({ children }: { children: React.ReactNode }) {
   const { data: settings, isLoading } = useGetSettings();
   const activeOperator = useActiveOperator();
+  const pinId = useId();
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState<string | null>(null);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm<TPinFormValues>({
+    resolver: zodResolver(pinFormSchema),
+    defaultValues: { pin: "" },
+  });
 
   const operators = settings?.operators ?? [];
 
@@ -25,21 +45,25 @@ export function OperatorGate({ children }: { children: React.ReactNode }) {
 
   const selectedOperator = operators.find((operator) => operator.id === selectedId);
 
-  function handleConfirmPin() {
+  function selectOperator(operatorId: number) {
+    setSelectedId(operatorId);
+    reset({ pin: "" });
+  }
+
+  function handleConfirmPin(data: TPinFormValues) {
     if (!selectedOperator) {
       return;
     }
 
-    if (pin !== selectedOperator.pin) {
-      setError("PIN incorreto.");
-      setPin("");
+    if (data.pin !== selectedOperator.pin) {
+      setError("pin", { message: "PIN incorreto." });
+      reset({ pin: "" });
 
       return;
     }
 
     setActiveOperator({ id: selectedOperator.id, name: selectedOperator.name });
-    setPin("");
-    setError(null);
+    reset({ pin: "" });
     setSelectedId(null);
   }
 
@@ -54,54 +78,47 @@ export function OperatorGate({ children }: { children: React.ReactNode }) {
       {!selectedOperator ? (
         <div className="flex max-w-md flex-wrap justify-center gap-3">
           {operators.map((operator) => (
-            <Button key={operator.id} variant="outline" size="lg" onClick={() => setSelectedId(operator.id)}>
+            <Button key={operator.id} type="button" variant="outline" size="lg" onClick={() => selectOperator(operator.id)}>
               {toTitleCase(operator.name)}
             </Button>
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-3">
-          <p className="font-medium">{toTitleCase(selectedOperator.name)}</p>
+        <form className="flex flex-col items-center gap-3" onSubmit={handleSubmit(handleConfirmPin)} noValidate>
+          <Label htmlFor={pinId} className="text-base">
+            {toTitleCase(selectedOperator.name)}
+          </Label>
 
-          <Input
-            autoFocus
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
-            placeholder="PIN"
-            className="w-32 text-center"
-            value={pin}
-            onChange={(event) => {
-              setPin(event.target.value.replace(/\D/g, "").slice(0, 4));
-              setError(null);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                handleConfirmPin();
-              }
-            }}
+          <Controller
+            control={control}
+            name="pin"
+            render={({ field }) => (
+              <Input
+                id={pinId}
+                autoFocus
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={4}
+                placeholder="PIN"
+                className="w-32 text-center"
+                aria-invalid={Boolean(errors.pin)}
+                value={field.value}
+                onChange={(event) => field.onChange(event.target.value.replace(/\D/g, "").slice(0, 4))}
+              />
+            )}
           />
 
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {errors.pin && <p className="text-xs text-destructive">{errors.pin.message}</p>}
 
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setSelectedId(null);
-                setPin("");
-                setError(null);
-              }}
-            >
+            <Button type="button" variant="ghost" onClick={() => setSelectedId(null)}>
               Voltar
             </Button>
 
-            <Button type="button" onClick={handleConfirmPin} disabled={pin.length !== 4}>
-              Entrar
-            </Button>
+            <Button type="submit">Entrar</Button>
           </div>
-        </div>
+        </form>
       )}
     </div>
   );

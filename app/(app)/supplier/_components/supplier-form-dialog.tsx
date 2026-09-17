@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import type { ReactNode } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import {
   Dialog,
@@ -23,14 +26,16 @@ import type { TSupplier } from "../../order/interface";
 import { DELIVERY_PERIODS, WEEKDAYS, type DeliveryPeriod, type Weekday } from "@/_lib/delivery-schedule";
 import { formatPhone } from "@/_lib/masks";
 
-interface TSupplierFormValues {
-  companyName: string;
-  whatsapp: string;
-  suppliesDescription: string;
-  purchaseLink: string;
-  deliveryDays: string[];
-  deliveryPeriod: string;
-}
+const supplierFormSchema = z.object({
+  companyName: z.string().trim().min(1, "Campo obrigatório."),
+  whatsapp: z.string(),
+  suppliesDescription: z.string(),
+  purchaseLink: z.string(),
+  deliveryDays: z.array(z.string()),
+  deliveryPeriod: z.string(),
+});
+
+type TSupplierFormValues = z.infer<typeof supplierFormSchema>;
 
 interface TSupplierFormDialog {
   trigger: ReactNode;
@@ -50,6 +55,10 @@ function buildDefaultValues(supplier?: TSupplier): TSupplierFormValues {
 
 export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
   const isEditing = Boolean(supplier);
+  const companyNameId = useId();
+  const whatsappId = useId();
+  const suppliesDescriptionId = useId();
+  const purchaseLinkId = useId();
 
   const [open, setOpen] = useState(false);
 
@@ -63,6 +72,7 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
     reset,
     formState: { errors },
   } = useForm<TSupplierFormValues>({
+    resolver: zodResolver(supplierFormSchema),
     defaultValues: buildDefaultValues(supplier),
   });
 
@@ -106,20 +116,29 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
           </DialogDescription>
         </DialogHeader>
 
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitSupplier)}>
+        <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitSupplier)} noValidate>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Empresa</label>
-            <Input placeholder="Nome da empresa" {...register("companyName", { required: true })} />
-            {errors.companyName && <p className="text-xs text-destructive">Campo obrigatório.</p>}
+            <Label htmlFor={companyNameId}>Empresa</Label>
+            <Input
+              id={companyNameId}
+              autoComplete="off"
+              placeholder="Nome da empresa"
+              aria-invalid={Boolean(errors.companyName)}
+              {...register("companyName")}
+            />
+            {errors.companyName && <p className="text-xs text-destructive">{errors.companyName.message}</p>}
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">WhatsApp</label>
+            <Label htmlFor={whatsappId}>WhatsApp</Label>
             <Controller
               control={control}
               name="whatsapp"
               render={({ field }) => (
                 <Input
+                  id={whatsappId}
+                  autoComplete="off"
+                  inputMode="numeric"
                   placeholder="Ex.: 22 99999-9999"
                   value={field.value}
                   onChange={(event) => field.onChange(formatPhone(event.target.value))}
@@ -129,17 +148,28 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">O que fornece</label>
-            <Input placeholder="Ex.: Café em grãos, leite, copos" {...register("suppliesDescription")} />
+            <Label htmlFor={suppliesDescriptionId}>O que fornece</Label>
+            <Input
+              id={suppliesDescriptionId}
+              autoComplete="off"
+              placeholder="Ex.: Café em grãos, leite, copos"
+              {...register("suppliesDescription")}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Link de compra</label>
-            <Input placeholder="Ex.: link do produto no Mercado Livre" {...register("purchaseLink")} />
+            <Label htmlFor={purchaseLinkId}>Link de compra</Label>
+            <Input
+              id={purchaseLinkId}
+              type="url"
+              autoComplete="off"
+              placeholder="Ex.: link do produto no Mercado Livre"
+              {...register("purchaseLink")}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Dias de entrega</label>
+            <Label>Dias de entrega</Label>
             <Controller
               control={control}
               name="deliveryDays"
@@ -154,6 +184,7 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
                         type="button"
                         size="sm"
                         variant={isSelected ? "default" : "outline"}
+                        aria-pressed={isSelected}
                         onClick={() =>
                           field.onChange(
                             isSelected ? field.value.filter((item) => item !== day) : [...field.value, day],
@@ -170,7 +201,7 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Horário de entrega</label>
+            <Label>Horário de entrega</Label>
             <Controller
               control={control}
               name="deliveryPeriod"

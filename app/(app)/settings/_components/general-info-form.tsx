@@ -1,9 +1,13 @@
 "use client";
 
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { Textarea } from "@/_components/ui/textarea";
 import { ImageUploadField } from "@/_components/ui/image-upload-field";
 
@@ -12,18 +16,25 @@ import type { TStoreSettings } from "../../order/interface";
 import { defaultFeatureFlags, defaultTakeoutFee } from "@/_lib/store/settings";
 import { formatCnpj, formatPhone } from "@/_lib/masks";
 
-interface TSettingsFormValues {
-  name: string;
-  cnpj: string;
-  phone: string;
-  address: string;
-  receiptFooterMessage: string;
-  logoUrl: string | null;
-  pixQrCodeUrl: string | null;
-}
+const settingsFormSchema = z.object({
+  name: z.string().trim().min(1, "Campo obrigatório."),
+  cnpj: z.string(),
+  phone: z.string(),
+  address: z.string(),
+  receiptFooterMessage: z.string(),
+  logoUrl: z.string().nullable(),
+  pixQrCodeUrl: z.string().nullable(),
+});
+
+type TSettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undefined }) {
   const updateSettings = useUpdateSettings();
+  const nameId = useId();
+  const cnpjId = useId();
+  const phoneId = useId();
+  const addressId = useId();
+  const receiptFooterMessageId = useId();
 
   const {
     register,
@@ -31,6 +42,7 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
     control,
     formState: { errors },
   } = useForm<TSettingsFormValues>({
+    resolver: zodResolver(settingsFormSchema),
     defaultValues: { name: "", cnpj: "", phone: "", address: "", receiptFooterMessage: "", logoUrl: null, pixQrCodeUrl: null },
     values: settings
       ? {
@@ -61,7 +73,7 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
   }
 
   return (
-    <form className="flex max-w-lg flex-col gap-4" onSubmit={handleSubmit(handleSubmitSettings)}>
+    <form className="flex max-w-lg flex-col gap-4" onSubmit={handleSubmit(handleSubmitSettings)} noValidate>
       <Controller
         control={control}
         name="logoUrl"
@@ -97,19 +109,28 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
       />
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Nome do estabelecimento</label>
-        <Input placeholder="Nome do estabelecimento" {...register("name", { required: true })} />
-        {errors.name && <p className="text-xs text-destructive">Campo obrigatório.</p>}
+        <Label htmlFor={nameId}>Nome do estabelecimento</Label>
+        <Input
+          id={nameId}
+          autoComplete="organization"
+          placeholder="Nome do estabelecimento"
+          aria-invalid={Boolean(errors.name)}
+          {...register("name")}
+        />
+        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex flex-1 flex-col gap-2">
-          <label className="text-sm font-medium">CNPJ</label>
+          <Label htmlFor={cnpjId}>CNPJ</Label>
           <Controller
             control={control}
             name="cnpj"
             render={({ field }) => (
               <Input
+                id={cnpjId}
+                inputMode="numeric"
+                autoComplete="off"
                 placeholder="00.000.000/0000-00"
                 value={field.value}
                 onChange={(event) => field.onChange(formatCnpj(event.target.value))}
@@ -119,12 +140,15 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
         </div>
 
         <div className="flex flex-1 flex-col gap-2">
-          <label className="text-sm font-medium">Telefone</label>
+          <Label htmlFor={phoneId}>Telefone</Label>
           <Controller
             control={control}
             name="phone"
             render={({ field }) => (
               <Input
+                id={phoneId}
+                inputMode="numeric"
+                autoComplete="tel"
                 placeholder="00 00000-0000"
                 value={field.value}
                 onChange={(event) => field.onChange(formatPhone(event.target.value))}
@@ -135,13 +159,13 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Endereço</label>
-        <Textarea placeholder="Rua, número, bairro, cidade - UF" rows={2} {...register("address")} />
+        <Label htmlFor={addressId}>Endereço</Label>
+        <Textarea id={addressId} autoComplete="street-address" placeholder="Rua, número, bairro, cidade - UF" rows={2} {...register("address")} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Mensagem no rodapé da comanda</label>
-        <Textarea placeholder="Ex.: Volte sempre! (opcional)" rows={2} {...register("receiptFooterMessage")} />
+        <Label htmlFor={receiptFooterMessageId}>Mensagem no rodapé da comanda</Label>
+        <Textarea id={receiptFooterMessageId} placeholder="Ex.: Volte sempre! (opcional)" rows={2} {...register("receiptFooterMessage")} />
       </div>
 
       <div>

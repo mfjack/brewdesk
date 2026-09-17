@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import type { ReactNode } from "react";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import {
   Dialog,
@@ -23,16 +26,18 @@ import type { TSupplier, TSupplyItem } from "../../order/interface";
 import { formatUnit, SUPPLY_UNITS, type SupplyUnit } from "@/_lib/supply-units";
 import { toTitleCase } from "@/_lib/to-title-case";
 
-interface TStockFormValues {
-  name: string;
-  brand: string;
-  quantity: string;
-  unit: string;
-  minQuantity: string;
-  costPrice: string;
-  supplierId: number;
-  expiresAt: string;
-}
+const stockFormSchema = z.object({
+  name: z.string().trim().min(1, "Campo obrigatório."),
+  brand: z.string(),
+  quantity: z.string(),
+  unit: z.string().min(1, "Campo obrigatório."),
+  minQuantity: z.string(),
+  costPrice: z.string(),
+  supplierId: z.number(),
+  expiresAt: z.string(),
+});
+
+type TStockFormValues = z.infer<typeof stockFormSchema>;
 
 interface TStockFormDialog {
   suppliers: TSupplier[] | undefined;
@@ -55,6 +60,14 @@ function buildDefaultValues(supplyItem?: TSupplyItem): TStockFormValues {
 
 export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDialog) {
   const isEditing = Boolean(supplyItem);
+  const nameId = useId();
+  const brandId = useId();
+  const quantityId = useId();
+  const unitId = useId();
+  const minQuantityId = useId();
+  const costPriceId = useId();
+  const supplierId = useId();
+  const expiresAtId = useId();
 
   const [open, setOpen] = useState(false);
 
@@ -68,6 +81,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
     reset,
     formState: { errors },
   } = useForm<TStockFormValues>({
+    resolver: zodResolver(stockFormSchema),
     defaultValues: buildDefaultValues(supplyItem),
   });
 
@@ -113,22 +127,29 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
           </DialogDescription>
         </DialogHeader>
 
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitSupplyItem)}>
+        <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitSupplyItem)} noValidate>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Nome</label>
-            <Input placeholder="Ex.: Mussarela" {...register("name", { required: true })} />
-            {errors.name && <p className="text-xs text-destructive">Campo obrigatório.</p>}
+            <Label htmlFor={nameId}>Nome</Label>
+            <Input
+              id={nameId}
+              autoComplete="off"
+              placeholder="Ex.: Mussarela"
+              aria-invalid={Boolean(errors.name)}
+              {...register("name")}
+            />
+            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Marca</label>
-            <Input placeholder="Opcional" {...register("brand")} />
+            <Label htmlFor={brandId}>Marca</Label>
+            <Input id={brandId} autoComplete="off" placeholder="Opcional" {...register("brand")} />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Quantidade em estoque</label>
+              <Label htmlFor={quantityId}>Quantidade em estoque</Label>
               <Input
+                id={quantityId}
                 type="number"
                 step="0.01"
                 min="0"
@@ -139,14 +160,13 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
             </div>
 
             <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-medium">Unidade de medida</label>
+              <Label htmlFor={unitId}>Unidade de medida</Label>
               <Controller
                 control={control}
                 name="unit"
-                rules={{ required: true }}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id={unitId} className="w-full" aria-invalid={Boolean(errors.unit)}>
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -159,13 +179,14 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
                   </Select>
                 )}
               />
-              {errors.unit && <p className="text-xs text-destructive">Campo obrigatório.</p>}
+              {errors.unit && <p className="text-xs text-destructive">{errors.unit.message}</p>}
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Estoque mínimo (alerta)</label>
+            <Label htmlFor={minQuantityId}>Estoque mínimo (alerta)</Label>
             <Input
+              id={minQuantityId}
               type="number"
               step="0.01"
               min="0"
@@ -176,8 +197,9 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Valor total pago</label>
+            <Label htmlFor={costPriceId}>Valor total pago</Label>
             <Input
+              id={costPriceId}
               type="number"
               step="0.01"
               min="0"
@@ -188,7 +210,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Fornecedor</label>
+            <Label htmlFor={supplierId}>Fornecedor</Label>
             <Controller
               control={control}
               name="supplierId"
@@ -197,7 +219,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
                   value={field.value ? String(field.value) : ""}
                   onValueChange={(value) => field.onChange(Number(value))}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id={supplierId} className="w-full">
                     <SelectValue placeholder="Nenhum" />
                   </SelectTrigger>
                   <SelectContent>
@@ -214,8 +236,8 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Validade</label>
-            <Input type="date" placeholder="Opcional" {...register("expiresAt")} />
+            <Label htmlFor={expiresAtId}>Validade</Label>
+            <Input id={expiresAtId} type="date" placeholder="Opcional" {...register("expiresAt")} />
           </div>
 
           <DialogFooter>

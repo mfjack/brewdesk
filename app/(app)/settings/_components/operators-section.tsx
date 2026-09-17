@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { KeyRound, Trash2 } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { Badge } from "@/_components/ui/badge";
 import { Switch } from "@/_components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
@@ -17,54 +21,58 @@ import { useAddOperator } from "../mutation/useAddOperator";
 import { useDeleteOperator } from "../mutation/useDeleteOperator";
 import type { TStoreSettings } from "../../order/interface";
 
+const operatorFormSchema = z.object({
+  name: z.string().trim().min(1, "Campo obrigatório."),
+  pin: z.string().regex(/^\d{4}$/, "O PIN deve ter exatamente 4 dígitos."),
+  allowedRoutes: z.array(z.string()),
+});
+
+type TOperatorFormValues = z.infer<typeof operatorFormSchema>;
+
+const defaultOperatorFormValues: TOperatorFormValues = { name: "", pin: "", allowedRoutes: [] };
+
 export function OperatorsSection({ settings }: { settings: TStoreSettings | undefined }) {
   const addOperator = useAddOperator();
   const deleteOperator = useDeleteOperator();
   const isHydrated = useIsHydrated();
+  const nameId = useId();
+  const pinId = useId();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [operatorName, setOperatorName] = useState("");
-  const [operatorPin, setOperatorPin] = useState("");
-  const [allowedRoutes, setAllowedRoutes] = useState<string[]>([]);
-  const [operatorError, setOperatorError] = useState<string | null>(null);
+  const [routesError, setRoutesError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<TOperatorFormValues>({
+    resolver: zodResolver(operatorFormSchema),
+    defaultValues: defaultOperatorFormValues,
+  });
 
   const isFirstOperator = (settings?.operators.length ?? 0) === 0;
 
   function handleOpenDialog() {
-    setOperatorName("");
-    setOperatorPin("");
-    setAllowedRoutes([]);
-    setOperatorError(null);
+    reset(defaultOperatorFormValues);
+    setRoutesError(null);
     setIsDialogOpen(true);
   }
 
-  function handleTogglePage(path: string, checked: boolean) {
-    setAllowedRoutes((current) => (checked ? [...current, path] : current.filter((route) => route !== path)));
-  }
-
-  function handleAddOperator() {
-    if (!operatorName.trim()) {
-      return;
-    }
-
-    if (!/^\d{4}$/.test(operatorPin)) {
-      setOperatorError("O PIN deve ter exatamente 4 dígitos.");
+  function handleAddOperator(data: TOperatorFormValues) {
+    if (!isFirstOperator && data.allowedRoutes.length === 0) {
+      setRoutesError("Selecione ao menos uma página.");
 
       return;
     }
 
-    if (!isFirstOperator && allowedRoutes.length === 0) {
-      setOperatorError("Selecione ao menos uma página.");
-
-      return;
-    }
+    setRoutesError(null);
 
     addOperator.mutate(
-      { name: operatorName, pin: operatorPin, allowedRoutes },
-      {
-        onSuccess: () => setIsDialogOpen(false),
-      },
+      { name: data.name, pin: data.pin, allowedRoutes: data.allowedRoutes },
+      { onSuccess: () => setIsDialogOpen(false) },
     );
   }
 
@@ -97,6 +105,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
                 </div>
 
                 <Button
+                  type="button"
                   variant="destructive"
                   size="icon-sm"
                   onClick={() => handleDeleteOperator(operator.id)}
@@ -133,39 +142,62 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
             <DialogTitle>Novo operador</DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-3">
-            <Input
-              placeholder="Nome do operador"
-              value={operatorName}
-              onChange={(e) => {
-                setOperatorName(e.target.value);
-                setOperatorError(null);
-              }}
-            />
-
-            <Input
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              placeholder="PIN de 4 dígitos"
-              value={operatorPin}
-              onChange={(e) => {
-                setOperatorPin(e.target.value.replace(/\D/g, "").slice(0, 4));
-                setOperatorError(null);
-              }}
-            />
-
-            <div className="flex flex-col gap-2">
-              {APP_PAGES.map((page) => (
-                <div key={page.path} className="flex items-center justify-between gap-2">
-                  <span className="text-sm">{page.label}</span>
-                  <Switch
-                    checked={allowedRoutes.includes(page.path)}
-                    onCheckedChange={(checked) => handleTogglePage(page.path, checked)}
-                  />
-                </div>
-              ))}
+          <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleAddOperator)} noValidate>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor={nameId}>Nome do operador</Label>
+              <Input
+                id={nameId}
+                autoComplete="off"
+                placeholder="Nome do operador"
+                aria-invalid={Boolean(errors.name)}
+                {...register("name")}
+              />
+              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
+
+            <div className="flex flex-col gap-1">
+              <Label htmlFor={pinId}>PIN</Label>
+              <Controller
+                control={control}
+                name="pin"
+                render={({ field }) => (
+                  <Input
+                    id={pinId}
+                    type="password"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={4}
+                    placeholder="PIN de 4 dígitos"
+                    aria-invalid={Boolean(errors.pin)}
+                    value={field.value}
+                    onChange={(event) => field.onChange(event.target.value.replace(/\D/g, "").slice(0, 4))}
+                  />
+                )}
+              />
+              {errors.pin && <p className="text-xs text-destructive">{errors.pin.message}</p>}
+            </div>
+
+            <Controller
+              control={control}
+              name="allowedRoutes"
+              render={({ field }) => (
+                <div className="flex flex-col gap-2">
+                  {APP_PAGES.map((page) => (
+                    <div key={page.path} className="flex items-center justify-between gap-2">
+                      <span className="text-sm">{page.label}</span>
+                      <Switch
+                        checked={field.value.includes(page.path)}
+                        onCheckedChange={(checked) =>
+                          field.onChange(
+                            checked ? [...field.value, page.path] : field.value.filter((route) => route !== page.path),
+                          )
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            />
 
             {isFirstOperator && (
               <p className="text-xs text-muted-foreground">
@@ -174,14 +206,14 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
               </p>
             )}
 
-            {operatorError && <p className="text-xs text-destructive">{operatorError}</p>}
-          </div>
+            {routesError && <p className="text-xs text-destructive">{routesError}</p>}
 
-          <DialogFooter>
-            <Button onClick={handleAddOperator} disabled={addOperator.isPending || !operatorName.trim()}>
-              {addOperator.isPending ? "Salvando..." : "Adicionar"}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="submit" disabled={addOperator.isPending}>
+                {addOperator.isPending ? "Salvando..." : "Adicionar"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
