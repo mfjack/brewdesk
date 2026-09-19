@@ -100,6 +100,7 @@ export default function OrderPageContent() {
   const [isResendingFullOrder, setIsResendingFullOrder] = useState(false);
 
   const sendingOrderRef = useRef(false);
+  const clearedOrderIdRef = useRef<number | null>(null);
 
   const { data: categories } = useGetCategories();
   const { data: products } = useGetProducts();
@@ -116,7 +117,12 @@ export default function OrderPageContent() {
 
   const { data: existingOrder } = useGetOrderById(orderId ? Number(orderId) : null);
 
-  if (existingOrder && existingOrder.id !== syncedOrderId && !isOrderPaid(existingOrder)) {
+  if (
+    existingOrder &&
+    existingOrder.id !== syncedOrderId &&
+    existingOrder.id !== clearedOrderIdRef.current &&
+    !isOrderPaid(existingOrder)
+  ) {
     setSyncedOrderId(existingOrder.id);
     setCurrentOrder(existingOrder);
     setObservation(existingOrder.observation ?? "");
@@ -505,6 +511,7 @@ export default function OrderPageContent() {
   }
 
   function clearCartState() {
+    clearedOrderIdRef.current = currentOrder?.id ?? null;
     setCurrentOrder(null);
     setObservation("");
     setPrintedItemQuantities({});
