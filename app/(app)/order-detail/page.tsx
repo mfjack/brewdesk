@@ -230,32 +230,41 @@ export default function OrderDetailPage() {
           ) : (
             <div className="flex-1 overflow-auto p-4 no-scrollbar">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {filteredOrders.map((order: TOrderResponse) => (
-                  <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
-                    <span className="font-bold text-lg text-center">{toTitleCase(order.customerName)}</span>
+                {filteredOrders.map((order: TOrderResponse) => {
+                  const groupedOrders = settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : [];
 
-                    <GroupedOrdersBadge
-                      groupedOrders={settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : []}
-                      className="justify-center text-center"
-                    />
+                  return (
+                    <Card className="flex flex-col gap-2 p-4 justify-between" key={order.id}>
+                      <span className="font-bold text-lg text-center">{toTitleCase(order.customerName)}</span>
 
-                    {order.observation && (
-                      <p className="text-xs font-bold">
-                        Observação:
-                        <span className="text-xs font-medium text-muted-foreground"> {order.observation}</span>
-                      </p>
-                    )}
+                      <GroupedOrdersBadge groupedOrders={groupedOrders} className="justify-center text-center" />
 
-                    <Button asChild className="w-full mt-2" size="lg" variant="default">
-                      <Link href={`/order?orderId=${order.id}`}>Detalhes da comanda</Link>
-                    </Button>
+                      {order.observation && (
+                        <p className="text-xs font-bold">
+                          Observação:
+                          <span className="text-xs font-medium text-muted-foreground"> {order.observation}</span>
+                        </p>
+                      )}
 
-                    <Button type="button" className="w-full" size="lg" variant="outline" onClick={() => handleOpenPayment(order)}>
-                      <DollarSign />
-                      Pagamento
-                    </Button>
-                  </Card>
-                ))}
+                      <Button asChild className="w-full mt-2" size="lg" variant="default">
+                        <Link href={`/order?orderId=${order.id}`}>Detalhes da comanda</Link>
+                      </Button>
+
+                      {groupedOrders.length > 0 && (
+                        <Button
+                          type="button"
+                          className="w-full"
+                          size="lg"
+                          variant="outline"
+                          onClick={() => handleOpenPayment(order)}
+                        >
+                          <DollarSign />
+                          Pagamento
+                        </Button>
+                      )}
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           )}
