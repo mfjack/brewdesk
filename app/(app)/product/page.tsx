@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
@@ -35,7 +36,7 @@ export default function ProductPage() {
   const filteredProducts = products?.filter((product) => product.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   function handleDeleteProduct(productId: number) {
-    deleteProduct.mutate(productId);
+    deleteProduct.mutate(productId, { onSuccess: () => toast.success("Produto excluído com sucesso!") });
   }
 
   function isRecipeLowStock(product: TProduct) {

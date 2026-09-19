@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
@@ -60,7 +61,7 @@ export default function StockPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   function handleDeleteSupplyItem(supplyItemId: number) {
-    deleteSupplyItem.mutate(supplyItemId);
+    deleteSupplyItem.mutate(supplyItemId, { onSuccess: () => toast.success("Insumo excluído com sucesso!") });
   }
 
   const lowStockItems = supplyItems?.filter((item) => isBelowMinQuantity(item.quantity, item.minQuantity)) ?? [];

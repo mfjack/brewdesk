@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
@@ -29,7 +30,7 @@ export default function CategoryPage() {
   );
 
   function handleDeleteCategory(categoryId: number) {
-    deleteCategory.mutate(categoryId);
+    deleteCategory.mutate(categoryId, { onSuccess: () => toast.success("Categoria excluída com sucesso!") });
   }
 
   return (

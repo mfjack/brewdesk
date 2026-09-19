@@ -4,6 +4,7 @@ import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
@@ -58,18 +59,21 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
   });
 
   function handleSubmitSettings(data: TSettingsFormValues) {
-    updateSettings.mutate({
-      name: data.name,
-      cnpj: data.cnpj || null,
-      phone: data.phone || null,
-      address: data.address || null,
-      logoUrl: data.logoUrl,
-      receiptFooterMessage: data.receiptFooterMessage || null,
-      operators: settings?.operators ?? [],
-      pixQrCodeUrl: data.pixQrCodeUrl,
-      featureFlags: settings?.featureFlags ?? defaultFeatureFlags,
-      takeoutFee: settings?.takeoutFee ?? defaultTakeoutFee,
-    });
+    updateSettings.mutate(
+      {
+        name: data.name,
+        cnpj: data.cnpj || null,
+        phone: data.phone || null,
+        address: data.address || null,
+        logoUrl: data.logoUrl,
+        receiptFooterMessage: data.receiptFooterMessage || null,
+        operators: settings?.operators ?? [],
+        pixQrCodeUrl: data.pixQrCodeUrl,
+        featureFlags: settings?.featureFlags ?? defaultFeatureFlags,
+        takeoutFee: settings?.takeoutFee ?? defaultTakeoutFee,
+      },
+      { onSuccess: () => toast.success("Configurações salvas com sucesso!") },
+    );
   }
 
   return (

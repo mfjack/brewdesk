@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Printer } from "lucide-react";
 
 import { SettingRow } from "@/_components/ui/setting-row";
@@ -42,10 +43,13 @@ export function ThermalPrinterSection() {
       const printer = await connectThermalPrinter();
 
       setPrinterName(printer.productName);
+      toast.success("Impressora pareada com sucesso!");
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
+      const message = `Não foi possível parear a impressora (${reason}). Tenta de novo e seleciona ela na lista.`;
 
-      setError(`Não foi possível parear a impressora (${reason}). Tenta de novo e seleciona ela na lista.`);
+      setError(message);
+      toast.error(message);
     } finally {
       setIsConnecting(false);
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Check, Eye } from "lucide-react";
 
 import { Separator } from "@/_components/ui/separator";
@@ -37,7 +38,7 @@ export default function FiadoPage() {
   const filteredOrders = openOrders.filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase()));
 
   function handleSettleOrder(orderId: number) {
-    setFiadoSettled.mutate({ orderId, settled: true });
+    setFiadoSettled.mutate({ orderId, settled: true }, { onSuccess: () => toast.success("Fiado quitado com sucesso!") });
   }
 
   if (!isCreditSaleEnabled) {

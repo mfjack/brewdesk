@@ -101,7 +101,15 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
     };
 
     if (supplyItem) {
-      updateSupplyItem.mutate({ id: supplyItem.id, ...payload }, { onSuccess: () => setOpen(false) });
+      updateSupplyItem.mutate(
+        { id: supplyItem.id, ...payload },
+        {
+          onSuccess: () => {
+            setOpen(false);
+            toast.success("Insumo atualizado com sucesso!");
+          },
+        },
+      );
     } else {
       createSupplyItem.mutate(payload, {
         onSuccess: () => {

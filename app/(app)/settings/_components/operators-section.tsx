@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { KeyRound, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
@@ -73,7 +74,12 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
 
     addOperator.mutate(
       { name: data.name, pin: data.pin, allowedRoutes: data.allowedRoutes },
-      { onSuccess: () => setIsDialogOpen(false) },
+      {
+        onSuccess: () => {
+          setIsDialogOpen(false);
+          toast.success("Operador adicionado com sucesso!");
+        },
+      },
     );
   }
 
@@ -85,6 +91,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
     setDeleteError(null);
 
     deleteOperator.mutate(operatorPendingDeletion.id, {
+      onSuccess: () => toast.success("Operador excluído com sucesso!"),
       onError: (error) => setDeleteError(error instanceof Error ? error.message : "Não foi possível excluir o operador."),
     });
 

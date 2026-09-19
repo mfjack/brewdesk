@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
@@ -26,7 +27,7 @@ export default function SupplierPage() {
   const deleteSupplier = useDeleteSupplier();
 
   function handleDeleteSupplier(supplierId: number) {
-    deleteSupplier.mutate(supplierId);
+    deleteSupplier.mutate(supplierId, { onSuccess: () => toast.success("Fornecedor excluído com sucesso!") });
   }
 
   return (

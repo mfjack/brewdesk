@@ -54,7 +54,15 @@ export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
 
   function handleSubmitCategory(data: TCategoryFormValues) {
     if (category) {
-      updateCategory.mutate({ id: category.id, name: data.name }, { onSuccess: () => setOpen(false) });
+      updateCategory.mutate(
+        { id: category.id, name: data.name },
+        {
+          onSuccess: () => {
+            setOpen(false);
+            toast.success("Categoria atualizada com sucesso!");
+          },
+        },
+      );
     } else {
       createCategory.mutate(data.name, {
         onSuccess: () => {

@@ -95,7 +95,15 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
     };
 
     if (supplier) {
-      updateSupplier.mutate({ id: supplier.id, ...payload }, { onSuccess: () => setOpen(false) });
+      updateSupplier.mutate(
+        { id: supplier.id, ...payload },
+        {
+          onSuccess: () => {
+            setOpen(false);
+            toast.success("Fornecedor atualizado com sucesso!");
+          },
+        },
+      );
     } else {
       createSupplier.mutate(payload, {
         onSuccess: () => {

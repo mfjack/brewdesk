@@ -189,7 +189,16 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
     const onError = (error: unknown) => setFormError(error instanceof Error ? error.message : "Não foi possível salvar o produto.");
 
     if (product) {
-      updateProduct.mutate({ id: product.id, ...payload }, { onSuccess: () => setOpen(false), onError });
+      updateProduct.mutate(
+        { id: product.id, ...payload },
+        {
+          onSuccess: () => {
+            setOpen(false);
+            toast.success("Produto atualizado com sucesso!");
+          },
+          onError,
+        },
+      );
     } else {
       createProduct.mutate(payload, {
         onSuccess: () => {

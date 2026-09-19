@@ -175,9 +175,10 @@ export default function OrderPageContent() {
 
           printedViaThermal = true;
         } catch (error) {
-          setStockError(
-            `Não foi possível imprimir na impressora térmica${error instanceof Error ? ` (${error.message})` : ""}. Imprimindo pelo navegador.`,
-          );
+          const message = `Não foi possível imprimir na impressora térmica${error instanceof Error ? ` (${error.message})` : ""}. Imprimindo pelo navegador.`;
+
+          setStockError(message);
+          toast.error(message);
         }
       }
 
@@ -189,6 +190,10 @@ export default function OrderPageContent() {
         orderId: order.id,
         printedItemQuantities: printedQty,
       });
+
+      if (printedViaThermal) {
+        toast.success("Recibo impresso com sucesso!");
+      }
 
       onAfterPrint?.();
       setPrintJob(null);
@@ -312,7 +317,10 @@ export default function OrderPageContent() {
     addOrderItem.mutate(
       { orderId: currentOrder.id, productId: product.id, quantity: 1 },
       {
-        onSuccess: (updatedOrder) => setCurrentOrder(updatedOrder),
+        onSuccess: (updatedOrder) => {
+          setCurrentOrder(updatedOrder);
+          toast.success("Item adicionado com sucesso!");
+        },
         onError: (error) => {
           setCurrentOrder(previousOrder);
           setStockError(error instanceof Error ? error.message : "Não foi possível adicionar o item.");
@@ -368,6 +376,7 @@ export default function OrderPageContent() {
         onSuccess: (updatedOrder) => {
           setCurrentOrder(updatedOrder);
           setPrintedItemQuantities(updatedOrder.printedItemQuantities ?? {});
+          toast.success("Item removido com sucesso!");
         },
         onError: (error) => {
           setCurrentOrder(previousOrder);
@@ -537,6 +546,8 @@ export default function OrderPageContent() {
       setPrintJob({ order: orderForPrint, mode: "full" });
 
       schedulePrint(orderForPrint, "full", printedQty);
+
+      toast.success("Pedido reenviado com sucesso!");
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível reenviar o pedido.");
     } finally {
@@ -563,6 +574,7 @@ export default function OrderPageContent() {
       setIsCancelDialogOpen(false);
       clearCartState();
       router.push("/order-detail");
+      toast.success("Comanda cancelada com sucesso!");
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível cancelar a comanda.");
     }
@@ -604,6 +616,7 @@ export default function OrderPageContent() {
 
         setIsPaymentDialogOpen(false);
         resetCart();
+        toast.success("Pagamento confirmado com sucesso!");
 
         return;
       }
@@ -621,6 +634,7 @@ export default function OrderPageContent() {
 
       setIsPaymentDialogOpen(false);
       resetCart();
+      toast.success("Pagamento confirmado com sucesso!");
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível concluir o pagamento.");
     } finally {
@@ -650,6 +664,7 @@ export default function OrderPageContent() {
       setIsPaymentDialogOpen(false);
       setIsSplitOpen(false);
       resetCart();
+      toast.success("Pagamento confirmado com sucesso!");
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível concluir o pagamento.");
     } finally {

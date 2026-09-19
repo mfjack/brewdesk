@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
@@ -140,6 +141,7 @@ export default function OrderDetailPage() {
 
     setPaymentOrders([]);
     router.push("/order");
+    toast.success("Pagamento confirmado com sucesso!");
   }
 
   async function handleConfirmSplitPayment(payments: TOrderPayment[]) {
@@ -155,6 +157,7 @@ export default function OrderDetailPage() {
 
     setPaymentOrders([]);
     router.push("/order");
+    toast.success("Pagamento confirmado com sucesso!");
   }
 
   function handlePrintHistoryOrder(order: TOrderResponse) {
@@ -172,13 +175,17 @@ export default function OrderDetailPage() {
           }
 
           printedViaThermal = true;
-        } catch {
-          // falls back to window.print() below
+        } catch (error) {
+          toast.error(
+            `Não foi possível imprimir na impressora térmica${error instanceof Error ? ` (${error.message})` : ""}. Imprimindo pelo navegador.`,
+          );
         }
       }
 
       if (!printedViaThermal) {
         window.print();
+      } else {
+        toast.success("Recibo impresso com sucesso!");
       }
 
       setPrintJob(null);
