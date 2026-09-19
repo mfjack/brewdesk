@@ -88,9 +88,13 @@ export function buildReceiptBytes({
 
   encoder.rule();
 
+  encoder.size(1, 2);
+
   displayItems.forEach((item) => {
     encoder.table(columns, [[`${item.quantity}x ${toTitleCase(item.product.name)}`, formatCurrency(item.quantity * item.unitPrice)]]);
   });
+
+  encoder.size(1, 1);
 
   if (!isAdditional && order.isTakeout) {
     encoder.table(columns, [["Embalagem para levar", formatCurrency(getChargedTakeoutFee(order))]]);

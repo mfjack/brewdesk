@@ -42,8 +42,10 @@ export function ThermalPrinterSection() {
       const printer = await connectThermalPrinter();
 
       setPrinterName(printer.productName);
-    } catch {
-      setError("Não foi possível parear a impressora. Tenta de novo e seleciona ela na lista.");
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+
+      setError(`Não foi possível parear a impressora (${reason}). Tenta de novo e seleciona ela na lista.`);
     } finally {
       setIsConnecting(false);
     }
