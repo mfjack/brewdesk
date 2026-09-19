@@ -7,7 +7,12 @@ import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { supabase } from "@/_lib/supabase/client";
+import { HAS_ESTABLISHMENT_COOKIE } from "@/_lib/has-establishment-cookie";
 import type { TStoreSettings } from "../../order/interface";
+
+function clearHasEstablishmentCookie() {
+  document.cookie = `${HAS_ESTABLISHMENT_COOKIE}=; Max-Age=0; path=/`;
+}
 
 export function AccountSection({ settings }: { settings: TStoreSettings | undefined }) {
   const [email, setEmail] = useState<string | null>(null);
@@ -22,6 +27,7 @@ export function AccountSection({ settings }: { settings: TStoreSettings | undefi
 
   async function handleSignOut() {
     await supabase.auth.signOut();
+    clearHasEstablishmentCookie();
     window.location.href = "/login";
   }
 
@@ -40,6 +46,7 @@ export function AccountSection({ settings }: { settings: TStoreSettings | undefi
       return;
     }
 
+    clearHasEstablishmentCookie();
     window.location.href = "/login";
   }
 

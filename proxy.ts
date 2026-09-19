@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { HAS_ESTABLISHMENT_COOKIE } from "@/_lib/has-establishment-cookie";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback"];
 
@@ -37,9 +38,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  const { data: establishment } = await supabase.from("establishments").select("id").maybeSingle();
-  const hasEstablishment = Boolean(establishment);
   const isOnboardingPath = request.nextUrl.pathname.startsWith("/onboarding");
+  const hasEstablishmentCookie = request.cookies.get(HAS_ESTABLISHMENT_COOKIE)?.value === "true";
+
+  let hasEstablishment = hasEstablishmentCookie;
+
+  if (!hasEstablishmentCookie) {
+    const { data: establishment } = await supabase.from("establishments").select("id").maybeSingle();
+
+    hasEstablishment = Boolean(establishment);
+
+    if (hasEstablishment) {
+      response.cookies.set(HAS_ESTABLISHMENT_COOKIE, "true", {
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24,
+      });
+    }
+  }
 
   if (!hasEstablishment && !isOnboardingPath && !isPublicPath) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
