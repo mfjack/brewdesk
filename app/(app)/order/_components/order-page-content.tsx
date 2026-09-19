@@ -317,10 +317,7 @@ export default function OrderPageContent() {
     addOrderItem.mutate(
       { orderId: currentOrder.id, productId: product.id, quantity: 1 },
       {
-        onSuccess: (updatedOrder) => {
-          setCurrentOrder(updatedOrder);
-          toast.success("Item adicionado com sucesso!");
-        },
+        onSuccess: (updatedOrder) => setCurrentOrder(updatedOrder),
         onError: (error) => {
           setCurrentOrder(previousOrder);
           setStockError(error instanceof Error ? error.message : "Não foi possível adicionar o item.");
@@ -376,7 +373,6 @@ export default function OrderPageContent() {
         onSuccess: (updatedOrder) => {
           setCurrentOrder(updatedOrder);
           setPrintedItemQuantities(updatedOrder.printedItemQuantities ?? {});
-          toast.success("Item removido com sucesso!");
         },
         onError: (error) => {
           setCurrentOrder(previousOrder);
