@@ -7,8 +7,9 @@ import { Input } from "@/_components/ui/input";
 import { SearchInput } from "@/_components/ui/search-input";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
-import { DollarSign, HandCoins, X } from "lucide-react";
+import { DollarSign, HandCoins, Printer, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useGetOrders } from "../order/query/useGetOrders";
 import { TOrderPayment, TOrderResponse, TPaymentMethod } from "../order/interface";
@@ -16,13 +17,16 @@ import { buildOrderPayment, getChargedTakeoutFee, getGroupedOrders, isOrderPaid 
 import { paymentMethodLabels } from "../order/payment-methods";
 import { PaymentDialog } from "../order/_components/payment-dialog";
 import { GroupedOrdersBadge } from "../order/_components/grouped-orders-badge";
+import { OrderReceipt } from "../order/_components/order-receipt";
+import { buildReceiptBytes } from "@/_lib/receipt-encoder";
+import { isThermalPrintingEnabled, printThermalReceipt } from "@/_lib/thermal-printer";
 import { formatCurrency } from "@/_lib/format-currency";
 import { Header } from "@/_components/ui/header";
 import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatDateTime } from "@/_lib/format-date";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
@@ -34,13 +38,15 @@ function toDateInputValue(date: Date): string {
 }
 
 export default function OrderDetailPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
 
   const [historySearchTerm, setHistorySearchTerm] = useState("");
   const [historyDate, setHistoryDate] = useState("");
   const [historyOrder, setHistoryOrder] = useState<TOrderResponse | null>(null);
+  const [printJob, setPrintJob] = useState<TOrderResponse | null>(null);
 
-  const [selectedOrder, setSelectedOrder] = useState<TOrderResponse | null>(null);
+  const [paymentOrders, setPaymentOrders] = useState<TOrderResponse[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CREDIT");
   const [amountReceived, setAmountReceived] = useState("");
   const [fiadoCustomerName, setFiadoCustomerName] = useState("");
@@ -75,7 +81,9 @@ export default function OrderDetailPage() {
   );
 
   function handleOpenPayment(order: TOrderResponse) {
-    setSelectedOrder(order);
+    const groupedOrders = settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : [];
+
+    setPaymentOrders([order, ...groupedOrders]);
     setPaymentMethod("CREDIT");
     setAmountReceived("");
     setFiadoCustomerName(order.customerName ?? "");
@@ -87,40 +95,101 @@ export default function OrderDetailPage() {
       return;
     }
 
-    setSelectedOrder(null);
+    setPaymentOrders([]);
   }
 
+  const combinedPaymentTotal = paymentOrders.reduce((sum, order) => sum + order.total, 0);
+
+  const combinedPaymentOrder: TOrderResponse | null =
+    paymentOrders.length === 0
+      ? null
+      : {
+          ...paymentOrders[0],
+          customerName: paymentOrders.map((order) => order.customerName).join(" + "),
+          isTakeout: false,
+          total: combinedPaymentTotal,
+          orderItems: paymentOrders.flatMap((order, orderIndex) =>
+            order.orderItems.map((item) => ({ ...item, id: orderIndex * 10000 + item.id })),
+          ),
+        };
+
   async function handleConfirmPayment() {
-    if (!selectedOrder || (paymentMethod === "FIADO" && !fiadoCustomerName.trim())) {
+    if (paymentOrders.length === 0 || (paymentMethod === "FIADO" && !fiadoCustomerName.trim())) {
       return;
     }
 
-    await updateOrderStatus.mutateAsync({
-      orderId: selectedOrder.id,
-      status: "PAID",
-      ...(paymentMethod === "FIADO" ? { customerName: fiadoCustomerName } : {}),
-      payments: [buildOrderPayment(paymentMethod, selectedOrder.total, Number(amountReceived) || 0)],
-    });
+    // For a single order, amountReceived/changeDue is the real value the operator typed.
+    // When paying two grouped orders together, that value only makes sense against the
+    // combined total (already validated against it in the dialog) — each underlying
+    // order still needs its own payment record to equal its own total, so it's stored
+    // here as paid in full rather than trying to split the cash-in-hand across orders.
+    const isCombinedPayment = paymentOrders.length > 1;
 
-    setSelectedOrder(null);
+    await Promise.all(
+      paymentOrders.map((order) =>
+        updateOrderStatus.mutateAsync({
+          orderId: order.id,
+          status: "PAID",
+          ...(paymentMethod === "FIADO" ? { customerName: fiadoCustomerName } : {}),
+          payments: [
+            buildOrderPayment(paymentMethod, order.total, isCombinedPayment ? order.total : Number(amountReceived) || 0),
+          ],
+        }),
+      ),
+    );
+
+    setPaymentOrders([]);
+    router.push("/order");
   }
 
   async function handleConfirmSplitPayment(payments: TOrderPayment[]) {
-    if (!selectedOrder) {
+    if (paymentOrders.length !== 1) {
       return;
     }
 
     await updateOrderStatus.mutateAsync({
-      orderId: selectedOrder.id,
+      orderId: paymentOrders[0].id,
       status: "PAID",
       payments,
     });
 
-    setSelectedOrder(null);
+    setPaymentOrders([]);
+    router.push("/order");
+  }
+
+  function handlePrintHistoryOrder(order: TOrderResponse) {
+    setPrintJob(order);
+
+    setTimeout(async () => {
+      let printedViaThermal = false;
+
+      if (isThermalPrintingEnabled()) {
+        try {
+          const bytes = buildReceiptBytes({ order, settings, printMode: "full" });
+
+          if (bytes) {
+            await printThermalReceipt(bytes);
+          }
+
+          printedViaThermal = true;
+        } catch {
+          // falls back to window.print() below
+        }
+      }
+
+      if (!printedViaThermal) {
+        window.print();
+      }
+
+      setPrintJob(null);
+    }, 100);
   }
 
   return (
-    <section className="flex flex-col h-screen w-full">
+    <>
+      {printJob && <OrderReceipt order={printJob} printMode="full" />}
+
+      <section className="flex flex-col h-screen w-full print:hidden">
       <div className="flex flex-col p-4 w-full">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <Header title="Comandas" />
@@ -355,15 +424,28 @@ export default function OrderDetailPage() {
                   ))}
                 </div>
               )}
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => handlePrintHistoryOrder(historyOrder)}>
+                  <Printer />
+                  Imprimir
+                </Button>
+              </DialogFooter>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
       <PaymentDialog
-        open={Boolean(selectedOrder)}
+        open={paymentOrders.length > 0}
         onOpenChange={(open) => !open && handleClosePayment()}
-        order={selectedOrder}
+        order={combinedPaymentOrder}
+        description={
+          paymentOrders.length > 1
+            ? "Confirme o recebimento do pagamento conjunto das comandas agrupadas."
+            : "Confirme o recebimento do pagamento da comanda."
+        }
+        disableSplit={paymentOrders.length > 1}
         paymentMethod={paymentMethod}
         onPaymentMethodChange={setPaymentMethod}
         amountReceived={amountReceived}
@@ -376,6 +458,7 @@ export default function OrderDetailPage() {
         onConfirmPayment={handleConfirmPayment}
         isConfirmingPayment={updateOrderStatus.isPending}
       />
-    </section>
+      </section>
+    </>
   );
 }

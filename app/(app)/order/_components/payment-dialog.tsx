@@ -17,6 +17,7 @@ export interface TPaymentDialog {
   onOpenChange: (open: boolean) => void;
   order: TOrderResponse | null;
   description?: string;
+  disableSplit?: boolean;
 
   paymentMethod: TPaymentMethod;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
@@ -42,6 +43,7 @@ export function PaymentDialog({
   onOpenChange,
   order,
   description = "Confirme o recebimento do pagamento da comanda.",
+  disableSplit = false,
 
   paymentMethod,
   onPaymentMethodChange,
@@ -63,7 +65,7 @@ export function PaymentDialog({
 }: TPaymentDialog) {
   const { data: settings } = useGetSettings();
 
-  const isSplitBillEnabled = settings?.featureFlags.splitBill ?? true;
+  const isSplitBillEnabled = (settings?.featureFlags.splitBill ?? true) && !disableSplit;
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
   const availablePaymentMethods = paymentMethodOptions.filter((option) => {
