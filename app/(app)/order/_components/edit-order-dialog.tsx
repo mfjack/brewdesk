@@ -3,7 +3,7 @@ import { Trash2, Send, Ban } from "lucide-react";
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 
 import { OrderPanel } from "./order-panel";
 import { TCategory, TOrderItem, TOrderResponse, TProduct, TSupplyItem } from "../interface";
@@ -109,31 +109,24 @@ export function EditOrderDialog({
               <p className="text-sm font-bold">Total:</p>
               <span className="text-sm font-bold">{formatCurrency(order.total)}</span>
             </div>
+
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                onClick={onResendFullOrder}
+                disabled={isResendingFullOrder || order.orderItems.length === 0}
+              >
+                <Send />
+                {isResendingFullOrder ? "Reenviando..." : "Reenviar pedido completo"}
+              </Button>
+
+              <Button type="button" variant="destructive" onClick={onRequestCancelOrder} disabled={isResendingFullOrder}>
+                <Ban />
+                Cancelar comanda
+              </Button>
+            </div>
           </div>
         </div>
-
-        <DialogFooter className="flex-row gap-2">
-          <Button
-            type="button"
-            variant="destructive"
-            className="flex-1"
-            onClick={onRequestCancelOrder}
-            disabled={isResendingFullOrder}
-          >
-            <Ban />
-            Cancelar comanda
-          </Button>
-
-          <Button
-            type="button"
-            className="flex-1"
-            onClick={onResendFullOrder}
-            disabled={isResendingFullOrder || order.orderItems.length === 0}
-          >
-            <Send />
-            {isResendingFullOrder ? "Reenviando..." : "Reenviar pedido completo"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
