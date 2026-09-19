@@ -15,6 +15,9 @@ function Toaster({ ...props }: ToasterProps) {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
+          "--success-bg": "oklch(0.97 0.03 165)",
+          "--success-text": "oklch(0.4 0.1 165)",
+          "--success-border": "oklch(0.85 0.08 165)",
         } as React.CSSProperties
       }
       {...props}
