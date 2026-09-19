@@ -116,6 +116,10 @@ export async function reconnectThermalPrinter(): Promise<TConnectedThermalPrinte
 
 export async function printThermalReceipt(bytes: Uint8Array): Promise<void> {
   if (!connectedPrinter) {
+    await reconnectThermalPrinter();
+  }
+
+  if (!connectedPrinter) {
     throw new Error("Nenhuma impressora térmica conectada.");
   }
 
