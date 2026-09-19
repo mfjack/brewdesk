@@ -116,7 +116,7 @@ export default function OrderPageContent() {
 
   const { data: existingOrder } = useGetOrderById(orderId ? Number(orderId) : null);
 
-  if (existingOrder && existingOrder.id !== syncedOrderId) {
+  if (existingOrder && existingOrder.id !== syncedOrderId && !isOrderPaid(existingOrder)) {
     setSyncedOrderId(existingOrder.id);
     setCurrentOrder(existingOrder);
     setObservation(existingOrder.observation ?? "");
