@@ -465,7 +465,7 @@ export default function OrderPageContent() {
 
       setPrintedItemQuantities(printedQty);
 
-      toast.success("Pedido enviado.");
+      toast.success("Pedido enviado com sucesso!");
 
       schedulePrint(orderWithPrintedItems, "full", printedQty, () => resetCart());
     } catch (error) {

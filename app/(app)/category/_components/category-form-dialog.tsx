@@ -59,7 +59,7 @@ export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
       createCategory.mutate(data.name, {
         onSuccess: () => {
           setOpen(false);
-          toast.success("Categoria adicionada.");
+          toast.success("Categoria adicionada com sucesso!");
         },
       });
     }

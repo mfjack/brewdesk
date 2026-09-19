@@ -100,7 +100,7 @@ export function SupplierFormDialog({ trigger, supplier }: TSupplierFormDialog) {
       createSupplier.mutate(payload, {
         onSuccess: () => {
           setOpen(false);
-          toast.success("Fornecedor adicionado.");
+          toast.success("Fornecedor adicionado com sucesso!");
         },
       });
     }

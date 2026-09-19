@@ -194,7 +194,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
       createProduct.mutate(payload, {
         onSuccess: () => {
           setOpen(false);
-          toast.success("Produto adicionado.");
+          toast.success("Produto adicionado com sucesso!");
         },
         onError,
       });

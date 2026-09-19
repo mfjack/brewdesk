@@ -106,7 +106,7 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
       createSupplyItem.mutate(payload, {
         onSuccess: () => {
           setOpen(false);
-          toast.success("Insumo adicionado.");
+          toast.success("Insumo adicionado com sucesso!");
         },
       });
     }
