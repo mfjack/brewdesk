@@ -6,9 +6,10 @@ import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
 import { Input } from "@/_components/ui/input";
 import { SearchInput } from "@/_components/ui/search-input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
-import { DollarSign, HandCoins, Printer, X } from "lucide-react";
+import { DollarSign, HandCoins, Printer, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -53,6 +54,9 @@ export default function OrderDetailPage() {
   const [fiadoCustomerName, setFiadoCustomerName] = useState("");
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
+  const [groupingOrder, setGroupingOrder] = useState<TOrderResponse | null>(null);
+  const [groupWithSelection, setGroupWithSelection] = useState<string>("none");
+
   const { data: ordersData } = useGetOrders();
   const { data: settings } = useGetSettings();
   const isHydrated = useIsHydrated();
@@ -89,6 +93,46 @@ export default function OrderDetailPage() {
     setAmountReceived("");
     setFiadoCustomerName(order.customerName ?? "");
     setIsSplitOpen(false);
+  }
+
+  function handleOpenGrouping(order: TOrderResponse) {
+    setGroupingOrder(order);
+    setGroupWithSelection("none");
+  }
+
+  function handleCloseGrouping() {
+    if (updateOrderStatus.isPending) {
+      return;
+    }
+
+    setGroupingOrder(null);
+  }
+
+  const groupableTargets = useMemo(() => {
+    if (!groupingOrder) {
+      return [];
+    }
+
+    const alreadyGrouped = getGroupedOrders(groupingOrder, orders).map((order) => order.id);
+
+    return orders
+      .filter((order) => !isOrderPaid(order) && order.id !== groupingOrder.id && !alreadyGrouped.includes(order.id))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [groupingOrder, orders]);
+
+  async function handleConfirmGrouping() {
+    if (!groupingOrder || groupWithSelection === "none") {
+      return;
+    }
+
+    await updateOrderStatus.mutateAsync({
+      orderId: groupingOrder.id,
+      status: groupingOrder.status === "OPEN" ? "PENDING" : groupingOrder.status,
+      groupWithOrderId: Number(groupWithSelection),
+    });
+
+    setGroupingOrder(null);
+    toast.success("Comandas vinculadas com sucesso!");
   }
 
   function handleClosePayment() {
@@ -256,6 +300,19 @@ export default function OrderDetailPage() {
                       <Button asChild className="w-full mt-2" size="lg" variant="default">
                         <Link href={`/order?orderId=${order.id}`}>Detalhes da comanda</Link>
                       </Button>
+
+                      {settings?.featureFlags.orderGrouping && (
+                        <Button
+                          type="button"
+                          className="w-full"
+                          size="lg"
+                          variant="outline"
+                          onClick={() => handleOpenGrouping(order)}
+                        >
+                          <Users />
+                          Juntar comanda
+                        </Button>
+                      )}
 
                       {groupedOrders.length > 0 && (
                         <Button
@@ -474,6 +531,47 @@ export default function OrderDetailPage() {
         onConfirmPayment={handleConfirmPayment}
         isConfirmingPayment={updateOrderStatus.isPending}
       />
+
+      <Dialog open={Boolean(groupingOrder)} onOpenChange={(open) => !open && handleCloseGrouping()}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader className="flex flex-col gap-0.5">
+            <DialogTitle>Juntar comanda</DialogTitle>
+            <DialogDescription>
+              {groupingOrder &&
+                `Vincule a comanda de ${toTitleCase(groupingOrder.customerName)} com outra já aberta, pra pagar as duas juntas depois.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {groupableTargets.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma outra comanda aberta disponível pra vincular.</p>
+          ) : (
+            <Select value={groupWithSelection} onValueChange={setGroupWithSelection}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione uma comanda" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Selecione uma comanda</SelectItem>
+                {groupableTargets.map((target) => (
+                  <SelectItem key={target.id} value={String(target.id)}>
+                    {toTitleCase(target.customerName)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              className="w-full"
+              disabled={groupWithSelection === "none" || updateOrderStatus.isPending}
+              onClick={handleConfirmGrouping}
+            >
+              {updateOrderStatus.isPending ? "Vinculando..." : "Vincular"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </section>
     </>
   );
