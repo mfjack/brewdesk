@@ -154,7 +154,7 @@ export function PaymentDialog({
 
                 <Separator className="mt-2" />
 
-                <DialogFooter className="flex-row gap-2 mt-16">
+                <DialogFooter className="flex-row gap-2 mt-12">
                   {onEditOrder && (
                     <Button className="flex-1" type="button" variant="outline" size="lg" onClick={onEditOrder}>
                       <Pencil />

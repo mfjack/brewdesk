@@ -112,7 +112,7 @@ export function buildReceiptBytes({
     encoder.newline().align("center").text(settings.receiptFooterMessage).newline();
   }
 
-  encoder.newline(2).cut();
+  encoder.newline(6).cut();
 
   return encoder.encode();
 }
