@@ -163,4 +163,8 @@
   .order-receipt {
     page: receipt;
   }
+
+  [data-sonner-toaster] {
+    display: none !important;
+  }
 }
