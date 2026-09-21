@@ -49,6 +49,7 @@ export function MenuList({
   onRequestPayment,
   isPaymentDialogOpen,
   onPaymentDialogOpenChange,
+  onEditOrderFromPayment,
   paymentMethod,
   onPaymentMethodChange,
   amountReceived,
@@ -193,7 +194,7 @@ export function MenuList({
             const showSendButton = isOrderTicketsEnabled && (isFirstSend || hasUnprintedItems);
 
             return (
-              <div className="mx-4 mb-4 flex gap-2">
+              <div className="mx-4 mb-3 flex gap-2">
                 {showSendButton && (
                   <Button
                     className="flex-1 flex gap-3"
@@ -332,6 +333,7 @@ export function MenuList({
             onConfirmSplitPayment={onConfirmSplitPayment}
             onConfirmPayment={onConfirmPayment}
             isConfirmingPayment={isConfirmingPayment}
+            onEditOrder={isExistingOrder ? onEditOrderFromPayment : undefined}
           />
 
           <Dialog open={isCancelDialogOpen} onOpenChange={onCancelDialogOpenChange}>

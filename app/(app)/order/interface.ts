@@ -41,6 +41,7 @@ export interface TMenuList {
   onRequestPayment: () => void;
   isPaymentDialogOpen: boolean;
   onPaymentDialogOpenChange: (open: boolean) => void;
+  onEditOrderFromPayment?: () => void;
   paymentMethod: TPaymentMethod;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
   amountReceived: string;

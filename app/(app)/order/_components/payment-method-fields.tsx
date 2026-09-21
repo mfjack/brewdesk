@@ -44,13 +44,13 @@ export function PaymentMethodFields({
     <div className="space-y-2">
       <p className="text-sm font-medium">Forma de pagamento</p>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         {methods.map(({ value, label, Icon }) => (
           <Button
             key={value}
             type="button"
+            size="lg"
             variant={paymentMethod === value ? "default" : "outline"}
-            className="flex-1 basis-[30%]"
             onClick={() => onPaymentMethodChange(value)}
           >
             <Icon />

@@ -100,7 +100,8 @@ export default function OrderPageContent() {
   const [isResendingFullOrder, setIsResendingFullOrder] = useState(false);
 
   const sendingOrderRef = useRef(false);
-  const clearedOrderIdRef = useRef<number | null>(null);
+  const [clearedOrderId, setClearedOrderId] = useState<number | null>(null);
+  const openedPaymentAfterSendRef = useRef(false);
 
   const { data: categories } = useGetCategories();
   const { data: products } = useGetProducts();
@@ -120,7 +121,7 @@ export default function OrderPageContent() {
   if (
     existingOrder &&
     existingOrder.id !== syncedOrderId &&
-    existingOrder.id !== clearedOrderIdRef.current &&
+    existingOrder.id !== clearedOrderId &&
     !isOrderPaid(existingOrder)
   ) {
     setSyncedOrderId(existingOrder.id);
@@ -478,7 +479,7 @@ export default function OrderPageContent() {
 
       toast.success("Pedido enviado com sucesso!");
 
-      schedulePrint(orderWithPrintedItems, "full", printedQty, () => resetCart());
+      schedulePrint(orderWithPrintedItems, "full", printedQty, () => handleRequestPaymentAfterSend());
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
     } finally {
@@ -511,7 +512,7 @@ export default function OrderPageContent() {
   }
 
   function clearCartState() {
-    clearedOrderIdRef.current = currentOrder?.id ?? null;
+    setClearedOrderId(currentOrder?.id ?? null);
     setCurrentOrder(null);
     setObservation("");
     setPrintedItemQuantities({});
@@ -583,7 +584,7 @@ export default function OrderPageContent() {
     }
   }
 
-  function handleRequestPayment() {
+  function openPaymentDialog() {
     if (!currentOrder || currentOrder.orderItems.length === 0 || isSendingOrder) {
       return;
     }
@@ -594,6 +595,31 @@ export default function OrderPageContent() {
     setFiadoTargetOrderId(null);
     setIsSplitOpen(false);
     setIsPaymentDialogOpen(true);
+  }
+
+  function handleRequestPayment() {
+    openedPaymentAfterSendRef.current = false;
+    openPaymentDialog();
+  }
+
+  function handleRequestPaymentAfterSend() {
+    openedPaymentAfterSendRef.current = true;
+    openPaymentDialog();
+  }
+
+  function handlePaymentDialogOpenChange(open: boolean) {
+    setIsPaymentDialogOpen(open);
+
+    if (!open && openedPaymentAfterSendRef.current) {
+      openedPaymentAfterSendRef.current = false;
+      resetCart();
+    }
+  }
+
+  function handleEditOrderFromPayment() {
+    openedPaymentAfterSendRef.current = false;
+    setIsPaymentDialogOpen(false);
+    setIsEditOrderDialogOpen(true);
   }
 
   async function handleConfirmPayment() {
@@ -730,7 +756,8 @@ export default function OrderPageContent() {
             groupedOrders={groupedOrders}
             onRequestPayment={handleRequestPayment}
             isPaymentDialogOpen={isPaymentDialogOpen}
-            onPaymentDialogOpenChange={setIsPaymentDialogOpen}
+            onPaymentDialogOpenChange={handlePaymentDialogOpenChange}
+            onEditOrderFromPayment={handleEditOrderFromPayment}
             paymentMethod={paymentMethod}
             onPaymentMethodChange={setPaymentMethod}
             amountReceived={amountReceived}

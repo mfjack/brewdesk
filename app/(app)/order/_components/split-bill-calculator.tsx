@@ -31,7 +31,14 @@ interface TPersonPaymentState {
 
 const DEFAULT_PERSON_PAYMENT: TPersonPaymentState = { method: "CREDIT", amountReceived: "" };
 
-export function SplitBillCalculator({ order, isOpen, onOpenChange, pixQrCodeUrl, onConfirmSplitPayment, isConfirming }: TSplitBillCalculator) {
+export function SplitBillCalculator({
+  order,
+  isOpen,
+  onOpenChange,
+  pixQrCodeUrl,
+  onConfirmSplitPayment,
+  isConfirming,
+}: TSplitBillCalculator) {
   const [mode, setMode] = useState<"equal" | "items">("equal");
   const [peopleCountInput, setPeopleCountInput] = useState("2");
   const [assignments, setAssignments] = useState<Record<number, number>>({});
@@ -107,10 +114,12 @@ export function SplitBillCalculator({ order, isOpen, onOpenChange, pixQrCodeUrl,
 
   if (!isOpen) {
     return (
-      <Button type="button" variant="outline" className="w-full" onClick={handleOpen}>
-        <Users />
-        Dividir conta
-      </Button>
+      <div className="flex justify-start">
+        <Button type="button" variant="ghost" size="xs" className="text-muted-foreground" onClick={handleOpen}>
+          <Users />
+          Dividir conta
+        </Button>
+      </div>
     );
   }
 

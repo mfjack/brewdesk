@@ -1,4 +1,4 @@
-import { DollarSign } from "lucide-react";
+import { DollarSign, Pencil } from "lucide-react";
 
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
@@ -18,6 +18,7 @@ export interface TPaymentDialog {
   order: TOrderResponse | null;
   description?: string;
   disableSplit?: boolean;
+  onEditOrder?: () => void;
 
   paymentMethod: TPaymentMethod;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
@@ -44,6 +45,7 @@ export function PaymentDialog({
   order,
   description = "Confirme o recebimento do pagamento da comanda.",
   disableSplit = false,
+  onEditOrder,
 
   paymentMethod,
   onPaymentMethodChange,
@@ -87,7 +89,7 @@ export function PaymentDialog({
         </DialogHeader>
 
         {order && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex gap-1">
                 <p className="text-sm text-muted-foreground">Cliente: </p>
@@ -150,9 +152,18 @@ export function PaymentDialog({
                   onFiadoTargetOrderIdChange={onFiadoTargetOrderIdChange}
                 />
 
-                <DialogFooter>
+                <Separator className="mt-2" />
+
+                <DialogFooter className="flex-row gap-2 mt-16">
+                  {onEditOrder && (
+                    <Button className="flex-1" type="button" variant="outline" size="lg" onClick={onEditOrder}>
+                      <Pencil />
+                      Alterar pedido
+                    </Button>
+                  )}
+
                   <Button
-                    className="w-full"
+                    className="flex-1"
                     type="button"
                     size="lg"
                     onClick={onConfirmPayment}
