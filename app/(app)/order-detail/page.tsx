@@ -49,7 +49,7 @@ export default function OrderDetailPage() {
   const [printJob, setPrintJob] = useState<TOrderResponse | null>(null);
 
   const [paymentOrders, setPaymentOrders] = useState<TOrderResponse[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CREDIT");
+  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod | null>(null);
   const [amountReceived, setAmountReceived] = useState("");
   const [contaCustomerName, setContaCustomerName] = useState("");
   const [isSplitOpen, setIsSplitOpen] = useState(false);
@@ -63,6 +63,7 @@ export default function OrderDetailPage() {
   const orders = useMemo(() => (isHydrated ? (ordersData ?? []) : []), [isHydrated, ordersData]);
 
   const updateOrderStatus = useUpdateOrderStatus();
+  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
   const openOrdersCount = useMemo(() => orders.filter((order) => !isOrderPaid(order)).length, [orders]);
 
@@ -89,7 +90,7 @@ export default function OrderDetailPage() {
     const groupedOrders = settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : [];
 
     setPaymentOrders([order, ...groupedOrders]);
-    setPaymentMethod("CREDIT");
+    setPaymentMethod(null);
     setAmountReceived("");
     setContaCustomerName(order.customerName ?? "");
     setIsSplitOpen(false);
@@ -159,7 +160,9 @@ export default function OrderDetailPage() {
         };
 
   async function handleConfirmPayment() {
-    if (paymentOrders.length === 0 || (paymentMethod === "CONTA" && !contaCustomerName.trim())) {
+    const effectiveMethod: TPaymentMethod | null = paymentMethod ?? (isCreditSaleEnabled ? "CONTA" : null);
+
+    if (paymentOrders.length === 0 || effectiveMethod === null || (effectiveMethod === "CONTA" && !contaCustomerName.trim())) {
       return;
     }
 
@@ -175,9 +178,9 @@ export default function OrderDetailPage() {
         updateOrderStatus.mutateAsync({
           orderId: order.id,
           status: "PAID",
-          ...(paymentMethod === "CONTA" ? { customerName: contaCustomerName } : {}),
+          ...(effectiveMethod === "CONTA" ? { customerName: contaCustomerName } : {}),
           payments: [
-            buildOrderPayment(paymentMethod, order.total, isCombinedPayment ? order.total : Number(amountReceived) || 0),
+            buildOrderPayment(effectiveMethod, order.total, isCombinedPayment ? order.total : Number(amountReceived) || 0),
           ],
         }),
       ),
@@ -524,7 +527,6 @@ export default function OrderDetailPage() {
         amountReceived={amountReceived}
         onAmountReceivedChange={setAmountReceived}
         contaCustomerName={contaCustomerName}
-        onContaCustomerNameChange={setContaCustomerName}
         isSplitOpen={isSplitOpen}
         onSplitOpenChange={setIsSplitOpen}
         onConfirmSplitPayment={handleConfirmSplitPayment}

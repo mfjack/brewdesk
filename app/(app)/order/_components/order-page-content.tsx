@@ -64,6 +64,7 @@ export default function OrderPageContent() {
   const [printedItemQuantities, setPrintedItemQuantities] = useState<Record<number, number>>({});
 
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
+  const [nameDialogIntent, setNameDialogIntent] = useState<"send" | "payment">("send");
 
   const [customerNameDraft, setCustomerNameDraft] = useState("");
 
@@ -81,17 +82,12 @@ export default function OrderPageContent() {
 
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CREDIT");
+  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod | null>(null);
 
   const [amountReceived, setAmountReceived] = useState("");
 
   const [contaCustomerName, setContaCustomerName] = useState("");
   const [contaTargetOrderId, setContaTargetOrderId] = useState<number | null>(null);
-
-  function handleContaCustomerNameChange(value: string) {
-    setContaCustomerName(value);
-    setContaTargetOrderId(null);
-  }
 
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
@@ -140,8 +136,15 @@ export default function OrderPageContent() {
     [products, effectiveCategory],
   );
 
+  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
+  // No method pressed yet: falls back to "conta" (pay later) when that's enabled, otherwise
+  // stays unresolved so the operator has to make an explicit choice.
+  const effectivePaymentMethod: TPaymentMethod | null = paymentMethod ?? (isCreditSaleEnabled ? "CONTA" : null);
+
   const openContaMatches =
-    paymentMethod === "CONTA" && currentOrder && isDraftOrder(currentOrder) ? findOpenContaOrders(orders, contaCustomerName) : [];
+    effectivePaymentMethod === "CONTA" && currentOrder && isDraftOrder(currentOrder)
+      ? findOpenContaOrders(orders, contaCustomerName)
+      : [];
 
   const groupableOrders = useMemo(
     () =>
@@ -417,6 +420,7 @@ export default function OrderPageContent() {
     setNameError(null);
     setIsTakeoutDraft(false);
     setGroupWithOrderId(null);
+    setNameDialogIntent("send");
     setIsNameDialogOpen(true);
   }
 
@@ -440,6 +444,13 @@ export default function OrderPageContent() {
 
     setNameError(null);
     setIsNameDialogOpen(false);
+
+    if (nameDialogIntent === "payment") {
+      setCurrentOrder((prev) => (prev ? { ...prev, customerName: trimmedName } : prev));
+      openPaymentDialog(trimmedName);
+
+      return;
+    }
 
     await sendOrder(trimmedName, isTakeoutDraft, groupWithOrderId);
   }
@@ -483,7 +494,7 @@ export default function OrderPageContent() {
 
       toast.success("Pedido enviado com sucesso!");
 
-      schedulePrint(orderWithPrintedItems, "full", printedQty, () => handleRequestPaymentAfterSend());
+      schedulePrint(orderWithPrintedItems, "full", printedQty, () => handleRequestPaymentAfterSend(customerName));
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
     } finally {
@@ -588,14 +599,14 @@ export default function OrderPageContent() {
     }
   }
 
-  function openPaymentDialog() {
+  function openPaymentDialog(customerNameOverride?: string) {
     if (!currentOrder || currentOrder.orderItems.length === 0 || isSendingOrder) {
       return;
     }
 
-    setPaymentMethod("CREDIT");
+    setPaymentMethod(null);
     setAmountReceived("");
-    setContaCustomerName(currentOrder.customerName ?? "");
+    setContaCustomerName(customerNameOverride ?? currentOrder.customerName ?? "");
     setContaTargetOrderId(null);
     setIsSplitOpen(false);
     setIsPaymentDialogOpen(true);
@@ -603,12 +614,28 @@ export default function OrderPageContent() {
 
   function handleRequestPayment() {
     openedPaymentAfterSendRef.current = false;
-    openPaymentDialog();
+
+    if (!currentOrder || currentOrder.orderItems.length === 0 || isSendingOrder) {
+      return;
+    }
+
+    if (currentOrder.customerName.trim()) {
+      openPaymentDialog();
+
+      return;
+    }
+
+    setCustomerNameDraft("");
+    setNameError(null);
+    setIsTakeoutDraft(false);
+    setGroupWithOrderId(null);
+    setNameDialogIntent("payment");
+    setIsNameDialogOpen(true);
   }
 
-  function handleRequestPaymentAfterSend() {
+  function handleRequestPaymentAfterSend(customerNameOverride?: string) {
     openedPaymentAfterSendRef.current = true;
-    openPaymentDialog();
+    openPaymentDialog(customerNameOverride);
   }
 
   function handlePaymentDialogOpenChange(open: boolean) {
@@ -631,7 +658,7 @@ export default function OrderPageContent() {
       return;
     }
 
-    if (paymentMethod === "CONTA" && !contaCustomerName.trim()) {
+    if (effectivePaymentMethod === null || (effectivePaymentMethod === "CONTA" && !contaCustomerName.trim())) {
       return;
     }
 
@@ -640,7 +667,7 @@ export default function OrderPageContent() {
 
     try {
       const targetContaOrder =
-        paymentMethod === "CONTA" && contaTargetOrderId
+        effectivePaymentMethod === "CONTA" && contaTargetOrderId
           ? openContaMatches.find((order) => order.id === contaTargetOrderId)
           : undefined;
 
@@ -654,15 +681,15 @@ export default function OrderPageContent() {
         return;
       }
 
-      const customerName = paymentMethod === "CONTA" ? contaCustomerName : "";
+      const customerName = effectivePaymentMethod === "CONTA" ? contaCustomerName : "";
       const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, customerName) : currentOrder;
 
       await updateOrderStatus.mutateAsync({
         orderId: order.id,
         status: "PAID",
         observation,
-        ...(paymentMethod === "CONTA" ? { customerName: contaCustomerName } : {}),
-        payments: [buildOrderPayment(paymentMethod, order.total, Number(amountReceived) || 0)],
+        ...(effectivePaymentMethod === "CONTA" ? { customerName: contaCustomerName } : {}),
+        payments: [buildOrderPayment(effectivePaymentMethod, order.total, Number(amountReceived) || 0)],
       });
 
       setIsPaymentDialogOpen(false);
@@ -748,6 +775,7 @@ export default function OrderPageContent() {
             onPrintAdditional={handlePrintAdditional}
             isNameDialogOpen={isNameDialogOpen}
             onNameDialogOpenChange={setIsNameDialogOpen}
+            nameDialogIntent={nameDialogIntent}
             customerNameDraft={customerNameDraft}
             onCustomerNameDraftChange={handleCustomerNameDraftChange}
             onConfirmCustomerName={handleConfirmCustomerName}
@@ -767,7 +795,6 @@ export default function OrderPageContent() {
             amountReceived={amountReceived}
             onAmountReceivedChange={setAmountReceived}
             contaCustomerName={contaCustomerName}
-            onContaCustomerNameChange={handleContaCustomerNameChange}
             openContaMatches={openContaMatches}
             contaTargetOrderId={contaTargetOrderId}
             onContaTargetOrderIdChange={setContaTargetOrderId}

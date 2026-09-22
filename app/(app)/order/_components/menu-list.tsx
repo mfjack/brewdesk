@@ -35,6 +35,7 @@ export function MenuList({
 
   isNameDialogOpen,
   onNameDialogOpenChange,
+  nameDialogIntent,
   customerNameDraft,
   onCustomerNameDraftChange,
   onConfirmCustomerName,
@@ -55,7 +56,6 @@ export function MenuList({
   amountReceived,
   onAmountReceivedChange,
   contaCustomerName,
-  onContaCustomerNameChange,
   openContaMatches,
   contaTargetOrderId,
   onContaTargetOrderIdChange,
@@ -243,7 +243,11 @@ export function MenuList({
               <DialogHeader>
                 <DialogTitle>Quem é o cliente?</DialogTitle>
 
-                <DialogDescription>Digite o nome para identificar essa comanda antes de enviar.</DialogDescription>
+                <DialogDescription>
+                  {nameDialogIntent === "payment"
+                    ? "Digite o nome do cliente antes de continuar para o pagamento."
+                    : "Digite o nome para identificar essa comanda antes de enviar."}
+                </DialogDescription>
               </DialogHeader>
 
               {isTakeoutEnabled && (
@@ -307,8 +311,17 @@ export function MenuList({
 
               <DialogFooter>
                 <Button onClick={onConfirmCustomerName} disabled={!customerNameDraft.trim() || isSending}>
-                  <Send />
-                  Enviar pedido
+                  {nameDialogIntent === "payment" ? (
+                    <>
+                      <DollarSign />
+                      Continuar para pagamento
+                    </>
+                  ) : (
+                    <>
+                      <Send />
+                      Enviar pedido
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -324,7 +337,6 @@ export function MenuList({
             amountReceived={amountReceived}
             onAmountReceivedChange={onAmountReceivedChange}
             contaCustomerName={contaCustomerName}
-            onContaCustomerNameChange={onContaCustomerNameChange}
             openContaMatches={openContaMatches}
             contaTargetOrderId={contaTargetOrderId}
             onContaTargetOrderIdChange={onContaTargetOrderIdChange}

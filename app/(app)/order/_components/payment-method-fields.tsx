@@ -10,15 +10,13 @@ import { paymentMethodOptions } from "../payment-methods";
 import type { TOrderResponse, TPaymentMethod } from "../interface";
 
 interface TPaymentMethodFields {
-  paymentMethod: TPaymentMethod;
+  paymentMethod: TPaymentMethod | null;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
   amountReceived: string;
   onAmountReceivedChange: (value: string) => void;
   total: number;
   pixQrCodeUrl?: string | null;
   methods?: typeof paymentMethodOptions;
-  contaCustomerName?: string;
-  onContaCustomerNameChange?: (value: string) => void;
   openContaMatches?: TOrderResponse[];
   contaTargetOrderId?: number | null;
   onContaTargetOrderIdChange?: (orderId: number | null) => void;
@@ -32,8 +30,6 @@ export function PaymentMethodFields({
   total,
   pixQrCodeUrl,
   methods = paymentMethodOptions,
-  contaCustomerName,
-  onContaCustomerNameChange,
   openContaMatches = [],
   contaTargetOrderId,
   onContaTargetOrderIdChange,
@@ -44,7 +40,7 @@ export function PaymentMethodFields({
     <div className="space-y-2">
       <p className="text-sm font-medium">Forma de pagamento</p>
 
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5">
         {methods.map(({ value, label, Icon }) => (
           <Button
             key={value}
@@ -74,40 +70,29 @@ export function PaymentMethodFields({
         </div>
       )}
 
-      {paymentMethod === "CONTA" && (
+      {paymentMethod === "CONTA" && openContaMatches.length > 0 && (
         <div className="space-y-1">
-          <Input
-            placeholder="Nome do cliente"
-            value={contaCustomerName ?? ""}
-            onChange={(e) => onContaCustomerNameChange?.(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">Necessário pra saber quem deve pagar depois.</p>
-
-          {openContaMatches.length > 0 && (
-            <div className="space-y-1 pt-1">
-              <label className="text-xs font-medium">Adicionar a qual comanda?</label>
-              <Select
-                value={contaTargetOrderId ? String(contaTargetOrderId) : "new"}
-                onValueChange={(value) => onContaTargetOrderIdChange?.(value === "new" ? null : Number(value))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">Nova comanda</SelectItem>
-                  {openContaMatches.map((order) => (
-                    <SelectItem key={order.id} value={String(order.id)}>
-                      Aberta em {formatDateTime(order.createdAt)} — {formatCurrency(order.total)} em aberto
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Já existe comanda na conta nesse nome. Se for a mesma pessoa, escolha ela; se for outra, deixe em &quot;Nova
-                comanda&quot;.
-              </p>
-            </div>
-          )}
+          <label className="text-xs font-medium">Adicionar a qual comanda?</label>
+          <Select
+            value={contaTargetOrderId ? String(contaTargetOrderId) : "new"}
+            onValueChange={(value) => onContaTargetOrderIdChange?.(value === "new" ? null : Number(value))}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">Nova comanda</SelectItem>
+              {openContaMatches.map((order) => (
+                <SelectItem key={order.id} value={String(order.id)}>
+                  Aberta em {formatDateTime(order.createdAt)} — {formatCurrency(order.total)} em aberto
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Já existe comanda na conta nesse nome. Se for a mesma pessoa, escolha ela; se for outra, deixe em &quot;Nova
+            comanda&quot;.
+          </p>
         </div>
       )}
 

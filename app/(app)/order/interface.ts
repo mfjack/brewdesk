@@ -27,6 +27,7 @@ export interface TMenuList {
 
   isNameDialogOpen: boolean;
   onNameDialogOpenChange: (open: boolean) => void;
+  nameDialogIntent: "send" | "payment";
   customerNameDraft: string;
   onCustomerNameDraftChange: (value: string) => void;
   onConfirmCustomerName: () => void;
@@ -42,12 +43,11 @@ export interface TMenuList {
   isPaymentDialogOpen: boolean;
   onPaymentDialogOpenChange: (open: boolean) => void;
   onEditOrderFromPayment?: () => void;
-  paymentMethod: TPaymentMethod;
+  paymentMethod: TPaymentMethod | null;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
   amountReceived: string;
   onAmountReceivedChange: (value: string) => void;
   contaCustomerName: string;
-  onContaCustomerNameChange: (value: string) => void;
   openContaMatches: TOrderResponse[];
   contaTargetOrderId: number | null;
   onContaTargetOrderIdChange: (orderId: number | null) => void;
