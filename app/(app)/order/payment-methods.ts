@@ -6,7 +6,7 @@ export const paymentMethodOptions: { value: TPaymentMethod; label: string; Icon:
   { value: "DEBIT", label: "Débito", Icon: Landmark },
   { value: "PIX", label: "Pix", Icon: QrCode },
   { value: "CASH", label: "Dinheiro", Icon: Banknote },
-  { value: "FIADO", label: "Fiado", Icon: Handshake },
+  { value: "CONTA", label: "Conta", Icon: Handshake },
 ];
 
 export const paymentMethodLabels: Record<TPaymentMethod, string> = Object.fromEntries(

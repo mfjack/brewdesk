@@ -20,7 +20,7 @@ export interface TAppPage {
 export const APP_PAGES: TAppPage[] = [
   { path: "/", label: "PDV", icon: HandCoins },
   { path: "/order-detail", label: "Comandas", icon: ScrollText },
-  { path: "/fiado", label: "Fiado", icon: Wallet },
+  { path: "/conta", label: "Conta", icon: Wallet },
   { path: "/category", label: "Categorias", icon: Tags },
   { path: "/product", label: "Produtos", icon: ScanBarcode },
   { path: "/stock", label: "Insumos", icon: Boxes },

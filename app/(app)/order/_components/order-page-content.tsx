@@ -34,7 +34,7 @@ import {
 import { getActiveOperator } from "@/_lib/operator-session";
 import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
-import { findOpenFiadoOrders } from "@/_lib/fiado";
+import { findOpenContaOrders } from "@/_lib/conta";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
@@ -85,12 +85,12 @@ export default function OrderPageContent() {
 
   const [amountReceived, setAmountReceived] = useState("");
 
-  const [fiadoCustomerName, setFiadoCustomerName] = useState("");
-  const [fiadoTargetOrderId, setFiadoTargetOrderId] = useState<number | null>(null);
+  const [contaCustomerName, setContaCustomerName] = useState("");
+  const [contaTargetOrderId, setContaTargetOrderId] = useState<number | null>(null);
 
-  function handleFiadoCustomerNameChange(value: string) {
-    setFiadoCustomerName(value);
-    setFiadoTargetOrderId(null);
+  function handleContaCustomerNameChange(value: string) {
+    setContaCustomerName(value);
+    setContaTargetOrderId(null);
   }
 
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
@@ -140,8 +140,8 @@ export default function OrderPageContent() {
     [products, effectiveCategory],
   );
 
-  const openFiadoMatches =
-    paymentMethod === "FIADO" && currentOrder && isDraftOrder(currentOrder) ? findOpenFiadoOrders(orders, fiadoCustomerName) : [];
+  const openContaMatches =
+    paymentMethod === "CONTA" && currentOrder && isDraftOrder(currentOrder) ? findOpenContaOrders(orders, contaCustomerName) : [];
 
   const groupableOrders = useMemo(
     () =>
@@ -227,7 +227,7 @@ export default function OrderPageContent() {
     return order;
   }
 
-  async function mergeIntoExistingFiadoOrder(existingOrder: TOrderResponse, newItems: TOrderItem[]): Promise<TOrderResponse> {
+  async function mergeIntoExistingContaOrder(existingOrder: TOrderResponse, newItems: TOrderItem[]): Promise<TOrderResponse> {
     let order = existingOrder;
 
     for (const item of newItems) {
@@ -241,7 +241,7 @@ export default function OrderPageContent() {
     return updateOrderStatus.mutateAsync({
       orderId: order.id,
       status: "PAID",
-      payments: [buildOrderPayment("FIADO", order.total)],
+      payments: [buildOrderPayment("CONTA", order.total)],
     });
   }
 
@@ -280,7 +280,7 @@ export default function OrderPageContent() {
           operatorName: null,
           payments: [],
           groupId: null,
-          fiadoSettledAt: null,
+          contaSettledAt: null,
         };
 
         const reservedQuantities = buildReservedSupplyQuantities(base.orderItems, products ?? []);
@@ -595,8 +595,8 @@ export default function OrderPageContent() {
 
     setPaymentMethod("CREDIT");
     setAmountReceived("");
-    setFiadoCustomerName(currentOrder.customerName ?? "");
-    setFiadoTargetOrderId(null);
+    setContaCustomerName(currentOrder.customerName ?? "");
+    setContaTargetOrderId(null);
     setIsSplitOpen(false);
     setIsPaymentDialogOpen(true);
   }
@@ -631,7 +631,7 @@ export default function OrderPageContent() {
       return;
     }
 
-    if (paymentMethod === "FIADO" && !fiadoCustomerName.trim()) {
+    if (paymentMethod === "CONTA" && !contaCustomerName.trim()) {
       return;
     }
 
@@ -639,13 +639,13 @@ export default function OrderPageContent() {
     setIsSendingOrder(true);
 
     try {
-      const targetFiadoOrder =
-        paymentMethod === "FIADO" && fiadoTargetOrderId
-          ? openFiadoMatches.find((order) => order.id === fiadoTargetOrderId)
+      const targetContaOrder =
+        paymentMethod === "CONTA" && contaTargetOrderId
+          ? openContaMatches.find((order) => order.id === contaTargetOrderId)
           : undefined;
 
-      if (targetFiadoOrder) {
-        await mergeIntoExistingFiadoOrder(targetFiadoOrder, currentOrder.orderItems);
+      if (targetContaOrder) {
+        await mergeIntoExistingContaOrder(targetContaOrder, currentOrder.orderItems);
 
         setIsPaymentDialogOpen(false);
         resetCart();
@@ -654,14 +654,14 @@ export default function OrderPageContent() {
         return;
       }
 
-      const customerName = paymentMethod === "FIADO" ? fiadoCustomerName : "";
+      const customerName = paymentMethod === "CONTA" ? contaCustomerName : "";
       const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, customerName) : currentOrder;
 
       await updateOrderStatus.mutateAsync({
         orderId: order.id,
         status: "PAID",
         observation,
-        ...(paymentMethod === "FIADO" ? { customerName: fiadoCustomerName } : {}),
+        ...(paymentMethod === "CONTA" ? { customerName: contaCustomerName } : {}),
         payments: [buildOrderPayment(paymentMethod, order.total, Number(amountReceived) || 0)],
       });
 
@@ -766,11 +766,11 @@ export default function OrderPageContent() {
             onPaymentMethodChange={setPaymentMethod}
             amountReceived={amountReceived}
             onAmountReceivedChange={setAmountReceived}
-            fiadoCustomerName={fiadoCustomerName}
-            onFiadoCustomerNameChange={handleFiadoCustomerNameChange}
-            openFiadoMatches={openFiadoMatches}
-            fiadoTargetOrderId={fiadoTargetOrderId}
-            onFiadoTargetOrderIdChange={setFiadoTargetOrderId}
+            contaCustomerName={contaCustomerName}
+            onContaCustomerNameChange={handleContaCustomerNameChange}
+            openContaMatches={openContaMatches}
+            contaTargetOrderId={contaTargetOrderId}
+            onContaTargetOrderIdChange={setContaTargetOrderId}
             onConfirmPayment={handleConfirmPayment}
             isConfirmingPayment={isSendingOrder}
             isSplitOpen={isSplitOpen}

@@ -25,11 +25,11 @@ export interface TPaymentDialog {
   amountReceived: string;
   onAmountReceivedChange: (value: string) => void;
 
-  fiadoCustomerName: string;
-  onFiadoCustomerNameChange: (value: string) => void;
-  openFiadoMatches?: TOrderResponse[];
-  fiadoTargetOrderId?: number | null;
-  onFiadoTargetOrderIdChange?: (orderId: number | null) => void;
+  contaCustomerName: string;
+  onContaCustomerNameChange: (value: string) => void;
+  openContaMatches?: TOrderResponse[];
+  contaTargetOrderId?: number | null;
+  onContaTargetOrderIdChange?: (orderId: number | null) => void;
 
   isSplitOpen: boolean;
   onSplitOpenChange: (open: boolean) => void;
@@ -52,11 +52,11 @@ export function PaymentDialog({
   amountReceived,
   onAmountReceivedChange,
 
-  fiadoCustomerName,
-  onFiadoCustomerNameChange,
-  openFiadoMatches,
-  fiadoTargetOrderId,
-  onFiadoTargetOrderIdChange,
+  contaCustomerName,
+  onContaCustomerNameChange,
+  openContaMatches,
+  contaTargetOrderId,
+  onContaTargetOrderIdChange,
 
   isSplitOpen,
   onSplitOpenChange,
@@ -71,7 +71,7 @@ export function PaymentDialog({
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
   const availablePaymentMethods = paymentMethodOptions.filter((option) => {
-    if (option.value === "FIADO") {
+    if (option.value === "CONTA") {
       return isCreditSaleEnabled;
     }
 
@@ -145,11 +145,11 @@ export function PaymentDialog({
                   total={finalTotal}
                   pixQrCodeUrl={settings?.pixQrCodeUrl}
                   methods={availablePaymentMethods}
-                  fiadoCustomerName={fiadoCustomerName}
-                  onFiadoCustomerNameChange={onFiadoCustomerNameChange}
-                  openFiadoMatches={openFiadoMatches}
-                  fiadoTargetOrderId={fiadoTargetOrderId}
-                  onFiadoTargetOrderIdChange={onFiadoTargetOrderIdChange}
+                  contaCustomerName={contaCustomerName}
+                  onContaCustomerNameChange={onContaCustomerNameChange}
+                  openContaMatches={openContaMatches}
+                  contaTargetOrderId={contaTargetOrderId}
+                  onContaTargetOrderIdChange={onContaTargetOrderIdChange}
                 />
 
                 <Separator className="mt-2" />
@@ -170,16 +170,16 @@ export function PaymentDialog({
                     disabled={
                       isConfirmingPayment ||
                       (paymentMethod === "CASH" && Number(amountReceived) < finalTotal) ||
-                      (paymentMethod === "FIADO" && !fiadoCustomerName.trim())
+                      (paymentMethod === "CONTA" && !contaCustomerName.trim())
                     }
                   >
                     <DollarSign />
                     {isConfirmingPayment
                       ? "Processando..."
-                      : paymentMethod === "FIADO"
-                        ? fiadoTargetOrderId != null
-                          ? "Adicionar à comanda fiado"
-                          : "Registrar fiado"
+                      : paymentMethod === "CONTA"
+                        ? contaTargetOrderId != null
+                          ? "Adicionar à comanda na conta"
+                          : "Registrar conta"
                         : "Pagamento Recebido"}
                   </Button>
                 </DialogFooter>

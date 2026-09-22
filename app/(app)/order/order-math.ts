@@ -39,7 +39,7 @@ export function computeChangeDue(amountReceived: number, total: number): number 
 }
 
 export function buildOrderPayment(method: TPaymentMethod, amount: number, amountReceivedInput?: number | null): TOrderPayment {
-  if (method === "FIADO") {
+  if (method === "CONTA") {
     return { method, amount, amountReceived: null, changeDue: null };
   }
 

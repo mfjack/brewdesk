@@ -46,11 +46,11 @@ export interface TMenuList {
   onPaymentMethodChange: (method: TPaymentMethod) => void;
   amountReceived: string;
   onAmountReceivedChange: (value: string) => void;
-  fiadoCustomerName: string;
-  onFiadoCustomerNameChange: (value: string) => void;
-  openFiadoMatches: TOrderResponse[];
-  fiadoTargetOrderId: number | null;
-  onFiadoTargetOrderIdChange: (orderId: number | null) => void;
+  contaCustomerName: string;
+  onContaCustomerNameChange: (value: string) => void;
+  openContaMatches: TOrderResponse[];
+  contaTargetOrderId: number | null;
+  onContaTargetOrderIdChange: (orderId: number | null) => void;
   onConfirmPayment: () => void;
   isConfirmingPayment: boolean;
   isSplitOpen: boolean;
@@ -143,7 +143,7 @@ export interface TOrderItem {
 
 export type TOrderStatus = "OPEN" | "PENDING" | "IN_PROGRESS" | "READY" | "DELIVERED" | "PAID";
 
-export type TPaymentMethod = "CREDIT" | "DEBIT" | "PIX" | "CASH" | "FIADO";
+export type TPaymentMethod = "CREDIT" | "DEBIT" | "PIX" | "CASH" | "CONTA";
 
 export interface TOrderPayment {
   method: TPaymentMethod;
@@ -165,7 +165,7 @@ export interface TOrderResponse {
   operatorName: string | null;
   payments: TOrderPayment[];
   groupId: number | null;
-  fiadoSettledAt: string | null;
+  contaSettledAt: string | null;
 }
 
 export interface TOperator {

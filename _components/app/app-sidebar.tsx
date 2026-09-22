@@ -34,7 +34,7 @@ export function AppSidebar() {
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
   const isOrderTicketsEnabled = settings?.featureFlags.orderTickets ?? true;
 
-  const visibleNavLinks = APP_PAGES.filter((page) => page.path !== "/fiado" || isCreditSaleEnabled)
+  const visibleNavLinks = APP_PAGES.filter((page) => page.path !== "/conta" || isCreditSaleEnabled)
     .filter((page) => page.path !== "/order-detail" || isOrderTicketsEnabled)
     .filter((page) => (activeOperator ? currentOperator?.allowedRoutes.includes(page.path) : true));
 

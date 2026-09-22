@@ -54,11 +54,11 @@ export function MenuList({
   onPaymentMethodChange,
   amountReceived,
   onAmountReceivedChange,
-  fiadoCustomerName,
-  onFiadoCustomerNameChange,
-  openFiadoMatches,
-  fiadoTargetOrderId,
-  onFiadoTargetOrderIdChange,
+  contaCustomerName,
+  onContaCustomerNameChange,
+  openContaMatches,
+  contaTargetOrderId,
+  onContaTargetOrderIdChange,
   onConfirmPayment,
   isConfirmingPayment,
   isSplitOpen,
@@ -323,11 +323,11 @@ export function MenuList({
             onPaymentMethodChange={onPaymentMethodChange}
             amountReceived={amountReceived}
             onAmountReceivedChange={onAmountReceivedChange}
-            fiadoCustomerName={fiadoCustomerName}
-            onFiadoCustomerNameChange={onFiadoCustomerNameChange}
-            openFiadoMatches={openFiadoMatches}
-            fiadoTargetOrderId={fiadoTargetOrderId}
-            onFiadoTargetOrderIdChange={onFiadoTargetOrderIdChange}
+            contaCustomerName={contaCustomerName}
+            onContaCustomerNameChange={onContaCustomerNameChange}
+            openContaMatches={openContaMatches}
+            contaTargetOrderId={contaTargetOrderId}
+            onContaTargetOrderIdChange={onContaTargetOrderIdChange}
             isSplitOpen={isSplitOpen}
             onSplitOpenChange={onSplitOpenChange}
             onConfirmSplitPayment={onConfirmSplitPayment}

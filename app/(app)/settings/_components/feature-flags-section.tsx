@@ -33,8 +33,8 @@ const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; des
   },
   {
     key: "creditSale",
-    label: "Venda fiado",
-    description: "Permite vender fiado, registrando o cliente e cobrando depois.",
+    label: "Venda na conta",
+    description: "Permite vender na conta, registrando o cliente e cobrando depois.",
     defaultValue: false,
   },
 ];

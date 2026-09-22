@@ -51,7 +51,7 @@ export default function OrderDetailPage() {
   const [paymentOrders, setPaymentOrders] = useState<TOrderResponse[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod>("CREDIT");
   const [amountReceived, setAmountReceived] = useState("");
-  const [fiadoCustomerName, setFiadoCustomerName] = useState("");
+  const [contaCustomerName, setContaCustomerName] = useState("");
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
   const [groupingOrder, setGroupingOrder] = useState<TOrderResponse | null>(null);
@@ -91,7 +91,7 @@ export default function OrderDetailPage() {
     setPaymentOrders([order, ...groupedOrders]);
     setPaymentMethod("CREDIT");
     setAmountReceived("");
-    setFiadoCustomerName(order.customerName ?? "");
+    setContaCustomerName(order.customerName ?? "");
     setIsSplitOpen(false);
   }
 
@@ -159,7 +159,7 @@ export default function OrderDetailPage() {
         };
 
   async function handleConfirmPayment() {
-    if (paymentOrders.length === 0 || (paymentMethod === "FIADO" && !fiadoCustomerName.trim())) {
+    if (paymentOrders.length === 0 || (paymentMethod === "CONTA" && !contaCustomerName.trim())) {
       return;
     }
 
@@ -175,7 +175,7 @@ export default function OrderDetailPage() {
         updateOrderStatus.mutateAsync({
           orderId: order.id,
           status: "PAID",
-          ...(paymentMethod === "FIADO" ? { customerName: fiadoCustomerName } : {}),
+          ...(paymentMethod === "CONTA" ? { customerName: contaCustomerName } : {}),
           payments: [
             buildOrderPayment(paymentMethod, order.total, isCombinedPayment ? order.total : Number(amountReceived) || 0),
           ],
@@ -523,8 +523,8 @@ export default function OrderDetailPage() {
         onPaymentMethodChange={setPaymentMethod}
         amountReceived={amountReceived}
         onAmountReceivedChange={setAmountReceived}
-        fiadoCustomerName={fiadoCustomerName}
-        onFiadoCustomerNameChange={setFiadoCustomerName}
+        contaCustomerName={contaCustomerName}
+        onContaCustomerNameChange={setContaCustomerName}
         isSplitOpen={isSplitOpen}
         onSplitOpenChange={setIsSplitOpen}
         onConfirmSplitPayment={handleConfirmSplitPayment}

@@ -17,11 +17,11 @@ interface TPaymentMethodFields {
   total: number;
   pixQrCodeUrl?: string | null;
   methods?: typeof paymentMethodOptions;
-  fiadoCustomerName?: string;
-  onFiadoCustomerNameChange?: (value: string) => void;
-  openFiadoMatches?: TOrderResponse[];
-  fiadoTargetOrderId?: number | null;
-  onFiadoTargetOrderIdChange?: (orderId: number | null) => void;
+  contaCustomerName?: string;
+  onContaCustomerNameChange?: (value: string) => void;
+  openContaMatches?: TOrderResponse[];
+  contaTargetOrderId?: number | null;
+  onContaTargetOrderIdChange?: (orderId: number | null) => void;
 }
 
 export function PaymentMethodFields({
@@ -32,11 +32,11 @@ export function PaymentMethodFields({
   total,
   pixQrCodeUrl,
   methods = paymentMethodOptions,
-  fiadoCustomerName,
-  onFiadoCustomerNameChange,
-  openFiadoMatches = [],
-  fiadoTargetOrderId,
-  onFiadoTargetOrderIdChange,
+  contaCustomerName,
+  onContaCustomerNameChange,
+  openContaMatches = [],
+  contaTargetOrderId,
+  onContaTargetOrderIdChange,
 }: TPaymentMethodFields) {
   const changeDue = paymentMethod === "CASH" && amountReceived ? computeChangeDue(Number(amountReceived), total) : null;
 
@@ -74,28 +74,28 @@ export function PaymentMethodFields({
         </div>
       )}
 
-      {paymentMethod === "FIADO" && (
+      {paymentMethod === "CONTA" && (
         <div className="space-y-1">
           <Input
             placeholder="Nome do cliente"
-            value={fiadoCustomerName ?? ""}
-            onChange={(e) => onFiadoCustomerNameChange?.(e.target.value)}
+            value={contaCustomerName ?? ""}
+            onChange={(e) => onContaCustomerNameChange?.(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">Necessário pra saber quem deve pagar depois.</p>
 
-          {openFiadoMatches.length > 0 && (
+          {openContaMatches.length > 0 && (
             <div className="space-y-1 pt-1">
               <label className="text-xs font-medium">Adicionar a qual comanda?</label>
               <Select
-                value={fiadoTargetOrderId ? String(fiadoTargetOrderId) : "new"}
-                onValueChange={(value) => onFiadoTargetOrderIdChange?.(value === "new" ? null : Number(value))}
+                value={contaTargetOrderId ? String(contaTargetOrderId) : "new"}
+                onValueChange={(value) => onContaTargetOrderIdChange?.(value === "new" ? null : Number(value))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="new">Nova comanda</SelectItem>
-                  {openFiadoMatches.map((order) => (
+                  {openContaMatches.map((order) => (
                     <SelectItem key={order.id} value={String(order.id)}>
                       Aberta em {formatDateTime(order.createdAt)} — {formatCurrency(order.total)} em aberto
                     </SelectItem>
@@ -103,7 +103,7 @@ export function PaymentMethodFields({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Já existe comanda fiado nesse nome. Se for a mesma pessoa, escolha ela; se for outra, deixe em &quot;Nova
+                Já existe comanda na conta nesse nome. Se for a mesma pessoa, escolha ela; se for outra, deixe em &quot;Nova
                 comanda&quot;.
               </p>
             </div>

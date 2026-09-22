@@ -13,8 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 import { useGetOrders } from "../order/query/useGetOrders";
 import { useGetSettings } from "../settings/query/useGetSettings";
-import { useSetFiadoSettled } from "../order/mutation/useSetFiadoSettled";
-import { listOpenFiadoOrders } from "@/_lib/fiado";
+import { useSetContaSettled } from "../order/mutation/useSetContaSettled";
+import { listOpenContaOrders } from "@/_lib/conta";
 import { getChargedTakeoutFee } from "../order/order-math";
 import type { TOrderResponse } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
@@ -22,36 +22,36 @@ import { formatDateTime } from "@/_lib/format-date";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
 
-export default function FiadoPage() {
+export default function ContaPage() {
   const { data: settings } = useGetSettings();
   const { data: ordersData } = useGetOrders();
-  const setFiadoSettled = useSetFiadoSettled();
+  const setContaSettled = useSetContaSettled();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingOrder, setViewingOrder] = useState<TOrderResponse | null>(null);
   const isHydrated = useIsHydrated();
 
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
-  const openOrders = useMemo(() => (isHydrated ? listOpenFiadoOrders(ordersData ?? []) : []), [isHydrated, ordersData]);
+  const openOrders = useMemo(() => (isHydrated ? listOpenContaOrders(ordersData ?? []) : []), [isHydrated, ordersData]);
   const totalOwed = openOrders.reduce((sum, order) => sum + order.total, 0);
 
   const filteredOrders = openOrders.filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase()));
 
   function handleSettleOrder(orderId: number) {
-    setFiadoSettled.mutate({ orderId, settled: true }, { onSuccess: () => toast.success("Fiado quitado com sucesso!") });
+    setContaSettled.mutate({ orderId, settled: true }, { onSuccess: () => toast.success("Conta quitada com sucesso!") });
   }
 
   if (!isCreditSaleEnabled) {
     return (
       <section className="flex flex-col h-screen">
         <div className="p-4">
-          <Header title="Fiado" />
+          <Header title="Conta" />
         </div>
 
         <Separator className="h-px w-full" />
 
         <div className="flex-1 p-4">
-          <EmptyState message='Ative "Venda fiado" em Configurações pra usar essa página.' />
+          <EmptyState message='Ative "Venda na conta" em Configurações pra usar essa página.' />
         </div>
       </section>
     );
@@ -60,14 +60,14 @@ export default function FiadoPage() {
   return (
     <section className="flex flex-col h-screen">
       <div className="flex items-center justify-between p-4 flex-wrap gap-2">
-        <Header title="Fiado" description={openOrders.length > 0 ? `${formatCurrency(totalOwed)} a receber` : undefined} />
+        <Header title="Conta" description={openOrders.length > 0 ? `${formatCurrency(totalOwed)} a receber` : undefined} />
       </div>
 
       <Separator className="h-px w-full" />
 
       <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
         {openOrders.length === 0 ? (
-          <EmptyState message="Nenhum fiado em aberto." />
+          <EmptyState message="Nenhuma conta em aberto." />
         ) : (
           <>
             <SearchInput
@@ -78,7 +78,7 @@ export default function FiadoPage() {
             />
 
             {filteredOrders.length === 0 ? (
-              <EmptyState message="Nenhum fiado encontrado com esse nome." />
+              <EmptyState message="Nenhuma conta encontrada com esse nome." />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {filteredOrders.map((order) => (
@@ -104,7 +104,7 @@ export default function FiadoPage() {
                         type="button"
                         size="sm"
                         onClick={() => handleSettleOrder(order.id)}
-                        disabled={setFiadoSettled.isPending}
+                        disabled={setContaSettled.isPending}
                       >
                         <Check />
                         Pago
@@ -161,7 +161,7 @@ export default function FiadoPage() {
                   handleSettleOrder(viewingOrder.id);
                   setViewingOrder(null);
                 }}
-                disabled={setFiadoSettled.isPending}
+                disabled={setContaSettled.isPending}
               >
                 <Check />
                 Marcar como pago
