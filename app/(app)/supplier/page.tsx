@@ -30,9 +30,13 @@ export default function SupplierPage() {
   const deleteSupplier = useDeleteSupplier();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredSuppliers = suppliers?.filter((supplier) =>
-    supplier.companyName.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredSuppliers = suppliers?.filter((supplier) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      supplier.companyName.toLowerCase().includes(term) ||
+      (supplier.suppliesDescription?.toLowerCase().includes(term) ?? false)
+    );
+  });
 
   const handleDeleteSupplier = useCallback(
     (supplierId: number) => {
@@ -190,7 +194,7 @@ export default function SupplierPage() {
             <SearchInput
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Filtrar por nome do fornecedor..."
+              placeholder="Filtrar por nome ou o que fornece..."
               className="mb-4 max-w-100"
             />
 
