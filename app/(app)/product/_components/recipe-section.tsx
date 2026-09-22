@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toTitleCase } from "@/_lib/to-title-case";
 import { formatCurrency } from "@/_lib/format-currency";
 import { getSupplyUnitCost } from "@/_lib/recipe-cost";
-import { formatUnit } from "@/_lib/supply-units";
+import { formatUnit, isBelowMinQuantity } from "@/_lib/supply-units";
 
 import type { TSupplyItem } from "../../order/interface";
 import type { TProductFormValues } from "./product-form-dialog";
@@ -34,6 +34,14 @@ function RecipeItemRow({
 
   const numericQuantity = Number(quantity) || 0;
   const rowCost = supplyItem && numericQuantity > 0 ? numericQuantity * getSupplyUnitCost(supplyItem) : 0;
+
+  const stockWarning = !supplyItem
+    ? null
+    : supplyItem.quantity <= 0
+      ? "Esgotado"
+      : isBelowMinQuantity(supplyItem.quantity, supplyItem.minQuantity)
+        ? "Estoque baixo"
+        : null;
 
   return (
     <div className="flex flex-col gap-1">
@@ -87,7 +95,12 @@ function RecipeItemRow({
         </Button>
       </div>
 
-      {rowCost > 0 && <p className="text-right text-xs text-muted-foreground">Custo: {formatCurrency(rowCost)}</p>}
+      {(stockWarning || rowCost > 0) && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-medium text-destructive">{stockWarning}</span>
+          {rowCost > 0 && <span className="text-xs text-muted-foreground">Custo: {formatCurrency(rowCost)}</span>}
+        </div>
+      )}
     </div>
   );
 }

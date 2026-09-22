@@ -19,17 +19,16 @@ import { useDeleteProduct } from "./mutation/useDeleteProduct";
 import { ProductFormDialog } from "./_components/product-form-dialog";
 import type { TProduct } from "../order/interface";
 import { formatCurrency } from "@/_lib/format-currency";
-import { getMaxProducibleQuantity } from "@/_lib/recipe-cost";
+import { getMaxProducibleQuantity, isRecipeIngredientLowStock } from "@/_lib/recipe-cost";
 import { toTitleCase } from "@/_lib/to-title-case";
-import { useIsHydrated } from "@/_lib/use-is-hydrated";
+import { useHydratedData } from "@/_lib/use-is-hydrated";
 import Image from "next/image";
 
 export default function ProductPage() {
   const { data: productsData } = useGetProducts();
   const { data: categories } = useGetCategories();
   const { data: supplyItems } = useGetSupplyItems();
-  const isHydrated = useIsHydrated();
-  const products = isHydrated ? productsData : undefined;
+  const products = useHydratedData(productsData);
   const deleteProduct = useDeleteProduct();
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -46,7 +45,7 @@ export default function ProductPage() {
 
     const maxProducible = getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0;
 
-    return maxProducible > 0 && maxProducible <= (product.lowStockThreshold || 5);
+    return maxProducible > 0 && isRecipeIngredientLowStock(product.recipe, supplyItems ?? []);
   }
 
   const lowStockProducts =
@@ -110,7 +109,7 @@ export default function ProductPage() {
                 <TableBody>
                   {filteredProducts?.map((product: TProduct) => {
                 const maxProducible = product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : null;
-                const recipeLowStockThreshold = product.lowStockThreshold || 5;
+                const isIngredientLowStock = isRecipeIngredientLowStock(product.recipe, supplyItems ?? []);
                 const isOutOfStock = maxProducible !== null ? maxProducible <= 0 : product.trackStock && product.quantity <= 0;
 
                 return (
@@ -181,11 +180,11 @@ export default function ProductPage() {
                           <Badge variant="destructive">Esgotado</Badge>
                         ) : (
                           <>
-                            <span className={maxProducible <= recipeLowStockThreshold ? "font-semibold text-destructive" : ""}>
+                            <span className={isIngredientLowStock ? "font-semibold text-destructive" : ""}>
                               Via insumos: {maxProducible}
                             </span>
 
-                            {maxProducible <= recipeLowStockThreshold && (
+                            {isIngredientLowStock && (
                               <Badge variant="destructive" className="gap-1">
                                 <AlertTriangle />
                                 Estoque baixo

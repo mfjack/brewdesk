@@ -135,11 +135,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
     defaultValues: buildDefaultValues(product),
   });
 
-  const {
-    fields: recipeFields,
-    append: appendRecipeItem,
-    remove: removeRecipeItem,
-  } = useFieldArray({ control, name: "recipe" });
+  const { fields: recipeFields, append: appendRecipeItem, remove: removeRecipeItem } = useFieldArray({ control, name: "recipe" });
 
   const isPending = createProduct.isPending || updateProduct.isPending;
 
@@ -181,12 +177,13 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
       costPrice,
       quantity: data.trackStock ? Number(data.quantity) || 0 : 0,
       trackStock: data.trackStock,
-      lowStockThreshold: data.trackStock || recipe.length > 0 ? Number(data.lowStockThreshold) || 5 : 0,
+      lowStockThreshold: data.trackStock ? Number(data.lowStockThreshold) || 5 : 0,
       category,
       recipe,
     };
 
-    const onError = (error: unknown) => setFormError(error instanceof Error ? error.message : "Não foi possível salvar o produto.");
+    const onError = (error: unknown) =>
+      setFormError(error instanceof Error ? error.message : "Não foi possível salvar o produto.");
 
     if (product) {
       updateProduct.mutate(
@@ -258,6 +255,29 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
             )}
           />
 
+          <div className="flex flex-col gap-1">
+            <Label htmlFor={categoryId}>Categoria</Label>
+            <Controller
+              control={control}
+              name="categoryId"
+              render={({ field }) => (
+                <Select value={field.value ? String(field.value) : ""} onValueChange={(value) => field.onChange(Number(value))}>
+                  <SelectTrigger id={categoryId} className="w-full" aria-invalid={Boolean(errors.categoryId)}>
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories?.map((category) => (
+                      <SelectItem key={category.id} value={String(category.id)}>
+                        {toTitleCase(category.name)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message}</p>}
+          </div>
+
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1">
               <Label htmlFor={priceId}>Preço de venda</Label>
@@ -310,29 +330,6 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
             maxProducible={maxProducible}
           />
 
-          <div className="flex flex-col gap-1">
-            <Label htmlFor={categoryId}>Categoria</Label>
-            <Controller
-              control={control}
-              name="categoryId"
-              render={({ field }) => (
-                <Select value={field.value ? String(field.value) : ""} onValueChange={(value) => field.onChange(Number(value))}>
-                  <SelectTrigger id={categoryId} className="w-full" aria-invalid={Boolean(errors.categoryId)}>
-                    <SelectValue placeholder="Selecione a categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories?.map((category) => (
-                      <SelectItem key={category.id} value={String(category.id)}>
-                        {toTitleCase(category.name)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message}</p>}
-          </div>
-
           <SettingRow label="Controlar estoque" description="Diminui automaticamente a cada venda no PDV.">
             <Controller
               control={control}
@@ -341,14 +338,12 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
             />
           </SettingRow>
 
-          {(trackStock || hasRecipe) && (
+          {trackStock && (
             <div className="flex flex-col gap-2 sm:flex-row">
-              {trackStock && (
-                <div className="flex flex-1 flex-col gap-1">
-                  <Label htmlFor={quantityId}>Quantidade em estoque</Label>
-                  <Input id={quantityId} type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
-                </div>
-              )}
+              <div className="flex flex-1 flex-col gap-1">
+                <Label htmlFor={quantityId}>Quantidade em estoque</Label>
+                <Input id={quantityId} type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
+              </div>
 
               <div className="flex flex-1 flex-col gap-1">
                 <Label htmlFor={lowStockThresholdId}>Alertar com estoque baixo</Label>
@@ -357,11 +352,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
                   type="number"
                   min="0"
                   placeholder="Ex.: 5"
-                  title={
-                    hasRecipe && !trackStock
-                      ? "Alertar quando der pra fazer só essa quantidade ou menos com o estoque de insumos atual"
-                      : "Alertar quando o estoque ficar menor ou igual a esse valor"
-                  }
+                  title="Alertar quando o estoque ficar menor ou igual a esse valor"
                   {...register("lowStockThreshold")}
                 />
               </div>

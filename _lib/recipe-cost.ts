@@ -1,4 +1,5 @@
 import type { TOrderItem, TProduct, TRecipeItem, TSupplyItem } from "@/app/(app)/order/interface";
+import { isBelowMinQuantity } from "@/_lib/supply-units";
 
 export function getSupplyUnitCost(supplyItem: TSupplyItem): number {
   return supplyItem.initialQuantity > 0 ? supplyItem.costPrice / supplyItem.initialQuantity : 0;
@@ -36,6 +37,17 @@ export function getMaxProducibleQuantity(
   }
 
   return Math.max(max, 0);
+}
+
+// A recipe-based product is "low stock" when any ingredient it uses is itself at or
+// below the minimum quantity set on that ingredient — the per-ingredient threshold is
+// the single source of truth, not a separate number on the product.
+export function isRecipeIngredientLowStock(recipe: TRecipeItem[], supplyItems: TSupplyItem[]): boolean {
+  return recipe.some((recipeItem) => {
+    const supplyItem = supplyItems.find((item) => item.id === recipeItem.supplyItemId);
+
+    return supplyItem ? isBelowMinQuantity(supplyItem.quantity, supplyItem.minQuantity) : false;
+  });
 }
 
 export function buildReservedSupplyQuantities(

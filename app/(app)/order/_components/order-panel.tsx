@@ -6,7 +6,7 @@ import { EmptyState } from "@/_components/ui/empty-state";
 import { SearchInput } from "@/_components/ui/search-input";
 import { formatCurrency } from "@/_lib/format-currency";
 import { toTitleCase } from "@/_lib/to-title-case";
-import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
+import { buildReservedSupplyQuantities, getMaxProducibleQuantity, isRecipeIngredientLowStock } from "@/_lib/recipe-cost";
 import { TCategory, TOrderPanel, TProduct } from "../interface";
 import { isDraftOrder } from "../order-math";
 import { ScrollText } from "lucide-react";
@@ -183,8 +183,10 @@ export function OrderPanel({
                     ? product.quantity - quantity
                     : null;
               const outOfStock = available !== null && available <= 0;
-              const lowStockThreshold = product.lowStockThreshold ?? 5;
-              const isLowStock = available !== null && available <= lowStockThreshold;
+              const isLowStock =
+                product.recipe.length > 0
+                  ? !outOfStock && isRecipeIngredientLowStock(product.recipe, supplyItems ?? [])
+                  : available !== null && available <= (product.lowStockThreshold ?? 5);
               const lowStockClassName = outOfStock
                 ? "bg-muted dark:bg-muted-foreground/25"
                 : isLowStock
