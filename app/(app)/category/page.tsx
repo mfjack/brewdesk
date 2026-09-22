@@ -16,12 +16,11 @@ import { useDeleteCategory } from "./mutation/useDeleteCategory";
 import { CategoryFormDialog } from "./_components/category-form-dialog";
 import type { TCategory } from "../order/interface";
 import { toTitleCase } from "@/_lib/to-title-case";
-import { useIsHydrated } from "@/_lib/use-is-hydrated";
+import { useHydratedData } from "@/_lib/use-is-hydrated";
 
 export default function CategoryPage() {
   const { data: categoriesData } = useGetCategories();
-  const isHydrated = useIsHydrated();
-  const categories = isHydrated ? categoriesData : undefined;
+  const categories = useHydratedData(categoriesData);
   const deleteCategory = useDeleteCategory();
   const [searchTerm, setSearchTerm] = useState("");
 

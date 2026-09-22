@@ -143,10 +143,14 @@ export default function OrderPageContent() {
   const openFiadoMatches =
     paymentMethod === "FIADO" && currentOrder && isDraftOrder(currentOrder) ? findOpenFiadoOrders(orders, fiadoCustomerName) : [];
 
-  const groupableOrders = orders
-    .filter((order) => !isOrderPaid(order) && order.status !== "OPEN" && order.id !== currentOrder?.id)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 4);
+  const groupableOrders = useMemo(
+    () =>
+      orders
+        .filter((order) => !isOrderPaid(order) && order.status !== "OPEN" && order.id !== currentOrder?.id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 4),
+    [orders, currentOrder?.id],
+  );
 
   const groupedOrders = currentOrder ? getGroupedOrders(currentOrder, orders) : [];
 

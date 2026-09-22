@@ -28,7 +28,7 @@ import { buildShoppingListGroups } from "@/_lib/shopping-list";
 import { useShoppingListDismissals } from "@/_lib/use-shopping-list-dismissals";
 import { buildWhatsappLink } from "@/_lib/whatsapp-link";
 import { shortenUrl } from "@/_lib/shorten-url";
-import { useIsHydrated } from "@/_lib/use-is-hydrated";
+import { useHydratedData } from "@/_lib/use-is-hydrated";
 import Link from "next/link";
 
 const EXPIRY_WARNING_DAYS = 7;
@@ -55,8 +55,7 @@ export default function StockPage() {
   const { data: supplyItemsData } = useGetSupplyItems();
   const { data: suppliers } = useGetSuppliers();
   const { data: products } = useGetProducts();
-  const isHydrated = useIsHydrated();
-  const supplyItems = isHydrated ? supplyItemsData : undefined;
+  const supplyItems = useHydratedData(supplyItemsData);
   const deleteSupplyItem = useDeleteSupplyItem();
   const [searchTerm, setSearchTerm] = useState("");
 
