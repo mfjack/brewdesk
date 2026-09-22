@@ -1,7 +1,7 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { localStore } from "@/_lib/store";
 import { TOrderResponse, TPaymentMethod } from "@/app/(app)/order/interface";
-import { isOrderPaid } from "@/app/(app)/order/order-math";
 
 export type DateRange = "day" | "week" | "month" | "custom";
 
@@ -92,18 +92,15 @@ function getDateRange(dateRange: DateRange, customRange?: CustomDateRange): { st
   return { start, end };
 }
 
-function filterOrdersByDateRange(orders: TOrderResponse[], dateRange: DateRange, customRange?: CustomDateRange): TOrderResponse[] {
+function useGetOrdersInRange(dateRange: DateRange, customRange?: CustomDateRange) {
   const range = getDateRange(dateRange, customRange);
+  const startIso = range?.start.toISOString() ?? null;
+  const endIso = range?.end.toISOString() ?? null;
 
-  if (!range) {
-    return [];
-  }
-
-  const { start, end } = range;
-
-  return orders.filter((order) => {
-    const orderDate = new Date(order.createdAt);
-    return orderDate >= start && orderDate <= end && isOrderPaid(order);
+  return useQuery({
+    queryKey: ["report", "orders", startIso, endIso],
+    queryFn: () => localStore.getOrdersInRange(startIso!, endIso!),
+    enabled: !!startIso && !!endIso,
   });
 }
 
@@ -228,14 +225,11 @@ function calculateReportStats(orders: TOrderResponse[]): ReportStats {
 }
 
 export function useGetReportData(dateRange: DateRange = "day", customRange?: CustomDateRange) {
-  return useQuery({
-    queryKey: ["report", dateRange, customRange],
-    queryFn: async () => {
-      const allOrders = await localStore.getOrders();
-      const filteredOrders = filterOrdersByDateRange(allOrders, dateRange, customRange);
-      return calculateReportStats(filteredOrders);
-    },
-  });
+  const { data: orders, isLoading } = useGetOrdersInRange(dateRange, customRange);
+
+  const data = useMemo(() => (orders ? calculateReportStats(orders) : undefined), [orders]);
+
+  return { data, isLoading };
 }
 
 export function useGetProductReportData(
@@ -243,42 +237,41 @@ export function useGetProductReportData(
   productName: string | null,
   customRange?: CustomDateRange,
 ) {
-  return useQuery({
-    queryKey: ["report", dateRange, customRange, "product", productName],
-    queryFn: async (): Promise<ProductReportStats | null> => {
-      if (!productName) return null;
+  const { data: orders } = useGetOrdersInRange(dateRange, customRange);
 
-      const allOrders = await localStore.getOrders();
-      const filteredOrders = filterOrdersByDateRange(allOrders, dateRange, customRange);
+  const data = useMemo((): ProductReportStats | null => {
+    if (!productName || !orders) {
+      return null;
+    }
 
-      const productOrders = filteredOrders
-        .map((order) => ({
-          ...order,
-          orderItems: order.orderItems.filter((item) => item.product.name === productName),
-        }))
-        .filter((order) => order.orderItems.length > 0);
+    const productOrders = orders
+      .map((order) => ({
+        ...order,
+        orderItems: order.orderItems.filter((item) => item.product.name === productName),
+      }))
+      .filter((order) => order.orderItems.length > 0);
 
-      const totalRevenue = productOrders.reduce(
-        (sum, order) => sum + order.orderItems.reduce((itemSum, item) => itemSum + item.subtotal, 0),
-        0,
-      );
-      const totalItemsSold = productOrders.reduce(
-        (sum, order) => sum + order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0),
-        0,
-      );
-      const ordersCount = productOrders.length;
-      const averageTicket = ordersCount > 0 ? totalRevenue / ordersCount : 0;
+    const totalRevenue = productOrders.reduce(
+      (sum, order) => sum + order.orderItems.reduce((itemSum, item) => itemSum + item.subtotal, 0),
+      0,
+    );
+    const totalItemsSold = productOrders.reduce(
+      (sum, order) => sum + order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0),
+      0,
+    );
+    const ordersCount = productOrders.length;
+    const averageTicket = ordersCount > 0 ? totalRevenue / ordersCount : 0;
 
-      const hourlyPeaks = buildHourlyPeaks(productOrders, (order) => order.orderItems.reduce((sum, item) => sum + item.subtotal, 0));
+    const hourlyPeaks = buildHourlyPeaks(productOrders, (order) => order.orderItems.reduce((sum, item) => sum + item.subtotal, 0));
 
-      return {
-        totalRevenue,
-        ordersCount,
-        averageTicket,
-        totalItemsSold,
-        hourlyPeaks,
-      };
-    },
-    enabled: !!productName,
-  });
+    return {
+      totalRevenue,
+      ordersCount,
+      averageTicket,
+      totalItemsSold,
+      hourlyPeaks,
+    };
+  }, [orders, productName]);
+
+  return { data };
 }

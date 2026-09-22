@@ -2,40 +2,10 @@ import type { TProduct } from "@/app/(app)/order/interface";
 import { supabase } from "@/_lib/supabase/client";
 import { getEstablishmentId } from "@/_lib/supabase/establishment";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
+import { mapProductRow, type TProductRow } from "@/_lib/store/shared";
 
 export type TProductInput = Partial<Omit<TProduct, "id" | "category" | "name" | "price">> &
   Pick<TProduct, "name" | "price" | "category">;
-
-interface TProductRow {
-  id: number;
-  name: string;
-  description: string | null;
-  photo_url: string | null;
-  price: number;
-  cost_price: number;
-  quantity: number;
-  track_stock: boolean;
-  low_stock_threshold: number;
-  category_id: number;
-  recipe: TProduct["recipe"];
-  category: { id: number; name: string } | null;
-}
-
-function fromRow(row: TProductRow): TProduct {
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    photoUrl: row.photo_url,
-    price: Number(row.price),
-    costPrice: Number(row.cost_price),
-    quantity: Number(row.quantity),
-    trackStock: row.track_stock,
-    lowStockThreshold: Number(row.low_stock_threshold),
-    category: row.category ?? { id: row.category_id, name: "" },
-    recipe: row.recipe ?? [],
-  };
-}
 
 function toRow(input: TProductInput) {
   const trackStock = input.trackStock ?? true;
@@ -64,7 +34,7 @@ export const productStore = {
       throw new Error(error.message);
     }
 
-    return (data as unknown as TProductRow[]).map(fromRow);
+    return (data as unknown as TProductRow[]).map(mapProductRow);
   },
 
   createProduct: async (input: TProductInput): Promise<TProduct> => {
@@ -82,7 +52,7 @@ export const productStore = {
 
     notifyStoreChange(["products"]);
 
-    return fromRow(data as unknown as TProductRow);
+    return mapProductRow(data as unknown as TProductRow);
   },
 
   updateProduct: async (productId: number, input: TProductInput): Promise<TProduct> => {
@@ -99,7 +69,7 @@ export const productStore = {
 
     notifyStoreChange(["products"]);
 
-    return fromRow(data as unknown as TProductRow);
+    return mapProductRow(data as unknown as TProductRow);
   },
 
   deleteProduct: async (productId: number): Promise<void> => {

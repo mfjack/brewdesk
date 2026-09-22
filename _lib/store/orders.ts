@@ -5,6 +5,7 @@ import { getEstablishmentId } from "@/_lib/supabase/establishment";
 import { adjustSupplyItemStock } from "./supply-items";
 import { getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
+import { mapProductRow, mapSupplyItemRow, type TProductRow, type TSupplyItemRow } from "@/_lib/store/shared";
 
 export interface TUpdateOrderStatusInput {
   orderId: number;
@@ -67,19 +68,7 @@ async function fetchProduct(productId: number): Promise<TProduct | null> {
     return null;
   }
 
-  return {
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    photoUrl: data.photo_url,
-    price: Number(data.price),
-    costPrice: Number(data.cost_price),
-    quantity: Number(data.quantity),
-    trackStock: data.track_stock,
-    lowStockThreshold: Number(data.low_stock_threshold),
-    category: data.category,
-    recipe: data.recipe ?? [],
-  };
+  return mapProductRow(data as unknown as TProductRow);
 }
 
 async function fetchSupplyItemsByIds(ids: number[]): Promise<TSupplyItem[]> {
@@ -93,18 +82,7 @@ async function fetchSupplyItemsByIds(ids: number[]): Promise<TSupplyItem[]> {
     throw new Error(error.message);
   }
 
-  return data.map((row) => ({
-    id: row.id,
-    name: row.name,
-    brand: row.brand,
-    quantity: Number(row.quantity),
-    initialQuantity: Number(row.initial_quantity),
-    unit: row.unit,
-    minQuantity: Number(row.min_quantity),
-    costPrice: Number(row.cost_price),
-    supplierId: row.supplier_id,
-    expiresAt: row.expires_at,
-  }));
+  return (data as TSupplyItemRow[]).map(mapSupplyItemRow);
 }
 
 async function fetchProductsByIds(ids: number[]): Promise<TProduct[]> {
@@ -118,19 +96,7 @@ async function fetchProductsByIds(ids: number[]): Promise<TProduct[]> {
     throw new Error(error.message);
   }
 
-  return data.map((row) => ({
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    photoUrl: row.photo_url,
-    price: Number(row.price),
-    costPrice: Number(row.cost_price),
-    quantity: Number(row.quantity),
-    trackStock: row.track_stock,
-    lowStockThreshold: Number(row.low_stock_threshold),
-    category: row.category,
-    recipe: row.recipe ?? [],
-  }));
+  return (data as unknown as TProductRow[]).map(mapProductRow);
 }
 
 async function fetchTakeoutFee(): Promise<number> {
@@ -184,6 +150,22 @@ export const orderStore = {
     return (data as TOrderRow[]).map(fromRow);
   },
 
+  getOrdersInRange: async (startIso: string, endIso: string): Promise<TOrderResponse[]> => {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("status", "PAID")
+      .gte("created_at", startIso)
+      .lte("created_at", endIso)
+      .order("id");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data as TOrderRow[]).map(fromRow);
+  },
+
   getOrder: async (orderId: number): Promise<TOrderResponse | undefined> => {
     const { data, error } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
 
@@ -218,7 +200,11 @@ export const orderStore = {
   },
 
   addOrderItem: async (orderId: number, productId: number, quantity: number): Promise<TOrderResponse> => {
-    const [orderRow, product] = await Promise.all([fetchOrderRow(orderId), fetchProduct(productId)]);
+    const [orderRow, product, takeoutFee] = await Promise.all([
+      fetchOrderRow(orderId),
+      fetchProduct(productId),
+      fetchTakeoutFee(),
+    ]);
 
     if (!product) {
       throw new Error("Pedido ou produto não encontrado");
@@ -242,7 +228,6 @@ export const orderStore = {
     const order = fromRow(orderRow);
 
     const newOrderItems = mergeOrderItem(order.orderItems, product, quantity, () => nextItemId(order.orderItems));
-    const takeoutFee = await fetchTakeoutFee();
     const total = computeOrderTotal(newOrderItems, order.isTakeout, takeoutFee);
 
     await consumeRecipeStock(product, quantity, recipeSupplyItems);
@@ -272,12 +257,11 @@ export const orderStore = {
   },
 
   removeOrderItem: async (orderId: number, itemId: number): Promise<TOrderResponse> => {
-    const orderRow = await fetchOrderRow(orderId);
+    const [orderRow, takeoutFee] = await Promise.all([fetchOrderRow(orderId), fetchTakeoutFee()]);
     const order = fromRow(orderRow);
 
     const removedItem = order.orderItems.find((item) => item.id === itemId);
     const newOrderItems = decrementOrRemoveItem(order.orderItems, itemId);
-    const takeoutFee = await fetchTakeoutFee();
     const total = computeOrderTotal(newOrderItems, order.isTakeout, takeoutFee);
 
     const printedItemQuantities = { ...order.printedItemQuantities };

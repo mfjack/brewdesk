@@ -4,35 +4,10 @@ import { getEstablishmentId } from "@/_lib/supabase/establishment";
 import { roundToAvoidFloatDrift } from "@/_lib/supply-units";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
 import { getRecipeCost } from "@/_lib/recipe-cost";
+import { mapSupplyItemRow } from "@/_lib/store/shared";
 
 export type TSupplyItemInput = Partial<Omit<TSupplyItem, "id" | "initialQuantity" | "name" | "unit">> &
   Pick<TSupplyItem, "name" | "unit">;
-
-function fromRow(row: {
-  id: number;
-  name: string;
-  brand: string | null;
-  quantity: number;
-  initial_quantity: number;
-  unit: TSupplyItem["unit"];
-  min_quantity: number;
-  cost_price: number;
-  supplier_id: number | null;
-  expires_at: string | null;
-}): TSupplyItem {
-  return {
-    id: row.id,
-    name: row.name,
-    brand: row.brand,
-    quantity: Number(row.quantity),
-    initialQuantity: Number(row.initial_quantity),
-    unit: row.unit,
-    minQuantity: Number(row.min_quantity),
-    costPrice: Number(row.cost_price),
-    supplierId: row.supplier_id,
-    expiresAt: row.expires_at,
-  };
-}
 
 function toRow(input: TSupplyItemInput) {
   return {
@@ -52,28 +27,38 @@ export function adjustSupplyItemStock(supplyItem: TSupplyItem, deltaInUnit: numb
 }
 
 async function recalculateProductCostsForSupplyItem(supplyItemId: number): Promise<void> {
-  const [{ data: supplyItemRows, error: supplyItemsError }, { data: productRows, error: productsError }] = await Promise.all([
-    supabase.from("supply_items").select("*"),
-    supabase.from("products").select("id, recipe"),
-  ]);
-
-  if (supplyItemsError) {
-    throw new Error(supplyItemsError.message);
-  }
+  // .contains() serializes an array of objects incorrectly for a jsonb column (sends
+  // "[object Object]" instead of JSON) — passing the JSON string straight to .filter()
+  // with the "cs" (contains) operator avoids that.
+  const { data: productRows, error: productsError } = await supabase
+    .from("products")
+    .select("id, recipe")
+    .filter("recipe", "cs", JSON.stringify([{ supplyItemId }]));
 
   if (productsError) {
     throw new Error(productsError.message);
   }
 
-  const allSupplyItems = supplyItemRows.map(fromRow);
-
-  const affectedProducts = productRows.filter((product) =>
-    (product.recipe as TRecipeItem[]).some((item) => item.supplyItemId === supplyItemId),
-  );
+  const affectedProducts = productRows;
 
   if (affectedProducts.length === 0) {
     return;
   }
+
+  const referencedSupplyItemIds = [
+    ...new Set(affectedProducts.flatMap((product) => (product.recipe as TRecipeItem[]).map((item) => item.supplyItemId))),
+  ];
+
+  const { data: supplyItemRows, error: supplyItemsError } = await supabase
+    .from("supply_items")
+    .select("*")
+    .in("id", referencedSupplyItemIds);
+
+  if (supplyItemsError) {
+    throw new Error(supplyItemsError.message);
+  }
+
+  const allSupplyItems = supplyItemRows.map(mapSupplyItemRow);
 
   await Promise.all(
     affectedProducts.map((product) =>
@@ -95,7 +80,7 @@ export const supplyItemStore = {
       throw new Error(error.message);
     }
 
-    return data.map(fromRow);
+    return data.map(mapSupplyItemRow);
   },
 
   createSupplyItem: async (input: TSupplyItemInput): Promise<TSupplyItem> => {
@@ -114,7 +99,7 @@ export const supplyItemStore = {
 
     notifyStoreChange(["supplyItems"]);
 
-    return fromRow(data);
+    return mapSupplyItemRow(data);
   },
 
   updateSupplyItem: async (supplyItemId: number, input: TSupplyItemInput): Promise<TSupplyItem> => {
@@ -138,7 +123,7 @@ export const supplyItemStore = {
 
     await recalculateProductCostsForSupplyItem(supplyItemId);
 
-    return fromRow(data);
+    return mapSupplyItemRow(data);
   },
 
   deleteSupplyItem: async (supplyItemId: number): Promise<void> => {
