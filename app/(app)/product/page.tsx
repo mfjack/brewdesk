@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
+import { DataTable } from "@/_components/ui/data-table";
+import { DataTableColumnHeader } from "@/_components/ui/data-table-column-header";
 import { Badge } from "@/_components/ui/badge";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { RowActions } from "@/_components/ui/row-actions";
@@ -34,9 +36,12 @@ export default function ProductPage() {
 
   const filteredProducts = products?.filter((product) => product.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  function handleDeleteProduct(productId: number) {
-    deleteProduct.mutate(productId, { onSuccess: () => toast.success("Produto excluído com sucesso!") });
-  }
+  const handleDeleteProduct = useCallback(
+    (productId: number) => {
+      deleteProduct.mutate(productId, { onSuccess: () => toast.success("Produto excluído com sucesso!") });
+    },
+    [deleteProduct],
+  );
 
   function isRecipeLowStock(product: TProduct) {
     if (product.recipe.length === 0) {
@@ -54,6 +59,195 @@ export default function ProductPage() {
         (product.trackStock && product.quantity > 0 && product.quantity <= (product.lowStockThreshold ?? 5)) ||
         isRecipeLowStock(product),
     ) ?? [];
+
+  const columns = useMemo<ColumnDef<TProduct>[]>(
+    () => [
+      {
+        id: "photo",
+        header: "Foto",
+        cell: ({ row }) => {
+          const product = row.original;
+
+          return product.photoUrl ? (
+            <Image
+              src={product.photoUrl}
+              alt={product.name}
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-md object-cover ring-1 ring-foreground/10"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
+              <ImageOff size={16} />
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Produto" />,
+        cell: ({ row }) => {
+          const product = row.original;
+
+          return (
+            <>
+              <p className="font-medium whitespace-normal">{toTitleCase(product.name)}</p>
+              {product.description && (
+                <p className="max-w-60 truncate text-xs text-muted-foreground">{product.description}</p>
+              )}
+            </>
+          );
+        },
+      },
+      {
+        id: "category",
+        accessorFn: (product) => product.category.name,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Categoria" />,
+        cell: ({ row }) => <span className="text-muted-foreground">{toTitleCase(row.original.category.name)}</span>,
+      },
+      {
+        accessorKey: "price",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Preço" />,
+        cell: ({ row }) => {
+          const product = row.original;
+          const maxProducible = product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : null;
+          const isOutOfStock = maxProducible !== null ? maxProducible <= 0 : product.trackStock && product.quantity <= 0;
+
+          return (
+            <>
+              {formatCurrency(product.price)}
+              {!isOutOfStock && product.costPrice > 0 && (
+                <p className="text-xs text-muted-foreground">Custo: {formatCurrency(product.costPrice)}</p>
+              )}
+            </>
+          );
+        },
+      },
+      {
+        id: "cmv",
+        accessorFn: (product) => (product.price > 0 ? (product.costPrice / product.price) * 100 : 0),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="CMV %" />,
+        cell: ({ row }) => {
+          const product = row.original;
+          const maxProducible = product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : null;
+          const isOutOfStock = maxProducible !== null ? maxProducible <= 0 : product.trackStock && product.quantity <= 0;
+
+          return !isOutOfStock && product.costPrice > 0 && product.price > 0 ? (
+            <span
+              className={`text-sm font-medium ${(product.costPrice / product.price) * 100 > 35 ? "text-destructive" : ""}`}
+            >
+              {((product.costPrice / product.price) * 100).toFixed(0)}%
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          );
+        },
+      },
+      {
+        id: "profit",
+        accessorFn: (product) => product.price - product.costPrice,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Lucro" />,
+        cell: ({ row }) => {
+          const product = row.original;
+          const maxProducible = product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : null;
+          const isOutOfStock = maxProducible !== null ? maxProducible <= 0 : product.trackStock && product.quantity <= 0;
+
+          return !isOutOfStock && product.costPrice > 0 ? (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">{formatCurrency(product.price - product.costPrice)}</span>
+              <span className="text-xs text-muted-foreground">
+                {product.price > 0 ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : 0}%
+              </span>
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">{isOutOfStock ? "—" : "Sem custo"}</span>
+          );
+        },
+      },
+      {
+        id: "stock",
+        accessorFn: (product) =>
+          product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : product.quantity,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Estoque" />,
+        cell: ({ row }) => {
+          const product = row.original;
+          const maxProducible = product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : null;
+          const isIngredientLowStock = isRecipeIngredientLowStock(product.recipe, supplyItems ?? []);
+
+          return maxProducible !== null ? (
+            <div className="flex items-center gap-2">
+              {maxProducible <= 0 ? (
+                <Badge variant="destructive">Esgotado</Badge>
+              ) : (
+                <>
+                  <span className={isIngredientLowStock ? "font-semibold text-destructive" : ""}>
+                    Via insumos: {maxProducible}
+                  </span>
+
+                  {isIngredientLowStock && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertTriangle />
+                      Estoque baixo
+                    </Badge>
+                  )}
+                </>
+              )}
+            </div>
+          ) : product.trackStock ? (
+            <div className="flex items-center gap-2">
+              {product.quantity <= 0 ? (
+                <Badge variant="destructive">Esgotado</Badge>
+              ) : (
+                <>
+                  <span className={product.quantity <= (product.lowStockThreshold ?? 5) ? "font-semibold text-destructive" : ""}>
+                    {product.quantity}
+                  </span>
+
+                  {product.quantity <= (product.lowStockThreshold ?? 5) && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertTriangle />
+                      Estoque baixo
+                    </Badge>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">Ilimitado</span>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Ações</div>,
+        cell: ({ row }) => {
+          const product = row.original;
+
+          return (
+            <div className="text-right">
+              <RowActions
+                editTrigger={
+                  <ProductFormDialog
+                    categories={categories}
+                    supplyItems={supplyItems}
+                    product={product}
+                    trigger={
+                      <Button variant="outline" size="icon-sm">
+                        <Pencil />
+                      </Button>
+                    }
+                  />
+                }
+                onDelete={() => handleDeleteProduct(product.id)}
+                deleteConfirmTitle={`Excluir "${toTitleCase(product.name)}"?`}
+              />
+            </div>
+          );
+        },
+      },
+    ],
+    [supplyItems, categories, handleDeleteProduct],
+  );
 
   return (
     <section className="flex flex-col h-screen">
@@ -92,154 +286,7 @@ export default function ProductPage() {
             {filteredProducts?.length === 0 ? (
               <EmptyState message="Nenhum produto encontrado com esse nome." />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Foto</TableHead>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Preço</TableHead>
-                    <TableHead>CMV %</TableHead>
-                    <TableHead>Lucro</TableHead>
-                    <TableHead>Estoque</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {filteredProducts?.map((product: TProduct) => {
-                const maxProducible = product.recipe.length > 0 ? (getMaxProducibleQuantity(product.recipe, supplyItems ?? []) ?? 0) : null;
-                const isIngredientLowStock = isRecipeIngredientLowStock(product.recipe, supplyItems ?? []);
-                const isOutOfStock = maxProducible !== null ? maxProducible <= 0 : product.trackStock && product.quantity <= 0;
-
-                return (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    {product.photoUrl ? (
-                      <Image
-                        src={product.photoUrl}
-                        alt={product.name}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-md object-cover ring-1 ring-foreground/10"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                        <ImageOff size={16} />
-                      </div>
-                    )}
-                  </TableCell>
-
-                  <TableCell>
-                    <p className="font-medium whitespace-normal">{toTitleCase(product.name)}</p>
-                    {product.description && (
-                      <p className="max-w-60 truncate text-xs text-muted-foreground">{product.description}</p>
-                    )}
-                  </TableCell>
-
-                  <TableCell className="text-muted-foreground">{toTitleCase(product.category.name)}</TableCell>
-
-                  <TableCell>
-                    {formatCurrency(product.price)}
-                    {!isOutOfStock && product.costPrice > 0 && (
-                      <p className="text-xs text-muted-foreground">Custo: {formatCurrency(product.costPrice)}</p>
-                    )}
-                  </TableCell>
-
-                  <TableCell>
-                    {!isOutOfStock && product.costPrice > 0 && product.price > 0 ? (
-                      <span
-                        className={`text-sm font-medium ${
-                          (product.costPrice / product.price) * 100 > 35 ? "text-destructive" : ""
-                        }`}
-                      >
-                        {((product.costPrice / product.price) * 100).toFixed(0)}%
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-
-                  <TableCell>
-                    {!isOutOfStock && product.costPrice > 0 ? (
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">{formatCurrency(product.price - product.costPrice)}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {product.price > 0 ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : 0}%
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">{isOutOfStock ? "—" : "Sem custo"}</span>
-                    )}
-                  </TableCell>
-
-                  <TableCell>
-                    {maxProducible !== null ? (
-                      <div className="flex items-center gap-2">
-                        {maxProducible <= 0 ? (
-                          <Badge variant="destructive">Esgotado</Badge>
-                        ) : (
-                          <>
-                            <span className={isIngredientLowStock ? "font-semibold text-destructive" : ""}>
-                              Via insumos: {maxProducible}
-                            </span>
-
-                            {isIngredientLowStock && (
-                              <Badge variant="destructive" className="gap-1">
-                                <AlertTriangle />
-                                Estoque baixo
-                              </Badge>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    ) : product.trackStock ? (
-                      <div className="flex items-center gap-2">
-                        {product.quantity <= 0 ? (
-                          <Badge variant="destructive">Esgotado</Badge>
-                        ) : (
-                          <>
-                            <span className={product.quantity <= (product.lowStockThreshold ?? 5) ? "font-semibold text-destructive" : ""}>
-                              {product.quantity}
-                            </span>
-
-                            {product.quantity <= (product.lowStockThreshold ?? 5) && (
-                              <Badge variant="destructive" className="gap-1">
-                                <AlertTriangle />
-                                Estoque baixo
-                              </Badge>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">Ilimitado</span>
-                    )}
-                  </TableCell>
-
-                  <TableCell className="text-right">
-                    <RowActions
-                      editTrigger={
-                        <ProductFormDialog
-                          categories={categories}
-                          supplyItems={supplyItems}
-                          product={product}
-                          trigger={
-                            <Button variant="outline" size="icon-sm">
-                              <Pencil />
-                            </Button>
-                          }
-                        />
-                      }
-                      onDelete={() => handleDeleteProduct(product.id)}
-                      deleteConfirmTitle={`Excluir "${toTitleCase(product.name)}"?`}
-                    />
-                  </TableCell>
-                </TableRow>
-                );
-              })}
-                </TableBody>
-              </Table>
+              <DataTable columns={columns} data={filteredProducts ?? []} />
             )}
           </>
         )}

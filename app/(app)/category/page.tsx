@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
+import { DataTable } from "@/_components/ui/data-table";
+import { DataTableColumnHeader } from "@/_components/ui/data-table-column-header";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { RowActions } from "@/_components/ui/row-actions";
 import { SearchInput } from "@/_components/ui/search-input";
@@ -28,9 +30,49 @@ export default function CategoryPage() {
     category.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  function handleDeleteCategory(categoryId: number) {
-    deleteCategory.mutate(categoryId, { onSuccess: () => toast.success("Categoria excluída com sucesso!") });
-  }
+  const handleDeleteCategory = useCallback(
+    (categoryId: number) => {
+      deleteCategory.mutate(categoryId, { onSuccess: () => toast.success("Categoria excluída com sucesso!") });
+    },
+    [deleteCategory],
+  );
+
+  const columns = useMemo<ColumnDef<TCategory>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Nome" />,
+        cell: ({ row }) => <span className="font-medium">{toTitleCase(row.original.name)}</span>,
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Ações</div>,
+        cell: ({ row }) => {
+          const category = row.original;
+
+          return (
+            <div className="text-right">
+              <RowActions
+                editTrigger={
+                  <CategoryFormDialog
+                    category={category}
+                    trigger={
+                      <Button variant="outline" size="icon-sm">
+                        <Pencil />
+                      </Button>
+                    }
+                  />
+                }
+                onDelete={() => handleDeleteCategory(category.id)}
+                deleteConfirmTitle={`Excluir "${toTitleCase(category.name)}"?`}
+              />
+            </div>
+          );
+        },
+      },
+    ],
+    [handleDeleteCategory],
+  );
 
   return (
     <section className="flex flex-col h-screen">
@@ -64,39 +106,7 @@ export default function CategoryPage() {
             {filteredCategories?.length === 0 ? (
               <EmptyState message="Nenhuma categoria encontrada com esse nome." />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {filteredCategories?.map((category: TCategory) => (
-                    <TableRow key={category.id}>
-                      <TableCell className="font-medium">{toTitleCase(category.name)}</TableCell>
-
-                      <TableCell className="text-right">
-                        <RowActions
-                          editTrigger={
-                            <CategoryFormDialog
-                              category={category}
-                              trigger={
-                                <Button variant="outline" size="icon-sm">
-                                  <Pencil />
-                                </Button>
-                              }
-                            />
-                          }
-                          onDelete={() => handleDeleteCategory(category.id)}
-                          deleteConfirmTitle={`Excluir "${toTitleCase(category.name)}"?`}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable columns={columns} data={filteredCategories ?? []} />
             )}
           </>
         )}

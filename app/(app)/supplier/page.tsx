@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Header } from "@/_components/ui/header";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/_components/ui/table";
+import { DataTable } from "@/_components/ui/data-table";
+import { DataTableColumnHeader } from "@/_components/ui/data-table-column-header";
 import { EmptyState } from "@/_components/ui/empty-state";
 import { RowActions } from "@/_components/ui/row-actions";
 import { SearchInput } from "@/_components/ui/search-input";
@@ -32,9 +34,136 @@ export default function SupplierPage() {
     supplier.companyName.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  function handleDeleteSupplier(supplierId: number) {
-    deleteSupplier.mutate(supplierId, { onSuccess: () => toast.success("Fornecedor excluído com sucesso!") });
-  }
+  const handleDeleteSupplier = useCallback(
+    (supplierId: number) => {
+      deleteSupplier.mutate(supplierId, { onSuccess: () => toast.success("Fornecedor excluído com sucesso!") });
+    },
+    [deleteSupplier],
+  );
+
+  const columns = useMemo<ColumnDef<TSupplier>[]>(
+    () => [
+      {
+        accessorKey: "companyName",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Empresa" />,
+        cell: ({ row }) => <p className="font-medium whitespace-normal">{toTitleCase(row.original.companyName)}</p>,
+      },
+      {
+        accessorKey: "observation",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Observações" />,
+        cell: ({ row }) => (
+          <span className="max-w-48 truncate text-muted-foreground">{row.original.observation || "—"}</span>
+        ),
+      },
+      {
+        accessorKey: "suppliesDescription",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Fornece" />,
+        cell: ({ row }) => (
+          <span className="max-w-48 truncate text-muted-foreground">{row.original.suppliesDescription || "—"}</span>
+        ),
+      },
+      {
+        accessorKey: "whatsapp",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="WhatsApp" />,
+        cell: ({ row }) => {
+          const supplier = row.original;
+
+          return supplier.whatsapp ? (
+            <Link href={buildWhatsappLink(supplier.whatsapp)} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm" type="button">
+                <MessageCircle />
+                {supplier.whatsapp}
+              </Button>
+            </Link>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        },
+      },
+      {
+        accessorKey: "purchaseLink",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Link" />,
+        cell: ({ row }) => {
+          const supplier = row.original;
+
+          return (
+            <span className="text-muted-foreground">
+              {supplier.purchaseLink ? (
+                <Link
+                  href={supplier.purchaseLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 underline"
+                >
+                  <Link2 size={14} />
+                  {shortenUrl(supplier.purchaseLink)}
+                </Link>
+              ) : (
+                "—"
+              )}
+            </span>
+          );
+        },
+      },
+      {
+        id: "delivery",
+        accessorFn: (supplier) =>
+          supplier.deliveryDays
+            ?.map((day) => WEEKDAY_FULL_NAMES[day as keyof typeof WEEKDAY_FULL_NAMES] ?? day)
+            .join(", ") ?? "",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Entrega" />,
+        cell: ({ row }) => {
+          const supplier = row.original;
+
+          return (
+            <span className="text-muted-foreground">
+              {supplier.deliveryDays?.length > 0 || supplier.deliveryPeriod ? (
+                <div className="flex flex-col">
+                  {supplier.deliveryDays?.length > 0 && (
+                    <span>
+                      {supplier.deliveryDays
+                        .map((day) => WEEKDAY_FULL_NAMES[day as keyof typeof WEEKDAY_FULL_NAMES] ?? day)
+                        .join(", ")}
+                    </span>
+                  )}
+                  {supplier.deliveryPeriod && <span className="text-xs">{supplier.deliveryPeriod}</span>}
+                </div>
+              ) : (
+                "—"
+              )}
+            </span>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Ações</div>,
+        cell: ({ row }) => {
+          const supplier = row.original;
+
+          return (
+            <div className="text-right">
+              <RowActions
+                editTrigger={
+                  <SupplierFormDialog
+                    supplier={supplier}
+                    trigger={
+                      <Button variant="outline" size="icon-sm">
+                        <Pencil />
+                      </Button>
+                    }
+                  />
+                }
+                onDelete={() => handleDeleteSupplier(supplier.id)}
+                deleteConfirmTitle={`Excluir "${toTitleCase(supplier.companyName)}"?`}
+              />
+            </div>
+          );
+        },
+      },
+    ],
+    [handleDeleteSupplier],
+  );
 
   return (
     <section className="flex flex-col h-screen">
@@ -68,96 +197,7 @@ export default function SupplierPage() {
             {filteredSuppliers?.length === 0 ? (
               <EmptyState message="Nenhum fornecedor encontrado com esse nome." />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>Observações</TableHead>
-                    <TableHead>Fornece</TableHead>
-                    <TableHead>WhatsApp</TableHead>
-                    <TableHead>Link</TableHead>
-                    <TableHead>Entrega</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {filteredSuppliers?.map((supplier: TSupplier) => (
-                    <TableRow key={supplier.id}>
-                      <TableCell>
-                        <p className="font-medium whitespace-normal">{toTitleCase(supplier.companyName)}</p>
-                      </TableCell>
-                      <TableCell className="max-w-48 truncate text-muted-foreground">{supplier.observation || "—"}</TableCell>
-                      <TableCell className="max-w-48 truncate text-muted-foreground">
-                        {supplier.suppliesDescription || "—"}
-                      </TableCell>
-
-                      <TableCell>
-                        {supplier.whatsapp ? (
-                          <Link href={buildWhatsappLink(supplier.whatsapp)} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm" type="button">
-                              <MessageCircle />
-                              {supplier.whatsapp}
-                            </Button>
-                          </Link>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-muted-foreground">
-                        {supplier.purchaseLink ? (
-                          <Link
-                            href={supplier.purchaseLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 underline"
-                          >
-                            <Link2 size={14} />
-                            {shortenUrl(supplier.purchaseLink)}
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-muted-foreground">
-                        {supplier.deliveryDays?.length > 0 || supplier.deliveryPeriod ? (
-                          <div className="flex flex-col">
-                            {supplier.deliveryDays?.length > 0 && (
-                              <span>
-                                {supplier.deliveryDays
-                                  .map((day) => WEEKDAY_FULL_NAMES[day as keyof typeof WEEKDAY_FULL_NAMES] ?? day)
-                                  .join(", ")}
-                              </span>
-                            )}
-                            {supplier.deliveryPeriod && <span className="text-xs">{supplier.deliveryPeriod}</span>}
-                          </div>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <RowActions
-                          editTrigger={
-                            <SupplierFormDialog
-                              supplier={supplier}
-                              trigger={
-                                <Button variant="outline" size="icon-sm">
-                                  <Pencil />
-                                </Button>
-                              }
-                            />
-                          }
-                          onDelete={() => handleDeleteSupplier(supplier.id)}
-                          deleteConfirmTitle={`Excluir "${toTitleCase(supplier.companyName)}"?`}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable columns={columns} data={filteredSuppliers ?? []} />
             )}
           </>
         )}
