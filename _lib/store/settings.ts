@@ -9,6 +9,7 @@ export const defaultFeatureFlags: TStoreSettings["featureFlags"] = {
   splitBill: true,
   creditSale: false,
   orderTickets: true,
+  selfService: false,
 };
 export const defaultTakeoutFee = 2;
 

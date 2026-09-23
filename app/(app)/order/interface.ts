@@ -181,6 +181,7 @@ export interface TFeatureFlags {
   splitBill: boolean;
   creditSale: boolean;
   orderTickets: boolean;
+  selfService: boolean;
 }
 
 export interface TStoreSettings {

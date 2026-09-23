@@ -494,7 +494,14 @@ export default function OrderPageContent() {
 
       toast.success("Pedido enviado com sucesso!");
 
-      schedulePrint(orderWithPrintedItems, "full", printedQty, () => handleRequestPaymentAfterSend(customerName));
+      const isSelfServiceEnabled = settings?.featureFlags.selfService ?? false;
+
+      schedulePrint(
+        orderWithPrintedItems,
+        "full",
+        printedQty,
+        isSelfServiceEnabled ? () => resetCart() : () => handleRequestPaymentAfterSend(customerName),
+      );
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
     } finally {

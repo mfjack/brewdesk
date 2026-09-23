@@ -92,6 +92,7 @@ export function MenuList({
   const isTakeoutEnabled = settings?.featureFlags.takeout ?? true;
   const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
   const isOrderTicketsEnabled = settings?.featureFlags.orderTickets ?? true;
+  const isSelfServiceEnabled = settings?.featureFlags.selfService ?? false;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -207,17 +208,19 @@ export function MenuList({
                   </Button>
                 )}
 
-                <Button
-                  type="button"
-                  className="flex-1 flex gap-3"
-                  size="lg"
-                  variant={showSendButton ? "outline" : "default"}
-                  onClick={onRequestPayment}
-                  disabled={isSending || !hasItems}
-                >
-                  <DollarSign />
-                  Pagamento
-                </Button>
+                {!isSelfServiceEnabled && (
+                  <Button
+                    type="button"
+                    className="flex-1 flex gap-3"
+                    size="lg"
+                    variant={showSendButton ? "outline" : "default"}
+                    onClick={onRequestPayment}
+                    disabled={isSending || !hasItems}
+                  >
+                    <DollarSign />
+                    Pagamento
+                  </Button>
+                )}
               </div>
             );
           })()}
@@ -252,12 +255,7 @@ export function MenuList({
 
               {isTakeoutEnabled && (
                 <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
-                  <div>
-                    <p className="text-sm font-medium">Para levar</p>
-                    <p className="text-xs text-muted-foreground">
-                      Adiciona {formatCurrency(settings?.takeoutFee ?? 0)} na comanda.
-                    </p>
-                  </div>
+                  <p className="text-sm font-medium">Para levar</p>
 
                   <Switch checked={isTakeoutDraft} onCheckedChange={onIsTakeoutDraftChange} />
                 </div>
