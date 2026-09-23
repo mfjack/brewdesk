@@ -131,6 +131,40 @@ export const settingsStore = {
     return operatorFromRow(data as TOperatorRow);
   },
 
+  updateOperatorRoutes: async (operatorId: number, allowedRoutes: string[]): Promise<TOperator> => {
+    const { data: operatorRows, error: fetchError } = await supabase.from("operators").select("*");
+
+    if (fetchError) {
+      throw new Error(fetchError.message);
+    }
+
+    const operators = (operatorRows as TOperatorRow[]).map(operatorFromRow);
+    const updatedOperators = operators.map((operator) =>
+      operator.id === operatorId ? { ...operator, allowedRoutes } : operator,
+    );
+
+    if (!hasSettingsAccess(updatedOperators)) {
+      throw new Error(
+        "Não é possível remover o acesso às configurações desse operador. Cadastre outro operador com acesso antes.",
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("operators")
+      .update({ allowed_routes: allowedRoutes })
+      .eq("id", operatorId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["settings"]);
+
+    return operatorFromRow(data as TOperatorRow);
+  },
+
   deleteOperator: async (operatorId: number): Promise<void> => {
     const { data: operatorRows, error: fetchError } = await supabase.from("operators").select("*");
 

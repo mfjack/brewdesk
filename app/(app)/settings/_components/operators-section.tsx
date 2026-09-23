@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { KeyRound, Trash2 } from "lucide-react";
+import { KeyRound, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/_components/ui/button";
@@ -17,10 +17,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { APP_PAGES } from "@/_lib/app-pages";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
+import { useActiveOperator } from "@/_lib/operator-session";
 
 import { useAddOperator } from "../mutation/useAddOperator";
 import { useDeleteOperator } from "../mutation/useDeleteOperator";
-import type { TStoreSettings } from "../../order/interface";
+import { useUpdateOperatorRoutes } from "../mutation/useUpdateOperatorRoutes";
+import type { TOperator, TStoreSettings } from "../../order/interface";
 
 const operatorFormSchema = z.object({
   name: z.string().trim().min(1, "Campo obrigatório."),
@@ -35,7 +37,9 @@ const defaultOperatorFormValues: TOperatorFormValues = { name: "", pin: "", allo
 export function OperatorsSection({ settings }: { settings: TStoreSettings | undefined }) {
   const addOperator = useAddOperator();
   const deleteOperator = useDeleteOperator();
+  const updateOperatorRoutes = useUpdateOperatorRoutes();
   const isHydrated = useIsHydrated();
+  const activeOperator = useActiveOperator();
   const nameId = useId();
   const pinId = useId();
 
@@ -43,6 +47,9 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   const [routesError, setRoutesError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [operatorPendingDeletion, setOperatorPendingDeletion] = useState<{ id: number; name: string } | null>(null);
+  const [editingOperator, setEditingOperator] = useState<TOperator | null>(null);
+  const [editRoutes, setEditRoutes] = useState<string[]>([]);
+  const [editRoutesError, setEditRoutesError] = useState<string | null>(null);
 
   const {
     register,
@@ -56,6 +63,9 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   });
 
   const isFirstOperator = (settings?.operators.length ?? 0) === 0;
+  // Once operators exist, the app forces a PIN login for everyone (see OperatorGate), so
+  // activeOperator is only null in single-owner mode without the PIN system set up at all.
+  const isMaster = !activeOperator || settings?.operators[0]?.id === activeOperator.id;
 
   function handleOpenDialog() {
     reset(defaultOperatorFormValues);
@@ -98,6 +108,38 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
     setOperatorPendingDeletion(null);
   }
 
+  function handleOpenEditDialog(operator: TOperator) {
+    setEditingOperator(operator);
+    setEditRoutes(operator.allowedRoutes);
+    setEditRoutesError(null);
+  }
+
+  function handleSaveOperatorRoutes() {
+    if (!editingOperator) {
+      return;
+    }
+
+    if (editRoutes.length === 0) {
+      setEditRoutesError("Selecione ao menos uma página.");
+
+      return;
+    }
+
+    setEditRoutesError(null);
+
+    updateOperatorRoutes.mutate(
+      { operatorId: editingOperator.id, allowedRoutes: editRoutes },
+      {
+        onSuccess: () => {
+          setEditingOperator(null);
+          toast.success("Permissões atualizadas com sucesso!");
+        },
+        onError: (error) =>
+          setEditRoutesError(error instanceof Error ? error.message : "Não foi possível atualizar as permissões."),
+      },
+    );
+  }
+
   return (
     <div className="max-w-lg space-y-3">
       <div>
@@ -118,15 +160,23 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
                   <span className="text-sm font-medium">{toTitleCase(operator.name)}</span>
                 </div>
 
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon-sm"
-                  onClick={() => setOperatorPendingDeletion({ id: operator.id, name: operator.name })}
-                  disabled={deleteOperator.isPending}
-                >
-                  <Trash2 />
-                </Button>
+                {isMaster && (
+                  <div className="flex gap-1">
+                    <Button type="button" variant="outline" size="icon-sm" onClick={() => handleOpenEditDialog(operator)}>
+                      <Pencil />
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon-sm"
+                      onClick={() => setOperatorPendingDeletion({ id: operator.id, name: operator.name })}
+                      disabled={deleteOperator.isPending}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-1">
@@ -146,9 +196,13 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
 
       {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
 
-      <Button type="button" variant="outline" onClick={handleOpenDialog}>
-        Adicionar operador
-      </Button>
+      {isMaster ? (
+        <Button type="button" variant="outline" onClick={handleOpenDialog}>
+          Adicionar operador
+        </Button>
+      ) : (
+        <p className="text-xs text-muted-foreground">Apenas o operador master pode gerenciar operadores.</p>
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-sm">
@@ -228,6 +282,38 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(editingOperator)} onOpenChange={(open) => !open && setEditingOperator(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{`Permissões de "${editingOperator ? toTitleCase(editingOperator.name) : ""}"`}</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-2">
+            {APP_PAGES.map((page) => (
+              <div key={page.path} className="flex items-center justify-between gap-2">
+                <span className="text-sm">{page.label}</span>
+                <Switch
+                  checked={editRoutes.includes(page.path)}
+                  onCheckedChange={(checked) =>
+                    setEditRoutes((current) =>
+                      checked ? [...current, page.path] : current.filter((route) => route !== page.path),
+                    )
+                  }
+                />
+              </div>
+            ))}
+          </div>
+
+          {editRoutesError && <p className="text-xs text-destructive">{editRoutesError}</p>}
+
+          <DialogFooter>
+            <Button type="button" onClick={handleSaveOperatorRoutes} disabled={updateOperatorRoutes.isPending}>
+              {updateOperatorRoutes.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
