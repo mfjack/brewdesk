@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import { Button } from "@/_components/ui/button";
 import { Card } from "@/_components/ui/card";
@@ -51,7 +52,6 @@ export default function OrderDetailPage() {
   const [paymentOrders, setPaymentOrders] = useState<TOrderResponse[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod | null>(null);
   const [amountReceived, setAmountReceived] = useState("");
-  const [contaCustomerName, setContaCustomerName] = useState("");
   const [isSplitOpen, setIsSplitOpen] = useState(false);
 
   const [groupingOrder, setGroupingOrder] = useState<TOrderResponse | null>(null);
@@ -63,7 +63,6 @@ export default function OrderDetailPage() {
   const orders = useMemo(() => (isHydrated ? (ordersData ?? []) : []), [isHydrated, ordersData]);
 
   const updateOrderStatus = useUpdateOrderStatus();
-  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
   const openOrdersCount = useMemo(() => orders.filter((order) => !isOrderPaid(order)).length, [orders]);
 
@@ -92,7 +91,6 @@ export default function OrderDetailPage() {
     setPaymentOrders([order, ...groupedOrders]);
     setPaymentMethod(null);
     setAmountReceived("");
-    setContaCustomerName(order.customerName ?? "");
     setIsSplitOpen(false);
   }
 
@@ -160,9 +158,15 @@ export default function OrderDetailPage() {
         };
 
   async function handleConfirmPayment() {
-    const effectiveMethod: TPaymentMethod | null = paymentMethod ?? (isCreditSaleEnabled ? "CONTA" : null);
+    if (paymentOrders.length === 0) {
+      return;
+    }
 
-    if (paymentOrders.length === 0 || effectiveMethod === null || (effectiveMethod === "CONTA" && !contaCustomerName.trim())) {
+    // No method picked: these are always already-existing comandas, so just leave them
+    // open without deciding right now — matches PaymentDialog's own "Abrir comanda" gate.
+    if (paymentMethod === null) {
+      setPaymentOrders([]);
+
       return;
     }
 
@@ -178,9 +182,8 @@ export default function OrderDetailPage() {
         updateOrderStatus.mutateAsync({
           orderId: order.id,
           status: "PAID",
-          ...(effectiveMethod === "CONTA" ? { customerName: contaCustomerName } : {}),
           payments: [
-            buildOrderPayment(effectiveMethod, order.total, isCombinedPayment ? order.total : Number(amountReceived) || 0),
+            buildOrderPayment(paymentMethod, order.total, isCombinedPayment ? order.total : Number(amountReceived) || 0),
           ],
         }),
       ),
@@ -208,9 +211,12 @@ export default function OrderDetailPage() {
   }
 
   function handlePrintHistoryOrder(order: TOrderResponse) {
-    setPrintJob(order);
+    // Forces the <OrderReceipt> to commit to the DOM before window.print() runs, instead
+    // of racing an arbitrary delay (thermal printing builds its bytes straight from `order`
+    // and doesn't depend on the render at all).
+    flushSync(() => setPrintJob(order));
 
-    setTimeout(async () => {
+    void (async () => {
       let printedViaThermal = false;
 
       if (isThermalPrintingEnabled()) {
@@ -236,7 +242,7 @@ export default function OrderDetailPage() {
       }
 
       setPrintJob(null);
-    }, 100);
+    })();
   }
 
   return (
@@ -526,7 +532,6 @@ export default function OrderDetailPage() {
         onPaymentMethodChange={setPaymentMethod}
         amountReceived={amountReceived}
         onAmountReceivedChange={setAmountReceived}
-        contaCustomerName={contaCustomerName}
         isSplitOpen={isSplitOpen}
         onSplitOpenChange={setIsSplitOpen}
         onConfirmSplitPayment={handleConfirmSplitPayment}

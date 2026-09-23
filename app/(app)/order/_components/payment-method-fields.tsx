@@ -2,12 +2,10 @@ import Image from "next/image";
 
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import { formatCurrency } from "@/_lib/format-currency";
-import { formatDateTime } from "@/_lib/format-date";
 import { computeChangeDue } from "../order-math";
 import { paymentMethodOptions } from "../payment-methods";
-import type { TOrderResponse, TPaymentMethod } from "../interface";
+import type { TPaymentMethod } from "../interface";
 
 interface TPaymentMethodFields {
   paymentMethod: TPaymentMethod | null;
@@ -17,9 +15,6 @@ interface TPaymentMethodFields {
   total: number;
   pixQrCodeUrl?: string | null;
   methods?: typeof paymentMethodOptions;
-  openContaMatches?: TOrderResponse[];
-  contaTargetOrderId?: number | null;
-  onContaTargetOrderIdChange?: (orderId: number | null) => void;
 }
 
 export function PaymentMethodFields({
@@ -30,9 +25,6 @@ export function PaymentMethodFields({
   total,
   pixQrCodeUrl,
   methods = paymentMethodOptions,
-  openContaMatches = [],
-  contaTargetOrderId,
-  onContaTargetOrderIdChange,
 }: TPaymentMethodFields) {
   const changeDue = paymentMethod === "CASH" && amountReceived ? computeChangeDue(Number(amountReceived), total) : null;
 
@@ -40,7 +32,7 @@ export function PaymentMethodFields({
     <div className="space-y-2">
       <p className="text-sm font-medium">Forma de pagamento</p>
 
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-2.5">
         {methods.map(({ value, label, Icon }) => (
           <Button
             key={value}
@@ -67,32 +59,6 @@ export function PaymentMethodFields({
           />
 
           {changeDue !== null && <p className="text-sm text-muted-foreground">Troco: {formatCurrency(changeDue)}</p>}
-        </div>
-      )}
-
-      {paymentMethod === "CONTA" && openContaMatches.length > 0 && (
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Adicionar a qual comanda?</label>
-          <Select
-            value={contaTargetOrderId ? String(contaTargetOrderId) : "new"}
-            onValueChange={(value) => onContaTargetOrderIdChange?.(value === "new" ? null : Number(value))}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="new">Nova comanda</SelectItem>
-              {openContaMatches.map((order) => (
-                <SelectItem key={order.id} value={String(order.id)}>
-                  Aberta em {formatDateTime(order.createdAt)} — {formatCurrency(order.total)} em aberto
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Já existe comanda na conta nesse nome. Se for a mesma pessoa, escolha ela; se for outra, deixe em &quot;Nova
-            comanda&quot;.
-          </p>
         </div>
       )}
 

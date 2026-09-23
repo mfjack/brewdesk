@@ -8,6 +8,7 @@ import { Label } from "@/_components/ui/label";
 import { SettingRow } from "@/_components/ui/setting-row";
 import { ThemeToggle } from "@/_components/app/theme-toggle";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
+import { useIsMasterOperator } from "@/_lib/operator-session";
 import type { TFeatureFlags, TStoreSettings } from "../../order/interface";
 
 import { useUpdateSettings } from "../mutation/useUpdateSettings";
@@ -42,6 +43,7 @@ const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; des
 export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | undefined }) {
   const updateSettings = useUpdateSettings();
   const isHydrated = useIsHydrated();
+  const isMaster = useIsMasterOperator(settings?.operators);
   const takeoutFeeId = useId();
   const [takeoutFeeInput, setTakeoutFeeInput] = useState<string | null>(null);
 
@@ -76,48 +78,54 @@ export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | u
           <ThemeToggle />
         </SettingRow>
 
-        <SettingRow
-          label="Para levar"
-          description="Permite marcar a comanda como para levar e cobrar a embalagem."
-          extra={
-            <div className="flex items-center gap-2">
-              <Label htmlFor={takeoutFeeId} className="text-xs font-normal text-muted-foreground whitespace-nowrap">
-                Valor da embalagem
-              </Label>
-              <div className="relative w-24">
-                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                  R$
-                </span>
-                <Input
-                  id={takeoutFeeId}
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  inputMode="decimal"
-                  className="pl-7"
-                  placeholder="0,00"
-                  value={takeoutFeeDisplayValue}
-                  onChange={(e) => setTakeoutFeeInput(e.target.value)}
-                  onBlur={handleTakeoutFeeBlur}
-                />
-              </div>
-            </div>
-          }
-        >
-          <Switch
-            checked={isHydrated && (settings?.featureFlags.takeout ?? true)}
-            onCheckedChange={(value) => handleToggle("takeout", value)}
-          />
-        </SettingRow>
+        {!isMaster && (
+          <p className="text-xs text-muted-foreground">Apenas o operador master pode alterar essas funcionalidades.</p>
+        )}
 
-        {OTHER_FEATURE_FLAG_OPTIONS.map((option) => (
-          <SettingRow key={option.key} label={option.label} description={option.description}>
+        <fieldset disabled={!isMaster} className="flex flex-col gap-2">
+          <SettingRow
+            label="Para levar"
+            description="Permite marcar a comanda como para levar e cobrar a embalagem."
+            extra={
+              <div className="flex items-center gap-2">
+                <Label htmlFor={takeoutFeeId} className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                  Valor da embalagem
+                </Label>
+                <div className="relative w-24">
+                  <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    R$
+                  </span>
+                  <Input
+                    id={takeoutFeeId}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    inputMode="decimal"
+                    className="pl-7"
+                    placeholder="0,00"
+                    value={takeoutFeeDisplayValue}
+                    onChange={(e) => setTakeoutFeeInput(e.target.value)}
+                    onBlur={handleTakeoutFeeBlur}
+                  />
+                </div>
+              </div>
+            }
+          >
             <Switch
-              checked={isHydrated && (settings?.featureFlags[option.key] ?? option.defaultValue)}
-              onCheckedChange={(value) => handleToggle(option.key, value)}
+              checked={isHydrated && (settings?.featureFlags.takeout ?? true)}
+              onCheckedChange={(value) => handleToggle("takeout", value)}
             />
           </SettingRow>
-        ))}
+
+          {OTHER_FEATURE_FLAG_OPTIONS.map((option) => (
+            <SettingRow key={option.key} label={option.label} description={option.description}>
+              <Switch
+                checked={isHydrated && (settings?.featureFlags[option.key] ?? option.defaultValue)}
+                onCheckedChange={(value) => handleToggle(option.key, value)}
+              />
+            </SettingRow>
+          ))}
+        </fieldset>
       </div>
     </div>
   );

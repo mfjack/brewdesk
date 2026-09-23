@@ -40,18 +40,17 @@ export interface TMenuList {
   onGroupWithOrderIdChange: (orderId: number | null) => void;
   groupedOrders: TOrderResponse[];
 
+  onRegisterConta: () => void;
+
   onRequestPayment: () => void;
   isPaymentDialogOpen: boolean;
   onPaymentDialogOpenChange: (open: boolean) => void;
   onEditOrderFromPayment?: () => void;
+  isPayingExistingComanda: boolean;
   paymentMethod: TPaymentMethod | null;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
   amountReceived: string;
   onAmountReceivedChange: (value: string) => void;
-  contaCustomerName: string;
-  openContaMatches: TOrderResponse[];
-  contaTargetOrderId: number | null;
-  onContaTargetOrderIdChange: (orderId: number | null) => void;
   onConfirmPayment: () => void;
   isConfirmingPayment: boolean;
   isSplitOpen: boolean;

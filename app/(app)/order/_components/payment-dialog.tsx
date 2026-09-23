@@ -19,16 +19,12 @@ export interface TPaymentDialog {
   description?: string;
   disableSplit?: boolean;
   onEditOrder?: () => void;
+  requirePaymentMethod?: boolean;
 
   paymentMethod: TPaymentMethod | null;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
   amountReceived: string;
   onAmountReceivedChange: (value: string) => void;
-
-  contaCustomerName: string;
-  openContaMatches?: TOrderResponse[];
-  contaTargetOrderId?: number | null;
-  onContaTargetOrderIdChange?: (orderId: number | null) => void;
 
   isSplitOpen: boolean;
   onSplitOpenChange: (open: boolean) => void;
@@ -45,16 +41,12 @@ export function PaymentDialog({
   description = "Confirme o recebimento do pagamento da comanda.",
   disableSplit = false,
   onEditOrder,
+  requirePaymentMethod = false,
 
   paymentMethod,
   onPaymentMethodChange,
   amountReceived,
   onAmountReceivedChange,
-
-  contaCustomerName,
-  openContaMatches,
-  contaTargetOrderId,
-  onContaTargetOrderIdChange,
 
   isSplitOpen,
   onSplitOpenChange,
@@ -66,15 +58,8 @@ export function PaymentDialog({
   const { data: settings } = useGetSettings();
 
   const isSplitBillEnabled = (settings?.featureFlags.splitBill ?? true) && !disableSplit;
-  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
   const availablePaymentMethods = paymentMethodOptions.filter((option) => option.value !== "CONTA");
-
-  // No method pressed yet: falls back to "conta" (pay later) when that's enabled, otherwise
-  // stays unresolved so the operator has to make an explicit choice. The customer name for
-  // that path is already collected upfront (same "Quem é o cliente?" dialog used to send the
-  // order), so it doesn't need to be asked again here.
-  const effectiveMethod: TPaymentMethod | null = paymentMethod ?? (isCreditSaleEnabled ? "CONTA" : null);
 
   const finalTotal = order?.total ?? 0;
 
@@ -136,16 +121,13 @@ export function PaymentDialog({
                 <Separator />
 
                 <PaymentMethodFields
-                  paymentMethod={effectiveMethod}
+                  paymentMethod={paymentMethod}
                   onPaymentMethodChange={onPaymentMethodChange}
                   amountReceived={amountReceived}
                   onAmountReceivedChange={onAmountReceivedChange}
                   total={finalTotal}
                   pixQrCodeUrl={settings?.pixQrCodeUrl}
                   methods={availablePaymentMethods}
-                  openContaMatches={openContaMatches}
-                  contaTargetOrderId={contaTargetOrderId}
-                  onContaTargetOrderIdChange={onContaTargetOrderIdChange}
                 />
 
                 <Separator className="mt-2" />
@@ -165,19 +147,16 @@ export function PaymentDialog({
                     onClick={onConfirmPayment}
                     disabled={
                       isConfirmingPayment ||
-                      effectiveMethod === null ||
-                      (effectiveMethod === "CASH" && Number(amountReceived) < finalTotal) ||
-                      (effectiveMethod === "CONTA" && !contaCustomerName.trim())
+                      (requirePaymentMethod && paymentMethod === null) ||
+                      (paymentMethod === "CASH" && Number(amountReceived) < finalTotal)
                     }
                   >
                     <DollarSign />
                     {isConfirmingPayment
                       ? "Processando..."
-                      : effectiveMethod === "CONTA"
-                        ? contaTargetOrderId != null
-                          ? "Adicionar à comanda na conta"
-                          : "Registrar conta"
-                        : "Pagamento Recebido"}
+                      : paymentMethod === null && !requirePaymentMethod
+                        ? "Abrir comanda"
+                        : "Pagamento recebido"}
                   </Button>
                 </DialogFooter>
               </>

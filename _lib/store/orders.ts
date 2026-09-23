@@ -7,6 +7,11 @@ import { getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 import { notifyStoreChange } from "@/_lib/store/notify-store-change";
 import { mapProductRow, mapSupplyItemRow, type TProductRow, type TSupplyItemRow } from "@/_lib/store/shared";
 
+export interface TOrderItemInput {
+  productId: number;
+  quantity: number;
+}
+
 export interface TUpdateOrderStatusInput {
   orderId: number;
   status: Exclude<TOrderStatus, "OPEN">;
@@ -139,6 +144,118 @@ async function consumeRecipeStock(product: TProduct, quantitySold: number, preFe
   );
 }
 
+// Shared by createOrderWithItems/addOrderItems: validates and merges a whole batch of
+// lines in one pass (one products fetch, one supply-items fetch) instead of the
+// one-network-round-trip-per-line the interactive PDV add-to-cart flow uses — that's fine
+// for a single click, but sending/paying a multi-item cart doesn't need to serialize N
+// separate reads and writes to do the same job.
+async function prepareBatchOrderItems(
+  existingOrderItems: TOrderResponse["orderItems"],
+  items: TOrderItemInput[],
+  isTakeout = false,
+): Promise<{
+  orderItems: TOrderResponse["orderItems"];
+  total: number;
+  applyStockChanges: () => Promise<void>;
+}> {
+  const productIds = [...new Set(items.map((item) => item.productId))];
+  const [products, takeoutFee] = await Promise.all([fetchProductsByIds(productIds), fetchTakeoutFee()]);
+
+  const supplyItemIds = [
+    ...new Set(
+      items.flatMap(
+        ({ productId }) =>
+          products.find((product) => product.id === productId)?.recipe.map((recipeItem) => recipeItem.supplyItemId) ?? [],
+      ),
+    ),
+  ];
+
+  const supplyItems = await fetchSupplyItemsByIds(supplyItemIds);
+
+  // Every recipe-based line draws from the same shared supply, so a shared ingredient has
+  // to be checked against what the whole batch needs at once — checking each line against
+  // the raw supply-item quantity independently would let two lines each look affordable
+  // alone while together overselling the same ingredient.
+  const supplyItemConsumption = new Map<number, number>();
+
+  for (const { productId, quantity } of items) {
+    const product = products.find((candidate) => candidate.id === productId);
+
+    if (!product) {
+      throw new Error("Produto não encontrado");
+    }
+
+    if (product.trackStock && product.quantity < quantity) {
+      throw new Error(`Estoque insuficiente para "${product.name}".`);
+    }
+
+    product.recipe.forEach((recipeItem) => {
+      supplyItemConsumption.set(
+        recipeItem.supplyItemId,
+        (supplyItemConsumption.get(recipeItem.supplyItemId) ?? 0) + recipeItem.quantity * quantity,
+      );
+    });
+  }
+
+  for (const [supplyItemId, consumedQuantity] of supplyItemConsumption) {
+    const supplyItem = supplyItems.find((item) => item.id === supplyItemId);
+
+    if (!supplyItem || supplyItem.quantity < consumedQuantity) {
+      const productUsingIt = items
+        .map(({ productId }) => products.find((candidate) => candidate.id === productId))
+        .find((candidate) => candidate?.recipe.some((recipeItem) => recipeItem.supplyItemId === supplyItemId));
+
+      throw new Error(`Estoque insuficiente para "${productUsingIt?.name ?? "um dos itens"}".`);
+    }
+  }
+
+  let orderItems = existingOrderItems;
+  let nextId = nextItemId(existingOrderItems);
+
+  for (const { productId, quantity } of items) {
+    const product = products.find((candidate) => candidate.id === productId) as TProduct;
+
+    orderItems = mergeOrderItem(orderItems, product, quantity, () => nextId++);
+  }
+
+  const total = computeOrderTotal(orderItems, isTakeout, takeoutFee);
+
+  async function applyStockChanges(): Promise<void> {
+    await Promise.all([
+      ...[...supplyItemConsumption.entries()].map(async ([supplyItemId, consumedQuantity]) => {
+        const supplyItem = supplyItems.find((item) => item.id === supplyItemId);
+
+        if (!supplyItem) {
+          return;
+        }
+
+        adjustSupplyItemStock(supplyItem, consumedQuantity);
+
+        const { error } = await supabase.from("supply_items").update({ quantity: supplyItem.quantity }).eq("id", supplyItemId);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+      }),
+      ...items
+        .map(({ productId, quantity }) => ({ product: products.find((candidate) => candidate.id === productId), quantity }))
+        .filter((entry): entry is { product: TProduct; quantity: number } => Boolean(entry.product?.trackStock))
+        .map(async ({ product, quantity }) => {
+          const { error } = await supabase
+            .from("products")
+            .update({ quantity: product.quantity - quantity })
+            .eq("id", product.id);
+
+          if (error) {
+            throw new Error(error.message);
+          }
+        }),
+    ]);
+  }
+
+  return { orderItems, total, applyStockChanges };
+}
+
 export const orderStore = {
   getOrders: async (): Promise<TOrderResponse[]> => {
     const { data, error } = await supabase.from("orders").select("*").order("id");
@@ -174,29 +291,6 @@ export const orderStore = {
     }
 
     return data ? fromRow(data as TOrderRow) : undefined;
-  },
-
-  createOrder: async (customerName: string, operatorName?: string | null): Promise<TOrderResponse> => {
-    const establishmentId = await getEstablishmentId();
-
-    const { data, error } = await supabase
-      .from("orders")
-      .insert({
-        customer_name: customerName.trim(),
-        status: "OPEN",
-        operator_name: operatorName?.trim() || null,
-        establishment_id: establishmentId,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    notifyStoreChange(["orders"]);
-
-    return fromRow(data as TOrderRow);
   },
 
   addOrderItem: async (orderId: number, productId: number, quantity: number): Promise<TOrderResponse> => {
@@ -243,6 +337,68 @@ export const orderStore = {
     const { data, error } = await supabase
       .from("orders")
       .update({ order_items: newOrderItems, total })
+      .eq("id", orderId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["orders", "products", "supplyItems"]);
+
+    return fromRow(data as TOrderRow);
+  },
+
+  // Creates a brand-new order pre-loaded with every line from the cart in one batch — used
+  // when sending a draft comanda for the first time, instead of an empty createOrder()
+  // followed by one addOrderItem() per line.
+  createOrderWithItems: async (
+    customerName: string,
+    operatorName: string | null | undefined,
+    items: TOrderItemInput[],
+  ): Promise<TOrderResponse> => {
+    const establishmentId = await getEstablishmentId();
+
+    const { orderItems, total, applyStockChanges } = await prepareBatchOrderItems([], items);
+
+    await applyStockChanges();
+
+    const { data, error } = await supabase
+      .from("orders")
+      .insert({
+        customer_name: customerName.trim(),
+        status: "OPEN",
+        operator_name: operatorName?.trim() || null,
+        order_items: orderItems,
+        total,
+        establishment_id: establishmentId,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["orders", "products", "supplyItems"]);
+
+    return fromRow(data as TOrderRow);
+  },
+
+  // Batched counterpart to addOrderItem for merging several cart lines into an existing
+  // order at once — used when folding new items into an already-open "conta" tab.
+  addOrderItems: async (orderId: number, items: TOrderItemInput[]): Promise<TOrderResponse> => {
+    const orderRow = await fetchOrderRow(orderId);
+    const order = fromRow(orderRow);
+
+    const { orderItems, total, applyStockChanges } = await prepareBatchOrderItems(order.orderItems, items, order.isTakeout);
+
+    await applyStockChanges();
+
+    const { data, error } = await supabase
+      .from("orders")
+      .update({ order_items: orderItems, total })
       .eq("id", orderId)
       .select()
       .single();
@@ -421,6 +577,19 @@ export const orderStore = {
     }
 
     notifyStoreChange(["orders", "products", "supplyItems"]);
+  },
+
+  // Removes an order record without reversing its stock consumption — for when its items
+  // were folded into a different order (e.g. merging a just-sent comanda into an already
+  // open "conta" tab under the same customer) rather than actually being cancelled/returned.
+  deleteOrderRecord: async (orderId: number): Promise<void> => {
+    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["orders"]);
   },
 
   setContaSettled: async (orderId: number, settled: boolean): Promise<TOrderResponse> => {

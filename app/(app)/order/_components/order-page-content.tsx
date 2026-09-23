@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { toast } from "sonner";
 
 import { MenuList } from "./menu-list";
@@ -13,7 +14,7 @@ import { useGetSupplyItems } from "../../stock/query/useGetSupplyItems";
 import { useGetOrders } from "../query/useGetOrders";
 import { useGetSettings } from "../../settings/query/useGetSettings";
 
-import { useCreateOrder } from "../mutation/useCreateOrder";
+import { useCreateOrderWithItems } from "../mutation/useCreateOrderWithItems";
 import { useAddOrderItem } from "../mutation/useAddOrderItem";
 import { useRemoveOrderItem } from "../mutation/useRemoveOrderItem";
 import { useUpdateOrderStatus } from "../mutation/useUpdateOrderStatus";
@@ -33,8 +34,7 @@ import {
 } from "../order-math";
 import { getActiveOperator, useIsSelfServiceOperator } from "@/_lib/operator-session";
 import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
-import { useIsHydrated } from "@/_lib/use-is-hydrated";
-import { findOpenContaOrders } from "@/_lib/conta";
+import { useHydratedData, useIsHydrated } from "@/_lib/use-is-hydrated";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrderById } from "../query/useGetOrderById";
@@ -86,9 +86,6 @@ export default function OrderPageContent() {
 
   const [amountReceived, setAmountReceived] = useState("");
 
-  const [contaCustomerName, setContaCustomerName] = useState("");
-  const [contaTargetOrderId, setContaTargetOrderId] = useState<number | null>(null);
-
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   const [isEditOrderDialogOpen, setIsEditOrderDialogOpen] = useState(false);
@@ -106,7 +103,7 @@ export default function OrderPageContent() {
   const { data: settings } = useGetSettings();
   const isSelfServiceEnabled = useIsSelfServiceOperator(settings?.operators);
 
-  const createOrder = useCreateOrder();
+  const createOrderWithItems = useCreateOrderWithItems();
   const addOrderItem = useAddOrderItem();
   const removeOrderItem = useRemoveOrderItem();
   const updateOrderStatus = useUpdateOrderStatus();
@@ -136,16 +133,9 @@ export default function OrderPageContent() {
     () => (effectiveCategory ? products?.filter((product: TProduct) => product.category.id === effectiveCategory.id) : products),
     [products, effectiveCategory],
   );
-
-  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
-  // No method pressed yet: falls back to "conta" (pay later) when that's enabled, otherwise
-  // stays unresolved so the operator has to make an explicit choice.
-  const effectivePaymentMethod: TPaymentMethod | null = paymentMethod ?? (isCreditSaleEnabled ? "CONTA" : null);
-
-  const openContaMatches =
-    effectivePaymentMethod === "CONTA" && currentOrder && isDraftOrder(currentOrder)
-      ? findOpenContaOrders(orders, contaCustomerName)
-      : [];
+  const hydratedProducts = useHydratedData(products);
+  const hydratedSupplyItems = useHydratedData(supplyItems);
+  const hydratedFilteredProducts = useHydratedData(filteredProducts);
 
   const groupableOrders = useMemo(
     () =>
@@ -156,7 +146,10 @@ export default function OrderPageContent() {
     [orders, currentOrder?.id],
   );
 
-  const groupedOrders = currentOrder ? getGroupedOrders(currentOrder, orders) : [];
+  const groupedOrders = useMemo(
+    () => (currentOrder ? getGroupedOrders(currentOrder, orders) : []),
+    [currentOrder, orders],
+  );
 
   function handleCategoryClick(categoryId: number) {
     const category = categories?.find((cat: TCategory) => cat.id === categoryId);
@@ -164,13 +157,17 @@ export default function OrderPageContent() {
     setSelectedCategory(category || null);
   }
 
+  // The receipt DOM only needs to exist for the browser-print fallback below (thermal
+  // printing builds its bytes straight from `order`, no render involved), and the caller
+  // just set printJob via a flushSync'd setPrintJob — so by the time we get here the
+  // <OrderReceipt> is already committed and window.print() has real content to capture.
   function schedulePrint(
     order: TOrderResponse,
     mode: "full" | "additional",
     printedQty: Record<number, number>,
     onAfterPrint?: () => void,
   ) {
-    setTimeout(async () => {
+    void (async () => {
       let printedViaThermal = false;
 
       if (isThermalPrintingEnabled()) {
@@ -212,41 +209,96 @@ export default function OrderPageContent() {
 
       onAfterPrint?.();
       setPrintJob(null);
-    }, 100);
+    })();
   }
 
   async function materializeDraftOrder(draftOrder: TOrderResponse, customerName: string): Promise<TOrderResponse> {
-    const created = await createOrder.mutateAsync({ customerName, operatorName: getActiveOperator()?.name });
-
-    let order = created;
-
-    for (const item of draftOrder.orderItems) {
-      order = await addOrderItem.mutateAsync({
-        orderId: created.id,
-        productId: item.product.id,
-        quantity: item.quantity,
-      });
-    }
-
-    return order;
+    return createOrderWithItems.mutateAsync({
+      customerName,
+      operatorName: getActiveOperator()?.name,
+      items: draftOrder.orderItems.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+    });
   }
 
-  async function mergeIntoExistingContaOrder(existingOrder: TOrderResponse, newItems: TOrderItem[]): Promise<TOrderResponse> {
-    let order = existingOrder;
+  // Prints a receipt for an order that's already been resolved (paid/registered), so it
+  // doesn't go through schedulePrint's printedItemQuantities/markOrderItemsPrinted bookkeeping
+  // — that tracking is for reprinting a still-open order's unprinted lines later, which no
+  // longer applies once the sale is closed out.
+  function printReceiptOnly(order: TOrderResponse) {
+    flushSync(() => setPrintJob({ order, mode: "full" }));
 
-    for (const item of newItems) {
-      order = await addOrderItem.mutateAsync({
-        orderId: existingOrder.id,
-        productId: item.product.id,
-        quantity: item.quantity,
-      });
+    void (async () => {
+      let printedViaThermal = false;
+
+      if (isThermalPrintingEnabled()) {
+        try {
+          const bytes = buildReceiptBytes({ order, settings, printMode: "full" });
+
+          if (bytes) {
+            await printThermalReceipt(bytes);
+          }
+
+          printedViaThermal = true;
+        } catch (error) {
+          const message = `Não foi possível imprimir na impressora térmica${error instanceof Error ? ` (${error.message})` : ""}. Imprimindo pelo navegador.`;
+
+          setStockError(message);
+          toast.error(message);
+        }
+      }
+
+      if (!printedViaThermal) {
+        window.print();
+      } else {
+        toast.success("Recibo impresso com sucesso!");
+      }
+
+      setPrintJob(null);
+    })();
+  }
+
+  async function handleRegisterConta() {
+    const trimmedName = customerNameDraft.trim();
+
+    if (!trimmedName || !currentOrder || sendingOrderRef.current) {
+      return;
     }
 
-    return updateOrderStatus.mutateAsync({
-      orderId: order.id,
-      status: "PAID",
-      payments: [buildOrderPayment("CONTA", order.total)],
-    });
+    setNameError(null);
+    setIsNameDialogOpen(false);
+
+    // "Enviar pedido" led here: the kitchen still needs a ticket for these items even
+    // though the sale is going straight to the customer's tab instead of being paid now.
+    // "Pagamento" (quick sale) never prints, matching that flow's own behavior.
+    const shouldPrint = nameDialogIntent === "send";
+
+    sendingOrderRef.current = true;
+    setIsSendingOrder(true);
+
+    try {
+      const order = isDraftOrder(currentOrder)
+        ? await materializeDraftOrder(currentOrder, trimmedName)
+        : currentOrder;
+
+      const paidOrder = await updateOrderStatus.mutateAsync({
+        orderId: order.id,
+        status: "PAID",
+        customerName: trimmedName,
+        payments: [buildOrderPayment("CONTA", order.total)],
+      });
+
+      if (shouldPrint) {
+        printReceiptOnly(paidOrder);
+      }
+
+      resetCart();
+      toast.success("Registrado na conta com sucesso!");
+    } catch (error) {
+      setStockError(error instanceof Error ? error.message : "Não foi possível registrar a conta.");
+    } finally {
+      sendingOrderRef.current = false;
+      setIsSendingOrder(false);
+    }
   }
 
   function computeAvailableStock(product: TProduct, orderItems: TOrderItem[], reservedQuantities: Record<number, number> = {}) {
@@ -448,7 +500,7 @@ export default function OrderPageContent() {
 
     if (nameDialogIntent === "payment") {
       setCurrentOrder((prev) => (prev ? { ...prev, customerName: trimmedName } : prev));
-      openPaymentDialog(trimmedName);
+      openPaymentDialog();
 
       return;
     }
@@ -488,10 +540,11 @@ export default function OrderPageContent() {
       };
 
       setCurrentOrder(orderWithPrintedItems);
-
-      setPrintJob({ order: orderWithPrintedItems, mode: "full" });
-
       setPrintedItemQuantities(printedQty);
+
+      // Forces the <OrderReceipt> for this job to commit to the DOM before schedulePrint
+      // runs, so window.print() has real content instead of racing an arbitrary delay.
+      flushSync(() => setPrintJob({ order: orderWithPrintedItems, mode: "full" }));
 
       toast.success("Pedido enviado com sucesso!");
 
@@ -499,7 +552,7 @@ export default function OrderPageContent() {
         orderWithPrintedItems,
         "full",
         printedQty,
-        isSelfServiceEnabled ? () => resetCart() : () => handleRequestPaymentAfterSend(customerName),
+        isSelfServiceEnabled ? () => resetCart() : () => handleRequestPaymentAfterSend(),
       );
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
@@ -524,10 +577,7 @@ export default function OrderPageContent() {
 
     const orderForAdditionalPrint = { ...currentOrder, printedItemQuantities: printedItemQuantities };
 
-    setPrintJob({
-      order: orderForAdditionalPrint,
-      mode: "additional",
-    });
+    flushSync(() => setPrintJob({ order: orderForAdditionalPrint, mode: "additional" }));
 
     schedulePrint(orderForAdditionalPrint, "additional", printedQty, () => setPrintedItemQuantities(printedQty));
   }
@@ -568,7 +618,7 @@ export default function OrderPageContent() {
       setCurrentOrder(orderForPrint);
       setPrintedItemQuantities(printedQty);
       setIsEditOrderDialogOpen(false);
-      setPrintJob({ order: orderForPrint, mode: "full" });
+      flushSync(() => setPrintJob({ order: orderForPrint, mode: "full" }));
 
       schedulePrint(orderForPrint, "full", printedQty);
 
@@ -605,15 +655,13 @@ export default function OrderPageContent() {
     }
   }
 
-  function openPaymentDialog(customerNameOverride?: string) {
+  function openPaymentDialog() {
     if (!currentOrder || currentOrder.orderItems.length === 0 || isSendingOrder) {
       return;
     }
 
     setPaymentMethod(null);
     setAmountReceived("");
-    setContaCustomerName(customerNameOverride ?? currentOrder.customerName ?? "");
-    setContaTargetOrderId(null);
     setIsSplitOpen(false);
     setIsPaymentDialogOpen(true);
   }
@@ -639,9 +687,9 @@ export default function OrderPageContent() {
     setIsNameDialogOpen(true);
   }
 
-  function handleRequestPaymentAfterSend(customerNameOverride?: string) {
+  function handleRequestPaymentAfterSend() {
     openedPaymentAfterSendRef.current = true;
-    openPaymentDialog(customerNameOverride);
+    openPaymentDialog();
   }
 
   function handlePaymentDialogOpenChange(open: boolean) {
@@ -664,43 +712,28 @@ export default function OrderPageContent() {
       return;
     }
 
-    if (effectivePaymentMethod === null || (effectivePaymentMethod === "CONTA" && !contaCustomerName.trim())) {
-      return;
-    }
-
     sendingOrderRef.current = true;
     setIsSendingOrder(true);
 
     try {
-      const targetContaOrder =
-        effectivePaymentMethod === "CONTA" && contaTargetOrderId
-          ? openContaMatches.find((order) => order.id === contaTargetOrderId)
-          : undefined;
+      const order = isDraftOrder(currentOrder)
+        ? await materializeDraftOrder(currentOrder, currentOrder.customerName)
+        : currentOrder;
 
-      if (targetContaOrder) {
-        await mergeIntoExistingContaOrder(targetContaOrder, currentOrder.orderItems);
-
-        setIsPaymentDialogOpen(false);
-        resetCart();
-        toast.success("Pagamento confirmado com sucesso!");
-
-        return;
+      if (paymentMethod !== null) {
+        await updateOrderStatus.mutateAsync({
+          orderId: order.id,
+          status: "PAID",
+          observation,
+          payments: [buildOrderPayment(paymentMethod, order.total, Number(amountReceived) || 0)],
+        });
+      } else {
+        setCurrentOrder(order);
       }
-
-      const customerName = effectivePaymentMethod === "CONTA" ? contaCustomerName : "";
-      const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, customerName) : currentOrder;
-
-      await updateOrderStatus.mutateAsync({
-        orderId: order.id,
-        status: "PAID",
-        observation,
-        ...(effectivePaymentMethod === "CONTA" ? { customerName: contaCustomerName } : {}),
-        payments: [buildOrderPayment(effectivePaymentMethod, order.total, Number(amountReceived) || 0)],
-      });
 
       setIsPaymentDialogOpen(false);
       resetCart();
-      toast.success("Pagamento confirmado com sucesso!");
+      toast.success(paymentMethod !== null ? "Pagamento confirmado com sucesso!" : "Comanda aberta com sucesso!");
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível concluir o pagamento.");
     } finally {
@@ -756,9 +789,9 @@ export default function OrderPageContent() {
           categories={isHydrated ? categories || [] : []}
           selectedCategory={effectiveCategory}
           handleCategoryClick={handleCategoryClick}
-          filteredProducts={isHydrated ? filteredProducts : undefined}
-          products={isHydrated ? products : undefined}
-          supplyItems={isHydrated ? supplyItems : undefined}
+          filteredProducts={hydratedFilteredProducts}
+          products={hydratedProducts}
+          supplyItems={hydratedSupplyItems}
           onAddProduct={handleAddProduct}
           order={currentOrder}
           stockError={stockError}
@@ -793,18 +826,16 @@ export default function OrderPageContent() {
             groupWithOrderId={groupWithOrderId}
             onGroupWithOrderIdChange={setGroupWithOrderId}
             groupedOrders={groupedOrders}
+            onRegisterConta={handleRegisterConta}
             onRequestPayment={handleRequestPayment}
             isPaymentDialogOpen={isPaymentDialogOpen}
             onPaymentDialogOpenChange={handlePaymentDialogOpenChange}
             onEditOrderFromPayment={handleEditOrderFromPayment}
+            isPayingExistingComanda={Boolean(orderId)}
             paymentMethod={paymentMethod}
             onPaymentMethodChange={setPaymentMethod}
             amountReceived={amountReceived}
             onAmountReceivedChange={setAmountReceived}
-            contaCustomerName={contaCustomerName}
-            openContaMatches={openContaMatches}
-            contaTargetOrderId={contaTargetOrderId}
-            onContaTargetOrderIdChange={setContaTargetOrderId}
             onConfirmPayment={handleConfirmPayment}
             isConfirmingPayment={isSendingOrder}
             isSplitOpen={isSplitOpen}

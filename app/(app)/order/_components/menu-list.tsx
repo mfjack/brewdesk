@@ -1,4 +1,4 @@
-import { Trash2, NotebookPen, Send, User, DollarSign, Pencil } from "lucide-react";
+import { Trash2, NotebookPen, Send, User, DollarSign, Pencil, Wallet } from "lucide-react";
 
 import { useEffect } from "react";
 
@@ -47,18 +47,17 @@ export function MenuList({
   onGroupWithOrderIdChange,
   groupedOrders,
 
+  onRegisterConta,
+
   onRequestPayment,
   isPaymentDialogOpen,
   onPaymentDialogOpenChange,
   onEditOrderFromPayment,
+  isPayingExistingComanda,
   paymentMethod,
   onPaymentMethodChange,
   amountReceived,
   onAmountReceivedChange,
-  contaCustomerName,
-  openContaMatches,
-  contaTargetOrderId,
-  onContaTargetOrderIdChange,
   onConfirmPayment,
   isConfirmingPayment,
   isSplitOpen,
@@ -93,6 +92,7 @@ export function MenuList({
   const isTakeoutEnabled = settings?.featureFlags.takeout ?? true;
   const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
   const isOrderTicketsEnabled = settings?.featureFlags.orderTickets ?? true;
+  const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -307,8 +307,21 @@ export function MenuList({
                 {nameError && <p className="text-xs text-center mt-1 text-destructive">{nameError}</p>}
               </div>
 
-              <DialogFooter>
-                <Button onClick={onConfirmCustomerName} disabled={!customerNameDraft.trim() || isSending}>
+              <DialogFooter className="flex-row gap-2">
+                {isCreditSaleEnabled && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={onRegisterConta}
+                    disabled={!customerNameDraft.trim() || isSending}
+                  >
+                    <Wallet />
+                    Registrar conta
+                  </Button>
+                )}
+
+                <Button className="flex-1" onClick={onConfirmCustomerName} disabled={!customerNameDraft.trim() || isSending}>
                   {nameDialogIntent === "payment" ? (
                     <>
                       <DollarSign />
@@ -329,21 +342,22 @@ export function MenuList({
             open={isPaymentDialogOpen}
             onOpenChange={onPaymentDialogOpenChange}
             order={order}
-            description="Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda."
+            description={
+              isPayingExistingComanda
+                ? "Confirme o recebimento do pagamento da comanda."
+                : "Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda."
+            }
+            requirePaymentMethod={isPayingExistingComanda}
             paymentMethod={paymentMethod}
             onPaymentMethodChange={onPaymentMethodChange}
             amountReceived={amountReceived}
             onAmountReceivedChange={onAmountReceivedChange}
-            contaCustomerName={contaCustomerName}
-            openContaMatches={openContaMatches}
-            contaTargetOrderId={contaTargetOrderId}
-            onContaTargetOrderIdChange={onContaTargetOrderIdChange}
             isSplitOpen={isSplitOpen}
             onSplitOpenChange={onSplitOpenChange}
             onConfirmSplitPayment={onConfirmSplitPayment}
             onConfirmPayment={onConfirmPayment}
             isConfirmingPayment={isConfirmingPayment}
-            onEditOrder={isExistingOrder ? onEditOrderFromPayment : undefined}
+            onEditOrder={isExistingOrder && !isPayingExistingComanda ? onEditOrderFromPayment : undefined}
           />
 
           <Dialog open={isCancelDialogOpen} onOpenChange={onCancelDialogOpenChange}>
