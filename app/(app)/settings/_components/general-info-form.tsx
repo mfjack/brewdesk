@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,7 +43,8 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
+    reset,
   } = useForm<TSettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: { name: "", cnpj: "", phone: "", address: "", receiptFooterMessage: "", logoUrl: null, pixQrCodeUrl: null },
@@ -60,6 +61,23 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
       : undefined,
   });
 
+  // Warns before the tab closes with edits still unsaved — this form requires an explicit
+  // Salvar click, unlike the auto-saving switches elsewhere on this page, so it's the one
+  // place on this page where a stray edit could otherwise get lost silently.
+  useEffect(() => {
+    if (!isDirty) {
+      return;
+    }
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
   function handleSubmitSettings(data: TSettingsFormValues) {
     updateSettings.mutate(
       {
@@ -74,7 +92,12 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
         featureFlags: settings?.featureFlags ?? defaultFeatureFlags,
         takeoutFee: settings?.takeoutFee ?? defaultTakeoutFee,
       },
-      { onSuccess: () => toast.success("Configurações salvas com sucesso!") },
+      {
+        onSuccess: () => {
+          toast.success("Configurações salvas com sucesso!");
+          reset(data);
+        },
+      },
     );
   }
 
@@ -188,12 +211,12 @@ export function GeneralInfoForm({ settings }: { settings: TStoreSettings | undef
           />
         </div>
 
-        <div>
+        <div className="flex items-center gap-3">
           <Button type="submit" disabled={updateSettings.isPending}>
             {updateSettings.isPending ? "Salvando..." : "Salvar alterações"}
           </Button>
 
-          {updateSettings.isSuccess && <span className="ml-3 text-sm text-muted-foreground">Configurações salvas.</span>}
+          {isDirty && <span className="text-xs text-muted-foreground">Você tem alterações não salvas.</span>}
         </div>
       </fieldset>
     </form>

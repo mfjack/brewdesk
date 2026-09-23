@@ -159,6 +159,7 @@ export default function SupplierPage() {
                   />
                 }
                 onDelete={() => handleDeleteSupplier(supplier.id)}
+                isDeleting={deleteSupplier.isPending}
                 deleteConfirmTitle={`Excluir "${toTitleCase(supplier.companyName)}"?`}
               />
             </div>
@@ -166,7 +167,7 @@ export default function SupplierPage() {
         },
       },
     ],
-    [handleDeleteSupplier],
+    [handleDeleteSupplier, deleteSupplier.isPending],
   );
 
   return (
@@ -187,8 +188,22 @@ export default function SupplierPage() {
       <Separator className="h-px w-full" />
 
       <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-        {suppliers?.length === 0 ? (
-          <EmptyState message="Nenhum fornecedor cadastrado." />
+        {suppliers === undefined ? (
+          <EmptyState message="Carregando fornecedores..." />
+        ) : suppliers.length === 0 ? (
+          <EmptyState
+            message="Nenhum fornecedor cadastrado."
+            action={
+              <SupplierFormDialog
+                trigger={
+                  <Button size="sm">
+                    <Plus />
+                    Adicionar fornecedor
+                  </Button>
+                }
+              />
+            }
+          />
         ) : (
           <>
             <SearchInput

@@ -635,6 +635,7 @@ export default function OrderPageContent() {
       return;
     }
 
+    setStockError(null);
     setIsCancelDialogOpen(true);
   }
 
@@ -660,6 +661,7 @@ export default function OrderPageContent() {
       return;
     }
 
+    setStockError(null);
     setPaymentMethod(null);
     setAmountReceived("");
     setIsSplitOpen(false);

@@ -180,7 +180,7 @@ export function SplitBillCalculator({
                   <Button
                     key={personIndex}
                     type="button"
-                    size="icon-sm"
+                    size="icon-lg"
                     variant={assignments[item.id] === personIndex ? "default" : "outline"}
                     onClick={() => handleAssign(item.id, personIndex)}
                   >

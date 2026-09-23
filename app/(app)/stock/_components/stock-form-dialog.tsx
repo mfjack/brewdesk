@@ -254,8 +254,12 @@ export function StockFormDialog({ suppliers, trigger, supplyItem }: TStockFormDi
             <Input id={expiresAtId} type="date" placeholder="Opcional" {...register("expiresAt")} />
           </div>
 
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>
+          <DialogFooter className="flex-row gap-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)} disabled={isPending}>
+              Cancelar
+            </Button>
+
+            <Button type="submit" className="flex-1" disabled={isPending}>
               {isPending ? "Salvando..." : isEditing ? "Salvar alterações" : "Adicionar insumo"}
             </Button>
           </DialogFooter>

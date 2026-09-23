@@ -361,8 +361,12 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
 
           {formError && <p className="text-xs text-destructive">{formError}</p>}
 
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>
+          <DialogFooter className="flex-row gap-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)} disabled={isPending}>
+              Cancelar
+            </Button>
+
+            <Button type="submit" className="flex-1" disabled={isPending}>
               {isPending ? "Salvando..." : isEditing ? "Salvar alterações" : "Adicionar produto"}
             </Button>
           </DialogFooter>

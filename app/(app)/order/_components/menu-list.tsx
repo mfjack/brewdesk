@@ -348,6 +348,7 @@ export function MenuList({
                 : "Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda."
             }
             requirePaymentMethod={isPayingExistingComanda}
+            error={stockError}
             paymentMethod={paymentMethod}
             onPaymentMethodChange={onPaymentMethodChange}
             amountReceived={amountReceived}
@@ -369,6 +370,8 @@ export function MenuList({
                 </DialogDescription>
               </DialogHeader>
 
+              {stockError && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{stockError}</p>}
+
               <DialogFooter className="flex-row gap-2">
                 <Button
                   type="button"
@@ -377,7 +380,7 @@ export function MenuList({
                   onClick={() => onCancelDialogOpenChange(false)}
                   disabled={isCancelling}
                 >
-                  Voltar
+                  Cancelar
                 </Button>
 
                 <Button

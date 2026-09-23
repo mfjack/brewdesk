@@ -64,6 +64,7 @@ export default function CategoryPage() {
                   />
                 }
                 onDelete={() => handleDeleteCategory(category.id)}
+                isDeleting={deleteCategory.isPending}
                 deleteConfirmTitle={`Excluir "${toTitleCase(category.name)}"?`}
               />
             </div>
@@ -71,7 +72,7 @@ export default function CategoryPage() {
         },
       },
     ],
-    [handleDeleteCategory],
+    [handleDeleteCategory, deleteCategory.isPending],
   );
 
   return (
@@ -92,8 +93,22 @@ export default function CategoryPage() {
       <Separator className="h-px w-full" />
 
       <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-        {categories?.length === 0 ? (
-          <EmptyState message="Nenhuma categoria cadastrada." />
+        {categories === undefined ? (
+          <EmptyState message="Carregando categorias..." />
+        ) : categories.length === 0 ? (
+          <EmptyState
+            message="Nenhuma categoria cadastrada."
+            action={
+              <CategoryFormDialog
+                trigger={
+                  <Button size="sm">
+                    <Plus />
+                    Adicionar categoria
+                  </Button>
+                }
+              />
+            }
+          />
         ) : (
           <>
             <SearchInput

@@ -239,6 +239,7 @@ export default function ProductPage() {
                   />
                 }
                 onDelete={() => handleDeleteProduct(product.id)}
+                isDeleting={deleteProduct.isPending}
                 deleteConfirmTitle={`Excluir "${toTitleCase(product.name)}"?`}
               />
             </div>
@@ -246,7 +247,7 @@ export default function ProductPage() {
         },
       },
     ],
-    [supplyItems, categories, handleDeleteProduct],
+    [supplyItems, categories, handleDeleteProduct, deleteProduct.isPending],
   );
 
   return (
@@ -272,8 +273,24 @@ export default function ProductPage() {
       <Separator className="h-px w-full" />
 
       <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-        {products?.length === 0 ? (
-          <EmptyState message="Nenhum produto cadastrado." />
+        {products === undefined ? (
+          <EmptyState message="Carregando produtos..." />
+        ) : products.length === 0 ? (
+          <EmptyState
+            message="Nenhum produto cadastrado."
+            action={
+              <ProductFormDialog
+                categories={categories}
+                supplyItems={supplyItems}
+                trigger={
+                  <Button size="sm">
+                    <Plus />
+                    Adicionar produto
+                  </Button>
+                }
+              />
+            }
+          />
         ) : (
           <>
             <SearchInput

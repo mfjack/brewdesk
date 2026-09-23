@@ -273,7 +273,13 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
               name="isSelfService"
               render={({ field }) => (
                 <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
-                  <p className="text-sm">Autoatendimento</p>
+                  <div>
+                    <p className="text-sm">Autoatendimento</p>
+                    <p className="text-xs text-muted-foreground">
+                      Esconde os botões de Pagamento e Comandas no PDV — use para um operador de totem, que só envia pedidos
+                      para a cozinha.
+                    </p>
+                  </div>
                   <Switch checked={field.value} onCheckedChange={field.onChange} />
                 </div>
               )}
@@ -320,7 +326,13 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
           </div>
 
           <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
-            <p className="text-sm">Autoatendimento</p>
+            <div>
+              <p className="text-sm">Autoatendimento</p>
+              <p className="text-xs text-muted-foreground">
+                Esconde os botões de Pagamento e Comandas no PDV — use para um operador de totem, que só envia pedidos para a
+                cozinha.
+              </p>
+            </div>
             <Switch checked={editIsSelfService} onCheckedChange={setEditIsSelfService} />
           </div>
 

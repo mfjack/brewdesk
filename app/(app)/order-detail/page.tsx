@@ -57,7 +57,7 @@ export default function OrderDetailPage() {
   const [groupingOrder, setGroupingOrder] = useState<TOrderResponse | null>(null);
   const [groupWithSelection, setGroupWithSelection] = useState<string>("none");
 
-  const { data: ordersData } = useGetOrders();
+  const { data: ordersData } = useGetOrders({ refetchInterval: 10000 });
   const { data: settings } = useGetSettings();
   const isHydrated = useIsHydrated();
   const orders = useMemo(() => (isHydrated ? (ordersData ?? []) : []), [isHydrated, ordersData]);
@@ -552,31 +552,33 @@ export default function OrderDetailPage() {
           {groupableTargets.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma outra comanda aberta disponível pra vincular.</p>
           ) : (
-            <Select value={groupWithSelection} onValueChange={setGroupWithSelection}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione uma comanda" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Selecione uma comanda</SelectItem>
-                {groupableTargets.map((target) => (
-                  <SelectItem key={target.id} value={String(target.id)}>
-                    {toTitleCase(target.customerName)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+            <>
+              <Select value={groupWithSelection} onValueChange={setGroupWithSelection}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione uma comanda" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Selecione uma comanda</SelectItem>
+                  {groupableTargets.map((target) => (
+                    <SelectItem key={target.id} value={String(target.id)}>
+                      {toTitleCase(target.customerName)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              className="w-full"
-              disabled={groupWithSelection === "none" || updateOrderStatus.isPending}
-              onClick={handleConfirmGrouping}
-            >
-              {updateOrderStatus.isPending ? "Vinculando..." : "Vincular"}
-            </Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={groupWithSelection === "none" || updateOrderStatus.isPending}
+                  onClick={handleConfirmGrouping}
+                >
+                  {updateOrderStatus.isPending ? "Vinculando..." : "Vincular"}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
       </section>

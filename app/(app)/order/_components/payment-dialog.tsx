@@ -20,6 +20,7 @@ export interface TPaymentDialog {
   disableSplit?: boolean;
   onEditOrder?: () => void;
   requirePaymentMethod?: boolean;
+  error?: string | null;
 
   paymentMethod: TPaymentMethod | null;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
@@ -42,6 +43,7 @@ export function PaymentDialog({
   disableSplit = false,
   onEditOrder,
   requirePaymentMethod = false,
+  error,
 
   paymentMethod,
   onPaymentMethodChange,
@@ -105,6 +107,8 @@ export function PaymentDialog({
               </div>
             </div>
 
+            {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+
             {isSplitBillEnabled && (
               <SplitBillCalculator
                 order={order}
@@ -133,6 +137,17 @@ export function PaymentDialog({
                 <Separator className="mt-2" />
 
                 <DialogFooter className="flex-row gap-2 mt-12">
+                  <Button
+                    className="flex-1"
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isConfirmingPayment}
+                  >
+                    Cancelar
+                  </Button>
+
                   {onEditOrder && (
                     <Button className="flex-1" type="button" variant="outline" size="lg" onClick={onEditOrder}>
                       <Pencil />

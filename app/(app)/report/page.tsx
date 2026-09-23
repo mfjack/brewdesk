@@ -570,11 +570,11 @@ export default function ReportPage() {
                                   ? "text-muted-foreground"
                                   : cashDifference < 0
                                     ? "text-destructive"
-                                    : "text-foreground"
+                                    : "text-primary"
                               }`}
                             >
                               {cashDifference === 0
-                                ? "Confere certinho."
+                                ? "Confere com o esperado."
                                 : cashDifference < 0
                                   ? `Faltam ${formatCurrency(Math.abs(cashDifference))}`
                                   : `Sobram ${formatCurrency(cashDifference)}`}

@@ -24,7 +24,7 @@ import { useIsHydrated } from "@/_lib/use-is-hydrated";
 
 export default function ContaPage() {
   const { data: settings } = useGetSettings();
-  const { data: ordersData } = useGetOrders();
+  const { data: ordersData } = useGetOrders({ refetchInterval: 10000 });
   const setContaSettled = useSetContaSettled();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingOrder, setViewingOrder] = useState<TOrderResponse | null>(null);
@@ -66,7 +66,9 @@ export default function ContaPage() {
       <Separator className="h-px w-full" />
 
       <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-        {openOrders.length === 0 ? (
+        {!isHydrated || ordersData === undefined ? (
+          <EmptyState message="Carregando contas..." />
+        ) : openOrders.length === 0 ? (
           <EmptyState message="Nenhuma conta em aberto." />
         ) : (
           <>
@@ -93,7 +95,7 @@ export default function ContaPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-destructive">{formatCurrency(order.total)}</span>
+                      <span className="text-lg font-bold">{formatCurrency(order.total)}</span>
 
                       <Button type="button" variant="outline" size="sm" onClick={() => setViewingOrder(order)}>
                         <Eye />
@@ -151,7 +153,7 @@ export default function ContaPage() {
 
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold">Total</span>
-                <span className="text-xl font-bold text-destructive">{formatCurrency(viewingOrder.total)}</span>
+                <span className="text-xl font-bold">{formatCurrency(viewingOrder.total)}</span>
               </div>
 
               <Button

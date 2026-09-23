@@ -15,7 +15,7 @@ import { useGetSettings } from "../settings/query/useGetSettings";
 import { GroupedOrdersBadge } from "../order/_components/grouped-orders-badge";
 
 export default function KitchenPage() {
-  const { data: orders = [] } = useGetOrders();
+  const { data: orders = [] } = useGetOrders({ refetchInterval: 8000 });
   const { data: settings } = useGetSettings();
   const updateOrderStatus = useUpdateOrderStatus();
   const [statusError, setStatusError] = useState<string | null>(null);

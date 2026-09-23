@@ -233,6 +233,7 @@ export default function StockPage() {
                   />
                 }
                 onDelete={() => handleDeleteSupplyItem(supplyItem.id)}
+                isDeleting={deleteSupplyItem.isPending}
                 deleteConfirmTitle={`Excluir "${toTitleCase(supplyItem.name)}"?`}
               />
             </div>
@@ -240,7 +241,7 @@ export default function StockPage() {
         },
       },
     ],
-    [findSupplier, suppliers, handleDeleteSupplyItem],
+    [findSupplier, suppliers, handleDeleteSupplyItem, deleteSupplyItem.isPending],
   );
 
   return (
@@ -281,8 +282,23 @@ export default function StockPage() {
         <Separator className="h-px w-full" />
 
         <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-          {supplyItems?.length === 0 ? (
-            <EmptyState message="Nenhum insumo cadastrado." />
+          {supplyItems === undefined ? (
+            <EmptyState message="Carregando insumos..." />
+          ) : supplyItems.length === 0 ? (
+            <EmptyState
+              message="Nenhum insumo cadastrado."
+              action={
+                <StockFormDialog
+                  suppliers={suppliers}
+                  trigger={
+                    <Button size="sm">
+                      <Plus />
+                      Adicionar insumo
+                    </Button>
+                  }
+                />
+              }
+            />
           ) : (
             <>
               <SearchInput
