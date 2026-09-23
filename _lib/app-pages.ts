@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Boxes,
+  ChefHat,
   HandCoins,
   ScanBarcode,
   ScrollText,
@@ -20,6 +21,7 @@ export interface TAppPage {
 export const APP_PAGES: TAppPage[] = [
   { path: "/", label: "PDV", icon: HandCoins },
   { path: "/order-detail", label: "Comandas", icon: ScrollText },
+  { path: "/kitchen", label: "Cozinha", icon: ChefHat },
   { path: "/conta", label: "Conta", icon: Wallet },
   { path: "/category", label: "Categorias", icon: Tags },
   { path: "/product", label: "Produtos", icon: ScanBarcode },
@@ -32,10 +34,6 @@ export const APP_PAGES: TAppPage[] = [
 export function isPathAllowed(allowedRoutes: string[], pathname: string): boolean {
   if (pathname === "/order") {
     return allowedRoutes.includes("/");
-  }
-
-  if (pathname === "/kitchen") {
-    return true;
   }
 
   return allowedRoutes.includes(pathname);
