@@ -83,6 +83,7 @@ export function MenuList({
   onEditOrderDialogOpenChange,
   onResendFullOrder,
   isResendingFullOrder,
+  isSelfServiceEnabled,
 }: TMenuList) {
   const hasItems = (order?.orderItems?.length ?? 0) > 0;
   const isExistingOrder = order?.id !== undefined && order.id !== DRAFT_ORDER_ID;
@@ -92,7 +93,6 @@ export function MenuList({
   const isTakeoutEnabled = settings?.featureFlags.takeout ?? true;
   const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
   const isOrderTicketsEnabled = settings?.featureFlags.orderTickets ?? true;
-  const isSelfServiceEnabled = settings?.featureFlags.selfService ?? false;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

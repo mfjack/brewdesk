@@ -31,7 +31,7 @@ import {
   isOrderPaid,
   mergeOrderItem,
 } from "../order-math";
-import { getActiveOperator } from "@/_lib/operator-session";
+import { getActiveOperator, useIsSelfServiceOperator } from "@/_lib/operator-session";
 import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
 import { findOpenContaOrders } from "@/_lib/conta";
@@ -104,6 +104,7 @@ export default function OrderPageContent() {
   const { data: supplyItems } = useGetSupplyItems();
   const { data: orders = [] } = useGetOrders();
   const { data: settings } = useGetSettings();
+  const isSelfServiceEnabled = useIsSelfServiceOperator(settings?.operators);
 
   const createOrder = useCreateOrder();
   const addOrderItem = useAddOrderItem();
@@ -494,8 +495,6 @@ export default function OrderPageContent() {
 
       toast.success("Pedido enviado com sucesso!");
 
-      const isSelfServiceEnabled = settings?.featureFlags.selfService ?? false;
-
       schedulePrint(
         orderWithPrintedItems,
         "full",
@@ -764,6 +763,7 @@ export default function OrderPageContent() {
           order={currentOrder}
           stockError={stockError}
           listLayout={!(settings?.featureFlags.orderTickets ?? true)}
+          isSelfServiceEnabled={isSelfServiceEnabled}
         />
 
         <Separator className="h-px bg-border md:hidden" />
@@ -827,6 +827,7 @@ export default function OrderPageContent() {
             onEditOrderDialogOpenChange={setIsEditOrderDialogOpen}
             onResendFullOrder={handleResendFullOrder}
             isResendingFullOrder={isResendingFullOrder}
+            isSelfServiceEnabled={isSelfServiceEnabled}
           />
         )}
       </section>

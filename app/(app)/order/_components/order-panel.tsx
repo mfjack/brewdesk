@@ -91,6 +91,7 @@ export function OrderPanel({
   stockError,
   hideHeader,
   listLayout,
+  isSelfServiceEnabled,
 }: TOrderPanel) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -123,7 +124,7 @@ export function OrderPanel({
           <div className="flex flex-col p-4 w-full">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <Header title="PDV" />
-              {!listLayout && (
+              {!listLayout && !isSelfServiceEnabled && (
                 <div className="flex gap-3">
                   <Button variant="secondary" asChild size="lg">
                     <Link href="/order-detail">

@@ -17,29 +17,30 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { APP_PAGES } from "@/_lib/app-pages";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useIsHydrated } from "@/_lib/use-is-hydrated";
-import { useActiveOperator } from "@/_lib/operator-session";
+import { useIsMasterOperator } from "@/_lib/operator-session";
 
 import { useAddOperator } from "../mutation/useAddOperator";
 import { useDeleteOperator } from "../mutation/useDeleteOperator";
-import { useUpdateOperatorRoutes } from "../mutation/useUpdateOperatorRoutes";
+import { useUpdateOperator } from "../mutation/useUpdateOperator";
 import type { TOperator, TStoreSettings } from "../../order/interface";
 
 const operatorFormSchema = z.object({
   name: z.string().trim().min(1, "Campo obrigatório."),
   pin: z.string().regex(/^\d{4}$/, "O PIN deve ter exatamente 4 dígitos."),
   allowedRoutes: z.array(z.string()),
+  isSelfService: z.boolean(),
 });
 
 type TOperatorFormValues = z.infer<typeof operatorFormSchema>;
 
-const defaultOperatorFormValues: TOperatorFormValues = { name: "", pin: "", allowedRoutes: [] };
+const defaultOperatorFormValues: TOperatorFormValues = { name: "", pin: "", allowedRoutes: [], isSelfService: false };
 
 export function OperatorsSection({ settings }: { settings: TStoreSettings | undefined }) {
   const addOperator = useAddOperator();
   const deleteOperator = useDeleteOperator();
-  const updateOperatorRoutes = useUpdateOperatorRoutes();
+  const updateOperator = useUpdateOperator();
   const isHydrated = useIsHydrated();
-  const activeOperator = useActiveOperator();
+  const isMaster = useIsMasterOperator(settings?.operators);
   const nameId = useId();
   const pinId = useId();
 
@@ -49,6 +50,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   const [operatorPendingDeletion, setOperatorPendingDeletion] = useState<{ id: number; name: string } | null>(null);
   const [editingOperator, setEditingOperator] = useState<TOperator | null>(null);
   const [editRoutes, setEditRoutes] = useState<string[]>([]);
+  const [editIsSelfService, setEditIsSelfService] = useState(false);
   const [editRoutesError, setEditRoutesError] = useState<string | null>(null);
 
   const {
@@ -63,9 +65,6 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   });
 
   const isFirstOperator = (settings?.operators.length ?? 0) === 0;
-  // Once operators exist, the app forces a PIN login for everyone (see OperatorGate), so
-  // activeOperator is only null in single-owner mode without the PIN system set up at all.
-  const isMaster = !activeOperator || settings?.operators[0]?.id === activeOperator.id;
 
   function handleOpenDialog() {
     reset(defaultOperatorFormValues);
@@ -83,7 +82,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
     setRoutesError(null);
 
     addOperator.mutate(
-      { name: data.name, pin: data.pin, allowedRoutes: data.allowedRoutes },
+      { name: data.name, pin: data.pin, allowedRoutes: data.allowedRoutes, isSelfService: data.isSelfService },
       {
         onSuccess: () => {
           setIsDialogOpen(false);
@@ -111,6 +110,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
   function handleOpenEditDialog(operator: TOperator) {
     setEditingOperator(operator);
     setEditRoutes(operator.allowedRoutes);
+    setEditIsSelfService(operator.isSelfService);
     setEditRoutesError(null);
   }
 
@@ -127,8 +127,8 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
 
     setEditRoutesError(null);
 
-    updateOperatorRoutes.mutate(
-      { operatorId: editingOperator.id, allowedRoutes: editRoutes },
+    updateOperator.mutate(
+      { operatorId: editingOperator.id, allowedRoutes: editRoutes, isSelfService: editIsSelfService },
       {
         onSuccess: () => {
           setEditingOperator(null);
@@ -145,8 +145,8 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
       <div>
         <p className="text-sm font-medium">Operadores</p>
         <p className="text-xs text-muted-foreground">
-          Cadastre operadores com PIN pra exigir login antes de usar o sistema, e escolha exatamente quais páginas cada um
-          pode acessar. Sem operadores cadastrados, o login fica desativado.
+          Cadastre operadores com PIN pra exigir login antes de usar o sistema, e escolha exatamente quais páginas cada um pode
+          acessar. Sem operadores cadastrados, o login fica desativado.
         </p>
       </div>
 
@@ -180,6 +180,7 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
               </div>
 
               <div className="flex flex-wrap gap-1">
+                {operator.isSelfService && <Badge variant="secondary">Autoatendimento</Badge>}
                 {APP_PAGES.filter((page) => operator.allowedRoutes.includes(page.path)).map((page) => (
                   <Badge key={page.path} variant="outline">
                     {page.label}
@@ -267,6 +268,17 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
               )}
             />
 
+            <Controller
+              control={control}
+              name="isSelfService"
+              render={({ field }) => (
+                <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+                  <p className="text-sm">Autoatendimento</p>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </div>
+              )}
+            />
+
             {isFirstOperator && (
               <p className="text-xs text-muted-foreground">
                 Esse é o primeiro operador cadastrado, então o acesso às configurações é garantido automaticamente, além das
@@ -307,11 +319,16 @@ export function OperatorsSection({ settings }: { settings: TStoreSettings | unde
             ))}
           </div>
 
+          <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+            <p className="text-sm">Autoatendimento</p>
+            <Switch checked={editIsSelfService} onCheckedChange={setEditIsSelfService} />
+          </div>
+
           {editRoutesError && <p className="text-xs text-destructive">{editRoutesError}</p>}
 
           <DialogFooter>
-            <Button type="button" onClick={handleSaveOperatorRoutes} disabled={updateOperatorRoutes.isPending}>
-              {updateOperatorRoutes.isPending ? "Salvando..." : "Salvar"}
+            <Button type="button" onClick={handleSaveOperatorRoutes} disabled={updateOperator.isPending}>
+              {updateOperator.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -9,9 +9,11 @@ import { OperatorsSection } from "./_components/operators-section";
 import { FeatureFlagsSection } from "./_components/feature-flags-section";
 import { ThermalPrinterSection } from "./_components/thermal-printer-section";
 import { AccountSection } from "./_components/account-section";
+import { useIsMasterOperator } from "@/_lib/operator-session";
 
 export default function SettingsPage() {
   const { data: settings } = useGetSettings();
+  const isMaster = useIsMasterOperator(settings?.operators);
 
   return (
     <section className="flex flex-col h-screen">
@@ -36,9 +38,13 @@ export default function SettingsPage() {
 
         <ThermalPrinterSection />
 
-        <Separator className="my-6 max-w-lg" />
+        {isMaster && (
+          <>
+            <Separator className="my-6 max-w-lg" />
 
-        <AccountSection settings={settings} />
+            <AccountSection settings={settings} />
+          </>
+        )}
       </div>
     </section>
   );

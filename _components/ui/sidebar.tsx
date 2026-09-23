@@ -27,6 +27,8 @@ type SidebarContextProps = {
   setOpen: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
+  locked: boolean;
+  setLocked: (locked: boolean) => void;
 };
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null);
@@ -55,10 +57,15 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile();
 
+  const [locked, setLocked] = React.useState(false);
   const [_open, _setOpen] = React.useState(defaultOpen);
-  const open = openProp ?? _open;
+  const open = locked ? false : (openProp ?? _open);
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
+      if (locked) {
+        return;
+      }
+
       const openState = typeof value === "function" ? value(open) : value;
       if (setOpenProp) {
         setOpenProp(openState);
@@ -68,7 +75,7 @@ function SidebarProvider({
 
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
-    [setOpenProp, open],
+    [setOpenProp, open, locked],
   );
 
   const toggleSidebar = React.useCallback(() => {
@@ -96,8 +103,10 @@ function SidebarProvider({
       setOpen,
       isMobile,
       toggleSidebar,
+      locked,
+      setLocked,
     }),
-    [state, open, setOpen, isMobile, toggleSidebar],
+    [state, open, setOpen, isMobile, toggleSidebar, locked],
   );
 
   return (
@@ -171,7 +180,11 @@ function Sidebar({
 }
 
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, locked } = useSidebar();
+
+  if (locked) {
+    return null;
+  }
 
   return (
     <Button

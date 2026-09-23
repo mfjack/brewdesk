@@ -24,6 +24,7 @@ export interface TMenuList {
   onEditOrderDialogOpenChange: (open: boolean) => void;
   onResendFullOrder: () => void;
   isResendingFullOrder: boolean;
+  isSelfServiceEnabled: boolean;
 
   isNameDialogOpen: boolean;
   onNameDialogOpenChange: (open: boolean) => void;
@@ -76,6 +77,7 @@ export interface TOrderPanel {
   stockError?: string | null;
   hideHeader?: boolean;
   listLayout?: boolean;
+  isSelfServiceEnabled?: boolean;
 }
 
 export interface TCategory {
@@ -173,6 +175,7 @@ export interface TOperator {
   name: string;
   pin: string;
   allowedRoutes: string[];
+  isSelfService: boolean;
 }
 
 export interface TFeatureFlags {
@@ -181,7 +184,6 @@ export interface TFeatureFlags {
   splitBill: boolean;
   creditSale: boolean;
   orderTickets: boolean;
-  selfService: boolean;
 }
 
 export interface TStoreSettings {

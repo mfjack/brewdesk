@@ -85,3 +85,23 @@ function subscribe(callback: () => void) {
 export function useActiveOperator(): TActiveOperator | null {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+// Once operators exist, the app forces a PIN login for everyone (see OperatorGate), so
+// activeOperator is only null in single-owner mode without the PIN system set up at all.
+export function useIsMasterOperator(operators: { id: number }[] | undefined): boolean {
+  const activeOperator = useActiveOperator();
+
+  return !activeOperator || operators?.[0]?.id === activeOperator.id;
+}
+
+// Lets a self-service kiosk and a staff-operated register run at the same time: the
+// behavior is tied to which operator is logged into that specific device, not a global flag.
+export function useIsSelfServiceOperator(operators: { id: number; isSelfService: boolean }[] | undefined): boolean {
+  const activeOperator = useActiveOperator();
+
+  if (!activeOperator) {
+    return false;
+  }
+
+  return operators?.find((operator) => operator.id === activeOperator.id)?.isSelfService ?? false;
+}

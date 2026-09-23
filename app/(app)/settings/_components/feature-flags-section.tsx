@@ -37,12 +37,6 @@ const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; des
     description: "Permite vender na conta, registrando o cliente e cobrando depois.",
     defaultValue: false,
   },
-  {
-    key: "selfService",
-    label: "Autoatendimento",
-    description: "O cliente só envia o pedido pra cozinha; some o botão de pagamento e a comanda fica em aberto pra cobrar depois.",
-    defaultValue: false,
-  },
 ];
 
 export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | undefined }) {

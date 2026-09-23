@@ -8,6 +8,7 @@ import { Input } from "@/_components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { supabase } from "@/_lib/supabase/client";
 import { HAS_ESTABLISHMENT_COOKIE } from "@/_lib/has-establishment-cookie";
+import { useIsMasterOperator } from "@/_lib/operator-session";
 import type { TStoreSettings } from "../../order/interface";
 
 function clearHasEstablishmentCookie() {
@@ -15,6 +16,7 @@ function clearHasEstablishmentCookie() {
 }
 
 export function AccountSection({ settings }: { settings: TStoreSettings | undefined }) {
+  const isMaster = useIsMasterOperator(settings?.operators);
   const [email, setEmail] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [confirmationText, setConfirmationText] = useState("");
@@ -51,6 +53,10 @@ export function AccountSection({ settings }: { settings: TStoreSettings | undefi
   }
 
   const canConfirmDelete = Boolean(settings?.name) && confirmationText.trim() === settings?.name;
+
+  if (!isMaster) {
+    return null;
+  }
 
   return (
     <div className="max-w-lg space-y-3">

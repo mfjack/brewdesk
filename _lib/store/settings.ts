@@ -9,7 +9,6 @@ export const defaultFeatureFlags: TStoreSettings["featureFlags"] = {
   splitBill: true,
   creditSale: false,
   orderTickets: true,
-  selfService: false,
 };
 export const defaultTakeoutFee = 2;
 
@@ -30,10 +29,17 @@ interface TOperatorRow {
   name: string;
   pin: string;
   allowed_routes: string[];
+  is_self_service: boolean;
 }
 
 function operatorFromRow(row: TOperatorRow): TOperator {
-  return { id: row.id, name: row.name, pin: row.pin, allowedRoutes: row.allowed_routes };
+  return {
+    id: row.id,
+    name: row.name,
+    pin: row.pin,
+    allowedRoutes: row.allowed_routes,
+    isSelfService: row.is_self_service,
+  };
 }
 
 async function fetchSettings(): Promise<TStoreSettings> {
@@ -102,7 +108,7 @@ export const settingsStore = {
     return fetchSettings();
   },
 
-  addOperator: async (name: string, pin: string, allowedRoutes: string[]): Promise<TOperator> => {
+  addOperator: async (name: string, pin: string, allowedRoutes: string[], isSelfService: boolean): Promise<TOperator> => {
     const establishmentId = await getEstablishmentId();
 
     const { data: existingOperators, error: existingError } = await supabase.from("operators").select("id");
@@ -119,7 +125,13 @@ export const settingsStore = {
 
     const { data, error } = await supabase
       .from("operators")
-      .insert({ name: name.trim(), pin: pin.trim(), allowed_routes: finalAllowedRoutes, establishment_id: establishmentId })
+      .insert({
+        name: name.trim(),
+        pin: pin.trim(),
+        allowed_routes: finalAllowedRoutes,
+        is_self_service: isSelfService,
+        establishment_id: establishmentId,
+      })
       .select()
       .single();
 
@@ -132,7 +144,7 @@ export const settingsStore = {
     return operatorFromRow(data as TOperatorRow);
   },
 
-  updateOperatorRoutes: async (operatorId: number, allowedRoutes: string[]): Promise<TOperator> => {
+  updateOperator: async (operatorId: number, allowedRoutes: string[], isSelfService: boolean): Promise<TOperator> => {
     const { data: operatorRows, error: fetchError } = await supabase.from("operators").select("*");
 
     if (fetchError) {
@@ -152,7 +164,7 @@ export const settingsStore = {
 
     const { data, error } = await supabase
       .from("operators")
-      .update({ allowed_routes: allowedRoutes })
+      .update({ allowed_routes: allowedRoutes, is_self_service: isSelfService })
       .eq("id", operatorId)
       .select()
       .single();

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import {
   Sidebar,
@@ -27,9 +28,10 @@ import { NetworkStatusBadge } from "./network-status-badge";
 export function AppSidebar() {
   const { data: settings } = useGetSettings();
   const activeOperator = useActiveOperator();
-  const { setOpen } = useSidebar();
+  const { setOpen, setLocked } = useSidebar();
 
   const currentOperator = activeOperator ? settings?.operators.find((operator) => operator.id === activeOperator.id) : undefined;
+  const isSelfService = currentOperator?.isSelfService ?? false;
 
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
   const isOrderTicketsEnabled = settings?.featureFlags.orderTickets ?? true;
@@ -37,6 +39,10 @@ export function AppSidebar() {
   const visibleNavLinks = APP_PAGES.filter((page) => page.path !== "/conta" || isCreditSaleEnabled)
     .filter((page) => page.path !== "/order-detail" || isOrderTicketsEnabled)
     .filter((page) => (activeOperator ? currentOperator?.allowedRoutes.includes(page.path) : true));
+
+  useEffect(() => {
+    setLocked(isSelfService);
+  }, [isSelfService, setLocked]);
 
   return (
     <Sidebar collapsible="offcanvas" className="print:hidden">
