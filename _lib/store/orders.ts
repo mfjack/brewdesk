@@ -144,16 +144,11 @@ async function consumeRecipeStock(product: TProduct, quantitySold: number, preFe
   );
 }
 
-// Shared by createOrderWithItems/addOrderItems: validates and merges a whole batch of
-// lines in one pass (one products fetch, one supply-items fetch) instead of the
-// one-network-round-trip-per-line the interactive PDV add-to-cart flow uses — that's fine
-// for a single click, but sending/paying a multi-item cart doesn't need to serialize N
-// separate reads and writes to do the same job.
-async function prepareBatchOrderItems(
-  existingOrderItems: TOrderResponse["orderItems"],
-  items: TOrderItemInput[],
-  isTakeout = false,
-): Promise<{
+// Validates and merges a whole batch of cart lines in one pass (one products fetch, one
+// supply-items fetch) instead of the one-network-round-trip-per-line the interactive PDV
+// add-to-cart flow uses — that's fine for a single click, but sending a multi-item cart
+// doesn't need to serialize N separate reads and writes to do the same job.
+async function prepareBatchOrderItems(items: TOrderItemInput[]): Promise<{
   orderItems: TOrderResponse["orderItems"];
   total: number;
   applyStockChanges: () => Promise<void>;
@@ -209,8 +204,8 @@ async function prepareBatchOrderItems(
     }
   }
 
-  let orderItems = existingOrderItems;
-  let nextId = nextItemId(existingOrderItems);
+  let orderItems: TOrderResponse["orderItems"] = [];
+  let nextId = 1;
 
   for (const { productId, quantity } of items) {
     const product = products.find((candidate) => candidate.id === productId) as TProduct;
@@ -218,7 +213,7 @@ async function prepareBatchOrderItems(
     orderItems = mergeOrderItem(orderItems, product, quantity, () => nextId++);
   }
 
-  const total = computeOrderTotal(orderItems, isTakeout, takeoutFee);
+  const total = computeOrderTotal(orderItems, false, takeoutFee);
 
   async function applyStockChanges(): Promise<void> {
     await Promise.all([
@@ -360,7 +355,7 @@ export const orderStore = {
   ): Promise<TOrderResponse> => {
     const establishmentId = await getEstablishmentId();
 
-    const { orderItems, total, applyStockChanges } = await prepareBatchOrderItems([], items);
+    const { orderItems, total, applyStockChanges } = await prepareBatchOrderItems(items);
 
     await applyStockChanges();
 
@@ -374,32 +369,6 @@ export const orderStore = {
         total,
         establishment_id: establishmentId,
       })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    notifyStoreChange(["orders", "products", "supplyItems"]);
-
-    return fromRow(data as TOrderRow);
-  },
-
-  // Batched counterpart to addOrderItem for merging several cart lines into an existing
-  // order at once — used when folding new items into an already-open "conta" tab.
-  addOrderItems: async (orderId: number, items: TOrderItemInput[]): Promise<TOrderResponse> => {
-    const orderRow = await fetchOrderRow(orderId);
-    const order = fromRow(orderRow);
-
-    const { orderItems, total, applyStockChanges } = await prepareBatchOrderItems(order.orderItems, items, order.isTakeout);
-
-    await applyStockChanges();
-
-    const { data, error } = await supabase
-      .from("orders")
-      .update({ order_items: orderItems, total })
-      .eq("id", orderId)
       .select()
       .single();
 
@@ -577,19 +546,6 @@ export const orderStore = {
     }
 
     notifyStoreChange(["orders", "products", "supplyItems"]);
-  },
-
-  // Removes an order record without reversing its stock consumption — for when its items
-  // were folded into a different order (e.g. merging a just-sent comanda into an already
-  // open "conta" tab under the same customer) rather than actually being cancelled/returned.
-  deleteOrderRecord: async (orderId: number): Promise<void> => {
-    const { error } = await supabase.from("orders").delete().eq("id", orderId);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    notifyStoreChange(["orders"]);
   },
 
   setContaSettled: async (orderId: number, settled: boolean): Promise<TOrderResponse> => {
