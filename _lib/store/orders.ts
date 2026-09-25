@@ -148,7 +148,7 @@ async function consumeRecipeStock(product: TProduct, quantitySold: number, preFe
 // supply-items fetch) instead of the one-network-round-trip-per-line the interactive PDV
 // add-to-cart flow uses — that's fine for a single click, but sending a multi-item cart
 // doesn't need to serialize N separate reads and writes to do the same job.
-async function prepareBatchOrderItems(items: TOrderItemInput[]): Promise<{
+async function prepareBatchOrderItems(items: TOrderItemInput[], isTakeout = false): Promise<{
   orderItems: TOrderResponse["orderItems"];
   total: number;
   applyStockChanges: () => Promise<void>;
@@ -213,7 +213,7 @@ async function prepareBatchOrderItems(items: TOrderItemInput[]): Promise<{
     orderItems = mergeOrderItem(orderItems, product, quantity, () => nextId++);
   }
 
-  const total = computeOrderTotal(orderItems, false, takeoutFee);
+  const total = computeOrderTotal(orderItems, isTakeout, takeoutFee);
 
   async function applyStockChanges(): Promise<void> {
     await Promise.all([
@@ -352,10 +352,11 @@ export const orderStore = {
     customerName: string,
     operatorName: string | null | undefined,
     items: TOrderItemInput[],
+    isTakeout = false,
   ): Promise<TOrderResponse> => {
     const establishmentId = await getEstablishmentId();
 
-    const { orderItems, total, applyStockChanges } = await prepareBatchOrderItems(items);
+    const { orderItems, total, applyStockChanges } = await prepareBatchOrderItems(items, isTakeout);
 
     await applyStockChanges();
 
@@ -367,6 +368,7 @@ export const orderStore = {
         operator_name: operatorName?.trim() || null,
         order_items: orderItems,
         total,
+        is_takeout: isTakeout,
         establishment_id: establishmentId,
       })
       .select()

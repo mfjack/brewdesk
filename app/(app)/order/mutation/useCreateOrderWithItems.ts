@@ -6,10 +6,11 @@ export interface TCreateOrderWithItems {
   customerName: string;
   operatorName?: string | null;
   items: TOrderItemInput[];
+  isTakeout?: boolean;
 }
 
 export const useCreateOrderWithItems = createLocalStoreMutation(
-  ({ customerName, operatorName, items }: TCreateOrderWithItems) =>
-    localStore.createOrderWithItems(customerName, operatorName, items),
+  ({ customerName, operatorName, items, isTakeout }: TCreateOrderWithItems) =>
+    localStore.createOrderWithItems(customerName, operatorName, items, isTakeout),
   ["createOrderWithItems"],
 );

@@ -112,12 +112,7 @@ export default function OrderPageContent() {
 
   const { data: existingOrder } = useGetOrderById(orderId ? Number(orderId) : null);
 
-  if (
-    existingOrder &&
-    existingOrder.id !== syncedOrderId &&
-    existingOrder.id !== clearedOrderId &&
-    !isOrderPaid(existingOrder)
-  ) {
+  if (existingOrder && existingOrder.id !== syncedOrderId && existingOrder.id !== clearedOrderId && !isOrderPaid(existingOrder)) {
     setSyncedOrderId(existingOrder.id);
     setCurrentOrder(existingOrder);
     setObservation(existingOrder.observation ?? "");
@@ -146,10 +141,7 @@ export default function OrderPageContent() {
     [orders, currentOrder?.id],
   );
 
-  const groupedOrders = useMemo(
-    () => (currentOrder ? getGroupedOrders(currentOrder, orders) : []),
-    [currentOrder, orders],
-  );
+  const groupedOrders = useMemo(() => (currentOrder ? getGroupedOrders(currentOrder, orders) : []), [currentOrder, orders]);
 
   function handleCategoryClick(categoryId: number) {
     const category = categories?.find((cat: TCategory) => cat.id === categoryId);
@@ -212,11 +204,16 @@ export default function OrderPageContent() {
     })();
   }
 
-  async function materializeDraftOrder(draftOrder: TOrderResponse, customerName: string): Promise<TOrderResponse> {
+  async function materializeDraftOrder(
+    draftOrder: TOrderResponse,
+    customerName: string,
+    isTakeout = false,
+  ): Promise<TOrderResponse> {
     return createOrderWithItems.mutateAsync({
       customerName,
       operatorName: getActiveOperator()?.name,
       items: draftOrder.orderItems.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+      isTakeout,
     });
   }
 
@@ -266,10 +263,6 @@ export default function OrderPageContent() {
 
     setNameError(null);
     setIsNameDialogOpen(false);
-
-    // "Enviar pedido" led here: the kitchen still needs a ticket for these items even
-    // though the sale is going straight to the customer's tab instead of being paid now.
-    // "Pagamento" (quick sale) never prints, matching that flow's own behavior.
     const shouldPrint = nameDialogIntent === "send";
 
     sendingOrderRef.current = true;
@@ -277,7 +270,7 @@ export default function OrderPageContent() {
 
     try {
       const order = isDraftOrder(currentOrder)
-        ? await materializeDraftOrder(currentOrder, trimmedName)
+        ? await materializeDraftOrder(currentOrder, trimmedName, isTakeoutDraft)
         : currentOrder;
 
       const paidOrder = await updateOrderStatus.mutateAsync({
@@ -499,7 +492,16 @@ export default function OrderPageContent() {
     setIsNameDialogOpen(false);
 
     if (nameDialogIntent === "payment") {
-      setCurrentOrder((prev) => (prev ? { ...prev, customerName: trimmedName } : prev));
+      setCurrentOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              customerName: trimmedName,
+              isTakeout: isTakeoutDraft,
+              total: computeOrderTotal(prev.orderItems, isTakeoutDraft, settings?.takeoutFee),
+            }
+          : prev,
+      );
       openPaymentDialog();
 
       return;
@@ -517,7 +519,9 @@ export default function OrderPageContent() {
     setIsSendingOrder(true);
 
     try {
-      const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, customerName) : currentOrder;
+      const order = isDraftOrder(currentOrder)
+        ? await materializeDraftOrder(currentOrder, customerName, isTakeout)
+        : currentOrder;
 
       const updatedOrder = await updateOrderStatus.mutateAsync({
         orderId: order.id,
@@ -719,7 +723,7 @@ export default function OrderPageContent() {
 
     try {
       const order = isDraftOrder(currentOrder)
-        ? await materializeDraftOrder(currentOrder, currentOrder.customerName)
+        ? await materializeDraftOrder(currentOrder, currentOrder.customerName, currentOrder.isTakeout)
         : currentOrder;
 
       if (paymentMethod !== null) {
@@ -753,7 +757,9 @@ export default function OrderPageContent() {
     setIsSendingOrder(true);
 
     try {
-      const order = isDraftOrder(currentOrder) ? await materializeDraftOrder(currentOrder, "") : currentOrder;
+      const order = isDraftOrder(currentOrder)
+        ? await materializeDraftOrder(currentOrder, "", currentOrder.isTakeout)
+        : currentOrder;
 
       await updateOrderStatus.mutateAsync({
         orderId: order.id,

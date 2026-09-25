@@ -1,4 +1,4 @@
-import { Trash2, NotebookPen, Send, User, DollarSign, Pencil, Wallet } from "lucide-react";
+import { Trash2, NotebookPen, Send, User, DollarSign, Pencil, Wallet, Printer } from "lucide-react";
 
 import { useEffect } from "react";
 
@@ -203,8 +203,8 @@ export function MenuList({
                     onClick={isFirstSend ? onSendOrder : onPrintAdditional}
                     disabled={isFirstSend && (isSending || !hasItems)}
                   >
-                    <Send />
-                    Enviar pedido
+                    <Printer />
+                    Imprimir pedido
                   </Button>
                 )}
 
@@ -329,8 +329,8 @@ export function MenuList({
                     </>
                   ) : (
                     <>
-                      <Send />
-                      Enviar pedido
+                      <Printer />
+                      Imprimir pedido
                     </>
                   )}
                 </Button>

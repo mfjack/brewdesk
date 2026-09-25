@@ -111,13 +111,9 @@ export function EditOrderDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Button
-                type="button"
-                onClick={onResendFullOrder}
-                disabled={isResendingFullOrder || order.orderItems.length === 0}
-              >
+              <Button type="button" onClick={onResendFullOrder} disabled={isResendingFullOrder || order.orderItems.length === 0}>
                 <Send />
-                {isResendingFullOrder ? "Reenviando..." : "Reenviar pedido completo"}
+                {isResendingFullOrder ? "Imprimindo..." : "Reimprimir pedido completo"}
               </Button>
 
               <Button type="button" variant="destructive" onClick={onRequestCancelOrder} disabled={isResendingFullOrder}>

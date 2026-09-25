@@ -220,7 +220,7 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto no-scrollbar">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar produto" : "Novo produto"}</DialogTitle>
           <DialogDescription>
@@ -229,139 +229,138 @@ export function ProductFormDialog({ categories, supplyItems, trigger, product }:
         </DialogHeader>
 
         <form className="flex flex-col gap-3" onSubmit={handleSubmit(handleSubmitProduct)} noValidate>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor={nameId}>Nome do produto</Label>
-            <Input id={nameId} autoComplete="off" aria-invalid={Boolean(errors.name)} {...register("name")} />
-            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-          </div>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div className="flex flex-1 flex-col gap-3 min-w-0">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor={nameId}>Nome do produto</Label>
+                <Input id={nameId} autoComplete="off" aria-invalid={Boolean(errors.name)} {...register("name")} />
+                {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <Label htmlFor={descriptionId}>Descrição</Label>
-            <Textarea id={descriptionId} placeholder="Opcional" rows={3} {...register("description")} />
-          </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor={descriptionId}>Descrição</Label>
+                <Textarea id={descriptionId} placeholder="Opcional" rows={3} {...register("description")} />
+              </div>
 
-          <Controller
-            control={control}
-            name="photoUrl"
-            render={({ field }) => (
-              <ImageUploadField
-                key={photoFieldKey}
-                label="Foto"
-                addLabel="Adicionar foto"
-                changeLabel="Trocar foto"
-                value={field.value}
-                onChange={field.onChange}
+              <Controller
+                control={control}
+                name="photoUrl"
+                render={({ field }) => (
+                  <ImageUploadField
+                    key={photoFieldKey}
+                    label="Foto"
+                    addLabel="Adicionar foto"
+                    changeLabel="Trocar foto"
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
               />
-            )}
-          />
 
-          <div className="flex flex-col gap-1">
-            <Label htmlFor={categoryId}>Categoria</Label>
-            <Controller
-              control={control}
-              name="categoryId"
-              render={({ field }) => (
-                <Select value={field.value ? String(field.value) : ""} onValueChange={(value) => field.onChange(Number(value))}>
-                  <SelectTrigger id={categoryId} className="w-full" aria-invalid={Boolean(errors.categoryId)}>
-                    <SelectValue placeholder="Selecione a categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories?.map((category) => (
-                      <SelectItem key={category.id} value={String(category.id)}>
-                        {toTitleCase(category.name)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message}</p>}
-          </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor={categoryId}>Categoria</Label>
+                <Controller
+                  control={control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ? String(field.value) : ""}
+                      onValueChange={(value) => field.onChange(Number(value))}
+                    >
+                      <SelectTrigger id={categoryId} className="w-full" aria-invalid={Boolean(errors.categoryId)}>
+                        <SelectValue placeholder="Selecione a categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories?.map((category) => (
+                          <SelectItem key={category.id} value={String(category.id)}>
+                            {toTitleCase(category.name)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message}</p>}
+              </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <div className="flex flex-1 flex-col gap-1">
-              <Label htmlFor={priceId}>Preço de venda</Label>
-              <Input
-                id={priceId}
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Quanto o cliente paga"
-                aria-invalid={Boolean(errors.price)}
-                {...register("price")}
-              />
-              {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
-            </div>
-
-            <div className="flex flex-1 flex-col gap-1">
-              <Label htmlFor={costPriceId}>Preço de custo</Label>
-              {hasRecipe ? (
-                <div
-                  id={costPriceId}
-                  className="flex h-10 items-center rounded-lg border border-input bg-input/30 px-2.5 text-sm"
-                  title="Calculado pela ficha técnica"
-                >
-                  {formatCurrency(calculatedCost ?? 0)}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-1 flex-col gap-1">
+                  <Label htmlFor={priceId}>Preço de venda</Label>
+                  <Input
+                    id={priceId}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Quanto o cliente paga"
+                    aria-invalid={Boolean(errors.price)}
+                    {...register("price")}
+                  />
+                  {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
                 </div>
-              ) : (
-                <Input
-                  id={costPriceId}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Quanto custou pra fazer todo o lote"
-                  title="Custo total pra produzir a quantidade em estoque informada abaixo. Dividido pela quantidade pra calcular o CMV."
-                  {...register("costPrice")}
+
+                {hasRecipe && (
+                  <div className="flex flex-1 flex-col gap-1">
+                    <Label htmlFor={costPriceId}>Preço de custo</Label>
+                    <div
+                      id={costPriceId}
+                      className="flex h-10 items-center rounded-lg border border-input bg-input/30 px-2.5 text-sm"
+                      title="Calculado pela ficha técnica"
+                    >
+                      {formatCurrency(calculatedCost ?? 0)}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <SettingRow label="Controlar estoque" description="Diminui automaticamente a cada venda no PDV.">
+                <Controller
+                  control={control}
+                  name="trackStock"
+                  render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
                 />
+              </SettingRow>
+
+              {trackStock && (
+                <div className="flex flex-row gap-2">
+                  <div className="flex flex-1 flex-col gap-1">
+                    <Label htmlFor={quantityId}>Quantidade em estoque</Label>
+                    <Input id={quantityId} type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-1">
+                    <Label htmlFor={lowStockThresholdId}>Alerta estoque baixo</Label>
+                    <Input
+                      id={lowStockThresholdId}
+                      type="number"
+                      min="0"
+                      placeholder="Ex.: 5"
+                      title="Alertar quando o estoque ficar menor ou igual a esse valor"
+                      {...register("lowStockThreshold")}
+                    />
+                  </div>
+                </div>
               )}
             </div>
-          </div>
 
-          <RecipeSection
-            control={control}
-            register={register}
-            setValue={setValue}
-            supplyItems={supplyItems}
-            recipeFields={recipeFields}
-            onAppendItem={() => appendRecipeItem({ supplyItemId: 0, quantity: "", unit: "" })}
-            onRemoveItem={removeRecipeItem}
-            hasRecipe={hasRecipe}
-            calculatedCost={calculatedCost}
-            maxProducible={maxProducible}
-          />
-
-          <SettingRow label="Controlar estoque" description="Diminui automaticamente a cada venda no PDV.">
-            <Controller
-              control={control}
-              name="trackStock"
-              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-            />
-          </SettingRow>
-
-          {trackStock && (
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="flex flex-1 flex-col gap-1">
-                <Label htmlFor={quantityId}>Quantidade em estoque</Label>
-                <Input id={quantityId} type="number" min="0" placeholder="Ex.: 20" {...register("quantity")} />
-              </div>
-
-              <div className="flex flex-1 flex-col gap-1">
-                <Label htmlFor={lowStockThresholdId}>Alertar com estoque baixo</Label>
-                <Input
-                  id={lowStockThresholdId}
-                  type="number"
-                  min="0"
-                  placeholder="Ex.: 5"
-                  title="Alertar quando o estoque ficar menor ou igual a esse valor"
-                  {...register("lowStockThreshold")}
-                />
-              </div>
+            <div className="flex flex-1 flex-col gap-3 min-w-0 lg:border-l lg:border-border lg:pl-4">
+              <RecipeSection
+                control={control}
+                register={register}
+                setValue={setValue}
+                supplyItems={supplyItems}
+                recipeFields={recipeFields}
+                onAppendItem={() => appendRecipeItem({ supplyItemId: 0, quantity: "", unit: "" })}
+                onRemoveItem={removeRecipeItem}
+                hasRecipe={hasRecipe}
+                calculatedCost={calculatedCost}
+                maxProducible={maxProducible}
+              />
             </div>
-          )}
+          </div>
 
           {formError && <p className="text-xs text-destructive">{formError}</p>}
 
-          <DialogFooter className="flex-row gap-2">
+          <DialogFooter className="flex-row gap-2 mt-6">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)} disabled={isPending}>
               Cancelar
             </Button>

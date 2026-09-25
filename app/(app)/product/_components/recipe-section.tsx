@@ -46,7 +46,7 @@ function RecipeItemRow({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-end gap-2">
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <label className="text-xs text-muted-foreground">Insumo</label>
           <Controller
             control={control}
@@ -78,19 +78,19 @@ function RecipeItemRow({
           />
         </div>
 
-        <div className="flex w-20 flex-col gap-1">
+        <div className="flex w-16 shrink-0 flex-col gap-1">
           <label className="text-xs text-muted-foreground">Qtd.</label>
           <Input type="number" step="0.01" min="0" placeholder="0" {...register(`recipe.${index}.quantity`)} />
         </div>
 
-        <div className="flex w-16 flex-col gap-1">
+        <div className="flex items-center w-9.5 shrink-0 flex-col gap-1">
           <label className="text-xs text-muted-foreground">Unidade</label>
           <div className="flex h-10 items-center rounded-lg border border-input bg-input/30 px-2.5 text-sm text-muted-foreground">
             {formatUnit(supplyItem?.unit ?? "")}
           </div>
         </div>
 
-        <Button type="button" variant="destructive" size="icon-sm" onClick={onRemove}>
+        <Button type="button" variant="destructive" size="icon-sm" className="shrink-0 mb-1" onClick={onRemove}>
           <Trash2 />
         </Button>
       </div>
@@ -145,7 +145,7 @@ export function RecipeSection({
       </div>
 
       {recipeFields.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex h-80 flex-col gap-2 overflow-y-auto no-scrollbar pr-0.5">
           {recipeFields.map((field, index) => (
             <RecipeItemRow
               key={field.id}
