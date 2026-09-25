@@ -18,8 +18,28 @@ export function getGroupedOrders(order: TOrderResponse, allOrders: TOrderRespons
   return allOrders.filter((candidate) => candidate.id !== order.id && candidate.groupId === order.groupId);
 }
 
+// A category with a preset price (e.g. "Açaí 500ml" at R$15) adds that price to the order
+// exactly once, no matter how many different products from that category end up in the
+// cart or how many units of each — it represents a single base item (the açaí itself),
+// with everything else in that category being toppings added on top of it.
+function computeCategorySurcharge(items: TOrderItem[]): number {
+  const seenCategoryIds = new Set<number>();
+  let surcharge = 0;
+
+  items.forEach((item) => {
+    const category = item.product.category;
+
+    if (category?.price && !seenCategoryIds.has(category.id)) {
+      seenCategoryIds.add(category.id);
+      surcharge += category.price;
+    }
+  });
+
+  return surcharge;
+}
+
 export function computeOrderTotal(items: TOrderItem[], isTakeout?: boolean, takeoutFee = 0): number {
-  const itemsTotal = items.reduce((total, item) => total + item.subtotal, 0);
+  const itemsTotal = items.reduce((total, item) => total + item.subtotal, 0) + computeCategorySurcharge(items);
 
   return isTakeout ? itemsTotal + takeoutFee : itemsTotal;
 }
@@ -72,7 +92,11 @@ export function mergeOrderItem(
     ...items,
     {
       id: getNewItemId(),
-      product: { id: product.id, name: product.name, category: { id: product.category.id, name: product.category.name } },
+      product: {
+        id: product.id,
+        name: product.name,
+        category: { id: product.category.id, name: product.category.name, price: product.category.price },
+      },
       quantity,
       unitPrice: product.price,
       costPrice: product.costPrice ?? 0,

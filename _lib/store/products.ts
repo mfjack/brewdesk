@@ -24,7 +24,7 @@ function toRow(input: TProductInput) {
   };
 }
 
-const SELECT_WITH_CATEGORY = "*, category:categories(id, name)";
+const SELECT_WITH_CATEGORY = "*, category:categories(id, name, price)";
 
 export const productStore = {
   getProducts: async (): Promise<TProduct[]> => {

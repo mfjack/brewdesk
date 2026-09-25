@@ -17,6 +17,7 @@ import { useGetCategories } from "./query/useGetCategories";
 import { useDeleteCategory } from "./mutation/useDeleteCategory";
 import { CategoryFormDialog } from "./_components/category-form-dialog";
 import type { TCategory } from "../order/interface";
+import { formatCurrency } from "@/_lib/format-currency";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useHydratedData } from "@/_lib/use-is-hydrated";
 
@@ -43,6 +44,16 @@ export default function CategoryPage() {
         accessorKey: "name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nome" />,
         cell: ({ row }) => <span className="font-medium">{toTitleCase(row.original.name)}</span>,
+      },
+      {
+        accessorKey: "price",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Preço" />,
+        cell: ({ row }) =>
+          row.original.price ? (
+            <span>{formatCurrency(row.original.price)}</span>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
       },
       {
         id: "actions",

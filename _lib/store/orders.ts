@@ -67,7 +67,11 @@ async function fetchOrderRow(orderId: number): Promise<TOrderRow> {
 }
 
 async function fetchProduct(productId: number): Promise<TProduct | null> {
-  const { data, error } = await supabase.from("products").select("*, category:categories(id, name)").eq("id", productId).single();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, category:categories(id, name, price)")
+    .eq("id", productId)
+    .single();
 
   if (error) {
     return null;
@@ -95,7 +99,7 @@ async function fetchProductsByIds(ids: number[]): Promise<TProduct[]> {
     return [];
   }
 
-  const { data, error } = await supabase.from("products").select("*, category:categories(id, name)").in("id", ids);
+  const { data, error } = await supabase.from("products").select("*, category:categories(id, name, price)").in("id", ids);
 
   if (error) {
     throw new Error(error.message);

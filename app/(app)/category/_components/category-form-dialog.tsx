@@ -18,6 +18,7 @@ import type { TCategory } from "../../order/interface";
 
 const categoryFormSchema = z.object({
   name: z.string().trim().min(1, "Campo obrigatório."),
+  price: z.string(),
 });
 
 type TCategoryFormValues = z.infer<typeof categoryFormSchema>;
@@ -28,12 +29,13 @@ interface TCategoryFormDialog {
 }
 
 function buildDefaultValues(category?: TCategory): TCategoryFormValues {
-  return { name: category?.name ?? "" };
+  return { name: category?.name ?? "", price: category?.price ? String(category.price) : "" };
 }
 
 export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
   const isEditing = Boolean(category);
   const nameId = useId();
+  const priceId = useId();
 
   const [open, setOpen] = useState(false);
 
@@ -53,9 +55,11 @@ export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
   const isPending = createCategory.isPending || updateCategory.isPending;
 
   function handleSubmitCategory(data: TCategoryFormValues) {
+    const price = data.price.trim() ? Number(data.price) : null;
+
     if (category) {
       updateCategory.mutate(
-        { id: category.id, name: data.name },
+        { id: category.id, name: data.name, price },
         {
           onSuccess: () => {
             setOpen(false);
@@ -64,12 +68,15 @@ export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
         },
       );
     } else {
-      createCategory.mutate(data.name, {
-        onSuccess: () => {
-          setOpen(false);
-          toast.success("Categoria adicionada com sucesso!");
+      createCategory.mutate(
+        { name: data.name, price },
+        {
+          onSuccess: () => {
+            setOpen(false);
+            toast.success("Categoria adicionada com sucesso!");
+          },
         },
-      });
+      );
     }
   }
 
@@ -105,6 +112,19 @@ export function CategoryFormDialog({ trigger, category }: TCategoryFormDialog) {
               {...register("name")}
             />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label htmlFor={priceId}>Preço (opcional)</Label>
+            <Input
+              id={priceId}
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Deixe em branco pra não vender direto pela categoria"
+              title="Quando preenchido, essa categoria vira um item de venda rápida no PDV (ex.: Açaí 500ml), com esse preço já pronto."
+              {...register("price")}
+            />
           </div>
 
           <DialogFooter className="flex-row gap-2">

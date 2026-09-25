@@ -4,9 +4,10 @@ import { localStore } from "@/_lib/store";
 export interface TUpdateCategory {
   id: number;
   name: string;
+  price: number | null;
 }
 
 export const useUpdateCategory = createLocalStoreMutation(
-  ({ id, name }: TUpdateCategory) => localStore.updateCategory(id, name),
+  ({ id, name, price }: TUpdateCategory) => localStore.updateCategory(id, name, price),
   ["updateCategory"],
 );

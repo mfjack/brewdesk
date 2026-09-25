@@ -82,6 +82,10 @@ export interface TOrderPanel {
 export interface TCategory {
   id: number;
   name: string;
+  // Optional preset price — when set, the category itself becomes a quick-add item in the
+  // PDV (e.g. "Açaí 500ml" as its own category, priced, with toppings added separately as
+  // regular products) instead of needing a dedicated product entry.
+  price: number | null;
 }
 
 export interface TRecipeItem {
@@ -132,8 +136,9 @@ export interface TOrderItemProduct {
   id: number;
   name: string;
   // Optional because items on orders created before this field existed have no category
-  // snapshot stored in their JSON — receipts fall back to an "Outros" group for those.
-  category?: { id: number; name: string };
+  // snapshot stored in their JSON — receipts fall back to an "Outros" group for those, and
+  // computeOrderTotal treats a missing/null price as "not a priced category".
+  category?: { id: number; name: string; price: number | null };
 }
 
 export interface TOrderItem {

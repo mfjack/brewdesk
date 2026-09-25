@@ -12,7 +12,7 @@ export interface TProductRow {
   low_stock_threshold: number;
   category_id: number;
   recipe: TProduct["recipe"];
-  category: { id: number; name: string } | null;
+  category: { id: number; name: string; price: number | null } | null;
 }
 
 export function mapProductRow(row: TProductRow): TProduct {
@@ -26,7 +26,7 @@ export function mapProductRow(row: TProductRow): TProduct {
     quantity: Number(row.quantity),
     trackStock: row.track_stock,
     lowStockThreshold: Number(row.low_stock_threshold),
-    category: row.category ?? { id: row.category_id, name: "" },
+    category: row.category ?? { id: row.category_id, name: "", price: null },
     recipe: row.recipe ?? [],
   };
 }

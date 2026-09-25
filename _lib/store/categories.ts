@@ -14,12 +14,12 @@ export const categoryStore = {
     return data;
   },
 
-  createCategory: async (name: string): Promise<TCategory> => {
+  createCategory: async (name: string, price: number | null = null): Promise<TCategory> => {
     const establishmentId = await getEstablishmentId();
 
     const { data, error } = await supabase
       .from("categories")
-      .insert({ name: name.trim(), establishment_id: establishmentId })
+      .insert({ name: name.trim(), price, establishment_id: establishmentId })
       .select()
       .single();
 
@@ -32,10 +32,10 @@ export const categoryStore = {
     return data;
   },
 
-  updateCategory: async (categoryId: number, name: string): Promise<TCategory> => {
+  updateCategory: async (categoryId: number, name: string, price: number | null = null): Promise<TCategory> => {
     const { data, error } = await supabase
       .from("categories")
-      .update({ name: name.trim() })
+      .update({ name: name.trim(), price })
       .eq("id", categoryId)
       .select()
       .single();
