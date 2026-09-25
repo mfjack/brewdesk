@@ -10,15 +10,13 @@ import { SearchInput } from "@/_components/ui/search-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
-import { DollarSign, HandCoins, Printer, Users, X } from "lucide-react";
+import { HandCoins, Printer, Users, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { useGetOrders } from "../order/query/useGetOrders";
-import { TOrderPayment, TOrderResponse, TPaymentMethod } from "../order/interface";
-import { buildOrderPayment, getChargedTakeoutFee, getGroupedOrders, isOrderPaid } from "../order/order-math";
+import { TOrderResponse } from "../order/interface";
+import { getChargedTakeoutFee, getGroupedOrders, isOrderPaid } from "../order/order-math";
 import { paymentMethodLabels } from "../order/payment-methods";
-import { PaymentDialog } from "../order/_components/payment-dialog";
 import { GroupedOrdersBadge } from "../order/_components/grouped-orders-badge";
 import { OrderReceipt } from "../order/_components/order-receipt";
 import { buildReceiptBytes } from "@/_lib/receipt-encoder";
@@ -41,18 +39,12 @@ function toDateInputValue(date: Date): string {
 }
 
 export default function OrderDetailPage() {
-  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
 
   const [historySearchTerm, setHistorySearchTerm] = useState("");
   const [historyDate, setHistoryDate] = useState("");
   const [historyOrder, setHistoryOrder] = useState<TOrderResponse | null>(null);
   const [printJob, setPrintJob] = useState<TOrderResponse | null>(null);
-
-  const [paymentOrders, setPaymentOrders] = useState<TOrderResponse[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<TPaymentMethod | null>(null);
-  const [amountReceived, setAmountReceived] = useState("");
-  const [isSplitOpen, setIsSplitOpen] = useState(false);
 
   const [groupingOrder, setGroupingOrder] = useState<TOrderResponse | null>(null);
   const [groupWithSelection, setGroupWithSelection] = useState<string>("none");
@@ -84,15 +76,6 @@ export default function OrderDetailPage() {
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [orders, historySearchTerm, historyDate],
   );
-
-  function handleOpenPayment(order: TOrderResponse) {
-    const groupedOrders = settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : [];
-
-    setPaymentOrders([order, ...groupedOrders]);
-    setPaymentMethod(null);
-    setAmountReceived("");
-    setIsSplitOpen(false);
-  }
 
   function handleOpenGrouping(order: TOrderResponse) {
     setGroupingOrder(order);
@@ -132,82 +115,6 @@ export default function OrderDetailPage() {
 
     setGroupingOrder(null);
     toast.success("Comandas vinculadas com sucesso!");
-  }
-
-  function handleClosePayment() {
-    if (updateOrderStatus.isPending) {
-      return;
-    }
-
-    setPaymentOrders([]);
-  }
-
-  const combinedPaymentTotal = paymentOrders.reduce((sum, order) => sum + order.total, 0);
-
-  const combinedPaymentOrder: TOrderResponse | null =
-    paymentOrders.length === 0
-      ? null
-      : {
-          ...paymentOrders[0],
-          customerName: paymentOrders.map((order) => order.customerName).join(" + "),
-          isTakeout: false,
-          total: combinedPaymentTotal,
-          orderItems: paymentOrders.flatMap((order, orderIndex) =>
-            order.orderItems.map((item) => ({ ...item, id: orderIndex * 10000 + item.id })),
-          ),
-        };
-
-  async function handleConfirmPayment() {
-    if (paymentOrders.length === 0) {
-      return;
-    }
-
-    // No method picked: these are always already-existing comandas, so just leave them
-    // open without deciding right now — matches PaymentDialog's own "Abrir comanda" gate.
-    if (paymentMethod === null) {
-      setPaymentOrders([]);
-
-      return;
-    }
-
-    // For a single order, amountReceived/changeDue is the real value the operator typed.
-    // When paying two grouped orders together, that value only makes sense against the
-    // combined total (already validated against it in the dialog) — each underlying
-    // order still needs its own payment record to equal its own total, so it's stored
-    // here as paid in full rather than trying to split the cash-in-hand across orders.
-    const isCombinedPayment = paymentOrders.length > 1;
-
-    await Promise.all(
-      paymentOrders.map((order) =>
-        updateOrderStatus.mutateAsync({
-          orderId: order.id,
-          status: "PAID",
-          payments: [
-            buildOrderPayment(paymentMethod, order.total, isCombinedPayment ? order.total : Number(amountReceived) || 0),
-          ],
-        }),
-      ),
-    );
-
-    setPaymentOrders([]);
-    router.push("/order");
-    toast.success("Pagamento confirmado com sucesso!");
-  }
-
-  async function handleConfirmSplitPayment(payments: TOrderPayment[]) {
-    if (paymentOrders.length !== 1) {
-      return;
-    }
-
-    await updateOrderStatus.mutateAsync({
-      orderId: paymentOrders[0].id,
-      status: "PAID",
-      payments,
-    });
-
-    setPaymentOrders([]);
-    router.push("/order");
-    toast.success("Pagamento confirmado com sucesso!");
   }
 
   function handlePrintHistoryOrder(order: TOrderResponse) {
@@ -320,19 +227,6 @@ export default function OrderDetailPage() {
                         >
                           <Users />
                           Juntar comanda
-                        </Button>
-                      )}
-
-                      {groupedOrders.length > 0 && (
-                        <Button
-                          type="button"
-                          className="w-full"
-                          size="lg"
-                          variant="outline"
-                          onClick={() => handleOpenPayment(order)}
-                        >
-                          <DollarSign />
-                          Pagamento
                         </Button>
                       )}
                     </Card>
@@ -517,27 +411,6 @@ export default function OrderDetailPage() {
           )}
         </DialogContent>
       </Dialog>
-
-      <PaymentDialog
-        open={paymentOrders.length > 0}
-        onOpenChange={(open) => !open && handleClosePayment()}
-        order={combinedPaymentOrder}
-        description={
-          paymentOrders.length > 1
-            ? "Confirme o recebimento do pagamento conjunto das comandas agrupadas."
-            : "Confirme o recebimento do pagamento da comanda."
-        }
-        disableSplit={paymentOrders.length > 1}
-        paymentMethod={paymentMethod}
-        onPaymentMethodChange={setPaymentMethod}
-        amountReceived={amountReceived}
-        onAmountReceivedChange={setAmountReceived}
-        isSplitOpen={isSplitOpen}
-        onSplitOpenChange={setIsSplitOpen}
-        onConfirmSplitPayment={handleConfirmSplitPayment}
-        onConfirmPayment={handleConfirmPayment}
-        isConfirmingPayment={updateOrderStatus.isPending}
-      />
 
       <Dialog open={Boolean(groupingOrder)} onOpenChange={(open) => !open && handleCloseGrouping()}>
         <DialogContent className="sm:max-w-sm">

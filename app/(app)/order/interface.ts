@@ -47,6 +47,10 @@ export interface TMenuList {
   onPaymentDialogOpenChange: (open: boolean) => void;
   onEditOrderFromPayment?: () => void;
   isPayingExistingComanda: boolean;
+  // Same as `order` when it's not grouped with anything; when grouped, a synthetic order
+  // combining every linked comanda's items/total under one name — this is what the payment
+  // dialog and split-bill calculator actually charge, so "Junto com" pays as one.
+  paymentOrder: TOrderResponse | null;
   paymentMethod: TPaymentMethod | null;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
   amountReceived: string;

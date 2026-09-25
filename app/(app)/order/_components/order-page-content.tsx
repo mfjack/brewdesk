@@ -141,7 +141,37 @@ export default function OrderPageContent() {
     [orders, currentOrder?.id],
   );
 
-  const groupedOrders = useMemo(() => (currentOrder ? getGroupedOrders(currentOrder, orders) : []), [currentOrder, orders]);
+  const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
+
+  const groupedOrders = useMemo(
+    () => (currentOrder && isOrderGroupingEnabled ? getGroupedOrders(currentOrder, orders) : []),
+    [currentOrder, orders, isOrderGroupingEnabled],
+  );
+
+  // "Junto com" comandas stay separate database records (each keeps its own id, kitchen
+  // ticket and history) but pay as one: this synthetic order is what the payment dialog and
+  // split-bill calculator actually display and charge against.
+  const paymentOrders = useMemo(() => (currentOrder ? [currentOrder, ...groupedOrders] : []), [currentOrder, groupedOrders]);
+
+  const combinedPaymentOrder: TOrderResponse | null = useMemo(() => {
+    if (paymentOrders.length === 0) {
+      return null;
+    }
+
+    if (paymentOrders.length === 1) {
+      return paymentOrders[0];
+    }
+
+    return {
+      ...paymentOrders[0],
+      customerName: paymentOrders.map((order) => order.customerName).join(" + "),
+      isTakeout: false,
+      total: paymentOrders.reduce((sum, order) => sum + order.total, 0),
+      orderItems: paymentOrders.flatMap((order, orderIndex) =>
+        order.orderItems.map((item) => ({ ...item, id: orderIndex * 10000 + item.id })),
+      ),
+    };
+  }, [paymentOrders]);
 
   function handleCategoryClick(categoryId: number) {
     const category = categories?.find((cat: TCategory) => cat.id === categoryId);
@@ -730,12 +760,28 @@ export default function OrderPageContent() {
         : currentOrder;
 
       if (paymentMethod !== null) {
-        await updateOrderStatus.mutateAsync({
-          orderId: order.id,
-          status: "PAID",
-          observation,
-          payments: [buildOrderPayment(paymentMethod, order.total, Number(amountReceived) || 0)],
-        });
+        // Grouped comandas each need their own payment record for their own total — the
+        // amount the operator typed only matches the combined total shown in the dialog,
+        // so it's only usable as-is when there's a single order being paid.
+        const ordersToPay = groupedOrders.length > 0 ? [order, ...groupedOrders] : [order];
+        const isCombinedPayment = ordersToPay.length > 1;
+
+        await Promise.all(
+          ordersToPay.map((orderToPay) =>
+            updateOrderStatus.mutateAsync({
+              orderId: orderToPay.id,
+              status: "PAID",
+              observation: orderToPay.id === order.id ? observation : undefined,
+              payments: [
+                buildOrderPayment(
+                  paymentMethod,
+                  orderToPay.total,
+                  isCombinedPayment ? orderToPay.total : Number(amountReceived) || 0,
+                ),
+              ],
+            }),
+          ),
+        );
       } else {
         setCurrentOrder(order);
       }
@@ -843,6 +889,7 @@ export default function OrderPageContent() {
             onPaymentDialogOpenChange={handlePaymentDialogOpenChange}
             onEditOrderFromPayment={handleEditOrderFromPayment}
             isPayingExistingComanda={Boolean(orderId)}
+            paymentOrder={combinedPaymentOrder}
             paymentMethod={paymentMethod}
             onPaymentMethodChange={setPaymentMethod}
             amountReceived={amountReceived}

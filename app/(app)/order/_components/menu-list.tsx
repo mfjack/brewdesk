@@ -54,6 +54,7 @@ export function MenuList({
   onPaymentDialogOpenChange,
   onEditOrderFromPayment,
   isPayingExistingComanda,
+  paymentOrder,
   paymentMethod,
   onPaymentMethodChange,
   amountReceived,
@@ -131,42 +132,75 @@ export function MenuList({
           )}
 
           <div className="flex-1 flex-col gap-4 p-4 overflow-y-auto no-scrollbar">
-            {(order.orderItems?.length ?? 0) === 0 ? (
+            {(order.orderItems?.length ?? 0) === 0 && (isOrderGroupingEnabled ? groupedOrders.length === 0 : true) ? (
               <p className="flex h-full justify-center items-center text-sm text-muted-foreground">
                 Adicione itens do cardápio à comanda.
               </p>
             ) : (
               <div className="flex flex-col gap-1">
-                {order.orderItems.map((item: TOrderItem) => {
-                  return (
-                    <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3">
-                      <div className="flex items-center gap-6">
-                        <span
-                          className="z-10 flex h-6 w-6 items-center justify-center
-                            rounded-full bg-background text-xs font-bold text-foreground shadow"
-                        >
-                          {item.quantity}
-                        </span>
+                {isOrderGroupingEnabled && groupedOrders.length > 0 && (
+                  <p className="text-xs font-bold uppercase text-muted-foreground mb-1">{toTitleCase(order.customerName)}</p>
+                )}
 
-                        <div className="flex flex-col items-start">
-                          <p className="text-md font-bold">{toTitleCase(item.product.name)}</p>
-
-                          <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
-                        </div>
-                      </div>
-
-                      <Button
-                        size="icon-lg"
-                        variant="ghost"
-                        className="bg-background"
-                        onClick={() => onRemoveItem(item.id)}
-                        disabled={isRemovingItem}
+                {order.orderItems.map((item: TOrderItem) => (
+                  <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3">
+                    <div className="flex items-center gap-6">
+                      <span
+                        className="z-10 flex h-6 w-6 items-center justify-center
+                          rounded-full bg-background text-xs font-bold text-foreground shadow"
                       >
-                        <Trash2 className="text-destructive" />
-                      </Button>
-                    </Card>
-                  );
-                })}
+                        {item.quantity}
+                      </span>
+
+                      <div className="flex flex-col items-start">
+                        <p className="text-md font-bold">{toTitleCase(item.product.name)}</p>
+
+                        <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="icon-lg"
+                      variant="ghost"
+                      className="bg-background"
+                      onClick={() => onRemoveItem(item.id)}
+                      disabled={isRemovingItem}
+                    >
+                      <Trash2 className="text-destructive" />
+                    </Button>
+                  </Card>
+                ))}
+
+                {/* Grouped comandas stay separate records (each still has its own id and
+                    history), so their items are shown here read-only, sectioned by name —
+                    to change one, switch to that comanda directly ("Alterar pedido" there). */}
+                {isOrderGroupingEnabled &&
+                  groupedOrders.map((groupedOrder) => (
+                    <div key={groupedOrder.id} className="mt-3">
+                      <p className="text-xs font-bold uppercase text-muted-foreground mb-1">
+                        {toTitleCase(groupedOrder.customerName)}
+                      </p>
+
+                      {groupedOrder.orderItems.map((item: TOrderItem) => (
+                        <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3 opacity-80">
+                          <div className="flex items-center gap-6">
+                            <span
+                              className="z-10 flex h-6 w-6 items-center justify-center
+                                rounded-full bg-background text-xs font-bold text-foreground shadow"
+                            >
+                              {item.quantity}
+                            </span>
+
+                            <div className="flex flex-col items-start">
+                              <p className="text-md font-bold">{toTitleCase(item.product.name)}</p>
+
+                              <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ))}
               </div>
             )}
           </div>
@@ -186,7 +220,7 @@ export function MenuList({
           <div className="flex flex-row items-center justify-between px-2 py-2 w-full">
             <p className="px-4 py-2 text-lg font-bold">Total:</p>
 
-            <span className="px-4 py-2 text-lg font-bold">{formatCurrency(order.total ?? 0)}</span>
+            <span className="px-4 py-2 text-lg font-bold">{formatCurrency(paymentOrder?.total ?? order.total ?? 0)}</span>
           </div>
 
           {(() => {
@@ -341,12 +375,15 @@ export function MenuList({
           <PaymentDialog
             open={isPaymentDialogOpen}
             onOpenChange={onPaymentDialogOpenChange}
-            order={order}
+            order={paymentOrder}
             description={
-              isPayingExistingComanda
-                ? "Confirme o recebimento do pagamento da comanda."
-                : "Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda."
+              isOrderGroupingEnabled && groupedOrders.length > 0
+                ? "Confirme o recebimento do pagamento conjunto das comandas agrupadas."
+                : isPayingExistingComanda
+                  ? "Confirme o recebimento do pagamento da comanda."
+                  : "Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda."
             }
+            disableSplit={isOrderGroupingEnabled && groupedOrders.length > 0}
             requirePaymentMethod={isPayingExistingComanda}
             error={stockError}
             paymentMethod={paymentMethod}
