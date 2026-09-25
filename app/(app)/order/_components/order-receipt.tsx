@@ -86,29 +86,47 @@ export function OrderReceipt({
         )}
       </div>
 
-      <div className="space-y-2">
-        {itemGroups.map((group, groupIndex) => (
-          <div key={groupIndex}>
-            {showCategoryNames && group.categoryName && (
-              <p className="text-xs font-bold uppercase border-b border-dashed border-foreground/40 pb-0.5 mb-1">
-                {group.categoryName}
-              </p>
-            )}
+      {showCategoryNames ? (
+        <div className="space-y-2">
+          {itemGroups.map((group, groupIndex) => (
+            <div key={groupIndex}>
+              {group.categoryName && (
+                <p className="text-xs font-bold uppercase border-b border-dashed border-foreground/40 pb-0.5 mb-1">
+                  {group.categoryName}
+                </p>
+              )}
 
-            <div className="space-y-1">
-              {group.items.map((item) => (
-                <div key={item.id} className="flex justify-between text-xs font-semibold">
-                  <span className="flex gap-1">
-                    {item.quantity}x <p>{toTitleCase(item.product.name)}</p>
-                  </span>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <div key={item.id} className="flex justify-between text-xs font-semibold">
+                    <span className="flex gap-1">
+                      {item.quantity}x <p>{toTitleCase(item.product.name)}</p>
+                    </span>
 
-                  <span>{formatCurrency(item.quantity * item.unitPrice)}</span>
-                </div>
-              ))}
+                    <span>{formatCurrency(item.quantity * item.unitPrice)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        // Same category-sorted order as above, but flattened into one list with no gaps
+        // between groups, since there's no header to justify the extra spacing.
+        <div className="space-y-1">
+          {itemGroups.flatMap((group) =>
+            group.items.map((item) => (
+              <div key={item.id} className="flex justify-between text-xs font-semibold">
+                <span className="flex gap-1">
+                  {item.quantity}x <p>{toTitleCase(item.product.name)}</p>
+                </span>
+
+                <span>{formatCurrency(item.quantity * item.unitPrice)}</span>
+              </div>
+            )),
+          )}
+        </div>
+      )}
 
       {!isAdditional && order.isTakeout && (
         <div className="flex justify-between text-xs font-semibold mt-1">

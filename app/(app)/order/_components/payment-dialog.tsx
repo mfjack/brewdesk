@@ -67,7 +67,7 @@ export function PaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto no-scrollbar">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader className="flex flex-col gap-0.5">
           <DialogTitle>Confirmar pagamento</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -81,7 +81,7 @@ export function PaymentDialog({
                 <p className="font-bold text-sm">{toTitleCase(order.customerName)}</p>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="max-h-64 space-y-1.5 overflow-y-auto no-scrollbar pr-0.5">
                 {order.orderItems.map((item) => (
                   <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
                     <div className="flex gap-2">
