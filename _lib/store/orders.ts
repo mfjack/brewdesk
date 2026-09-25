@@ -554,6 +554,19 @@ export const orderStore = {
     notifyStoreChange(["orders", "products", "supplyItems"]);
   },
 
+  // Unlike deleteOrder (which restocks products, since it's for cancelling a comanda before
+  // it's fulfilled), this never touches stock — these are completed, paid sales, so the
+  // stock they consumed was legitimately sold and must stay out of inventory.
+  deletePaidOrders: async (orderIds: number[]): Promise<void> => {
+    const { error } = await supabase.from("orders").delete().in("id", orderIds).eq("status", "PAID");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    notifyStoreChange(["orders"]);
+  },
+
   setContaSettled: async (orderId: number, settled: boolean): Promise<TOrderResponse> => {
     const { data, error } = await supabase
       .from("orders")

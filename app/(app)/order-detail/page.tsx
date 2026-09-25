@@ -10,7 +10,7 @@ import { SearchInput } from "@/_components/ui/search-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 import { Separator } from "@/_components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_components/ui/tabs";
-import { HandCoins, Printer, Users, X } from "lucide-react";
+import { HandCoins, Printer, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 
 import { useGetOrders } from "../order/query/useGetOrders";
@@ -26,6 +26,7 @@ import { Header } from "@/_components/ui/header";
 import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
+import { useDeletePaidOrders } from "./mutation/useDeletePaidOrders";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 import { toTitleCase } from "@/_lib/to-title-case";
@@ -49,12 +50,15 @@ export default function OrderDetailPage() {
   const [groupingOrder, setGroupingOrder] = useState<TOrderResponse | null>(null);
   const [groupWithSelection, setGroupWithSelection] = useState<string>("none");
 
+  const [isDeleteHistoryDialogOpen, setIsDeleteHistoryDialogOpen] = useState(false);
+
   const { data: ordersData } = useGetOrders({ refetchInterval: 10000 });
   const { data: settings } = useGetSettings();
   const isHydrated = useIsHydrated();
   const orders = useMemo(() => (isHydrated ? (ordersData ?? []) : []), [isHydrated, ordersData]);
 
   const updateOrderStatus = useUpdateOrderStatus();
+  const deletePaidOrders = useDeletePaidOrders();
 
   const openOrdersCount = useMemo(() => orders.filter((order) => !isOrderPaid(order)).length, [orders]);
 
@@ -152,6 +156,21 @@ export default function OrderDetailPage() {
     })();
   }
 
+  async function handleConfirmDeleteHistory() {
+    if (paidOrders.length === 0) {
+      return;
+    }
+
+    try {
+      await deletePaidOrders.mutateAsync({ orderIds: paidOrders.map((order) => order.id) });
+
+      setIsDeleteHistoryDialogOpen(false);
+      toast.success("Histórico apagado com sucesso!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível apagar o histórico.");
+    }
+  }
+
   return (
     <>
       {printJob && <OrderReceipt order={printJob} printMode="full" />}
@@ -238,9 +257,24 @@ export default function OrderDetailPage() {
         </TabsContent>
 
         <TabsContent value="history" className="flex-1 flex flex-col overflow-hidden">
-          <p className="px-4 pt-4 text-xs text-muted-foreground">
-            Comandas pagas há mais de 60 dias são removidas automaticamente.
-          </p>
+          <div className="flex items-center justify-between flex-wrap gap-2 px-4 pt-4">
+            <p className="text-xs text-muted-foreground">
+              Comandas pagas há mais de 60 dias são removidas automaticamente.
+            </p>
+
+            {paidOrders.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setIsDeleteHistoryDialogOpen(true)}
+              >
+                <Trash2 />
+                Apagar todos
+              </Button>
+            )}
+          </div>
 
           <div className="p-4 flex flex-col sm:flex-row gap-2 w-full sm:max-w-160">
             <Input
@@ -452,6 +486,41 @@ export default function OrderDetailPage() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteHistoryDialogOpen} onOpenChange={(open) => !deletePaidOrders.isPending && setIsDeleteHistoryDialogOpen(open)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="flex flex-col gap-0.5">
+            <DialogTitle>Apagar todo o histórico?</DialogTitle>
+            <DialogDescription>
+              {historySearchTerm || historyDate
+                ? `Isso apaga permanentemente as ${paidOrders.length} comandas do histórico que correspondem ao filtro atual. Não pode ser desfeito.`
+                : `Isso apaga permanentemente as ${paidOrders.length} comandas do histórico. Não pode ser desfeito.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setIsDeleteHistoryDialogOpen(false)}
+              disabled={deletePaidOrders.isPending}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              type="button"
+              variant="destructive"
+              className="flex-1"
+              onClick={handleConfirmDeleteHistory}
+              disabled={deletePaidOrders.isPending}
+            >
+              {deletePaidOrders.isPending ? "Apagando..." : "Apagar todos"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       </section>
