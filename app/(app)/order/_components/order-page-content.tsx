@@ -164,20 +164,23 @@ export default function OrderPageContent() {
 
       if (isThermalPrintingEnabled()) {
         try {
+          // Uses the order's own (pre-this-print) printedItemQuantities, not the already
+          // "everything's printed now" printedQty below — passing printedQty here made
+          // additional-item prints always compute zero new lines, since every item already
+          // matched its own just-updated printed count.
           const bytes = buildReceiptBytes({
             order,
             settings,
             observation,
             printMode: mode,
-            printedItemQuantities: printedQty,
+            printedItemQuantities: order.printedItemQuantities,
             groupedCustomerNames: getGroupedOrders(order, orders).map((groupedOrder) => groupedOrder.customerName),
           });
 
           if (bytes) {
             await printThermalReceipt(bytes);
+            printedViaThermal = true;
           }
-
-          printedViaThermal = true;
         } catch (error) {
           const message = `Não foi possível imprimir na impressora térmica${error instanceof Error ? ` (${error.message})` : ""}. Imprimindo pelo navegador.`;
 
