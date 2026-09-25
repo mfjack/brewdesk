@@ -12,6 +12,7 @@ import { isDraftOrder } from "../order-math";
 import { ScrollText } from "lucide-react";
 import { Header } from "@/_components/ui/header";
 import Link from "next/link";
+import Image from "next/image";
 
 function QuantityBadge({ quantity, className = "" }: { quantity: number; className?: string }) {
   return (
@@ -49,14 +50,25 @@ function ProductButton({
       className={
         listLayout
           ? `h-auto w-full justify-between gap-3 px-4 py-3 ${lowStockClassName}`
-          : `relative h-28 min-w-32 bg-muted hover:bg-muted-foreground/20 ${lowStockClassName}`
+          : `relative h-32 min-w-32 bg-muted hover:bg-muted-foreground/20 ${lowStockClassName}`
       }
     >
       {listLayout ? (
         <>
-          <span className="flex items-center gap-2">
+          <span className="flex min-w-0 items-center gap-2">
             {quantity > 0 && <QuantityBadge quantity={quantity} />}
-            <span className="text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
+
+            {product.photoUrl && (
+              <Image
+                src={product.photoUrl}
+                alt=""
+                width={32}
+                height={32}
+                className="h-8 w-8 shrink-0 rounded-md object-cover ring-1 ring-foreground/10"
+              />
+            )}
+
+            <span className="truncate text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
           </span>
 
           <span className="flex items-center gap-2">
@@ -69,6 +81,16 @@ function ProductButton({
           {quantity > 0 && <QuantityBadge quantity={quantity} className="absolute -top-2 -right-2 z-10" />}
 
           <div className="flex flex-col items-center gap-1">
+            {product.photoUrl && (
+              <Image
+                src={product.photoUrl}
+                alt=""
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-full object-cover ring-1 ring-foreground/10"
+              />
+            )}
+
             <span className="text-center text-sm font-bold whitespace-normal">{toTitleCase(product.name)}</span>
             <span className="text-xs font-medium p-0">{formatCurrency(product.price)}</span>
             {stockLabel}
