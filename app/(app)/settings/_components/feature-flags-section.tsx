@@ -38,6 +38,12 @@ const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; des
     description: "Permite vender na conta, registrando o cliente e cobrando depois.",
     defaultValue: false,
   },
+  {
+    key: "receiptCategories",
+    label: "Categorias na comanda",
+    description: "Isso mostra o nome de cada categoria acima do grupo.",
+    defaultValue: true,
+  },
 ];
 
 export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | undefined }) {

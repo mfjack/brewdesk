@@ -90,10 +90,13 @@ export function buildReceiptBytes({
 
   encoder.size(1, 2);
 
+  // Items always print grouped/sorted by category — the feature flag only decides whether
+  // the category name header is printed above each group, not the ordering itself.
   const itemGroups = groupItemsByCategory(displayItems);
+  const showCategoryNames = settings?.featureFlags.receiptCategories ?? true;
 
   itemGroups.forEach((group) => {
-    if (group.categoryName) {
+    if (showCategoryNames && group.categoryName) {
       encoder.bold(true).text(group.categoryName.toUpperCase()).bold(false).newline();
     }
 

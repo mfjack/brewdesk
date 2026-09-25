@@ -46,6 +46,7 @@ export function OrderReceipt({
 
   const receiptObservation = order.observation ?? observation;
   const itemGroups = groupItemsByCategory(displayItems);
+  const showCategoryNames = settings?.featureFlags.receiptCategories ?? true;
 
   return (
     <div className="order-receipt hidden px-2 h-fit print:block">
@@ -88,7 +89,7 @@ export function OrderReceipt({
       <div className="space-y-2">
         {itemGroups.map((group, groupIndex) => (
           <div key={groupIndex}>
-            {group.categoryName && (
+            {showCategoryNames && group.categoryName && (
               <p className="text-xs font-bold uppercase border-b border-dashed border-foreground/40 pb-0.5 mb-1">
                 {group.categoryName}
               </p>
