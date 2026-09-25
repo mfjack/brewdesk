@@ -1,4 +1,4 @@
-import { Trash2, NotebookPen, Send, User, DollarSign, Pencil, Wallet, Printer } from "lucide-react";
+import { Trash2, NotebookPen, User, DollarSign, Pencil, Wallet, Printer } from "lucide-react";
 
 import { useEffect } from "react";
 

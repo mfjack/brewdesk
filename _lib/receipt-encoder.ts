@@ -1,7 +1,7 @@
 import ReceiptPrinterEncoder from "@point-of-sale/receipt-printer-encoder";
 
 import type { TOrderResponse, TStoreSettings } from "@/app/(app)/order/interface";
-import { getChargedTakeoutFee } from "@/app/(app)/order/order-math";
+import { getChargedTakeoutFee, groupItemsByCategory } from "@/app/(app)/order/order-math";
 import { formatCurrency } from "@/_lib/format-currency";
 import { formatDateTime } from "@/_lib/format-date";
 import { toTitleCase } from "@/_lib/to-title-case";
@@ -90,8 +90,16 @@ export function buildReceiptBytes({
 
   encoder.size(1, 2);
 
-  displayItems.forEach((item) => {
-    encoder.table(columns, [[`${item.quantity}x ${toTitleCase(item.product.name)}`, formatCurrency(item.quantity * item.unitPrice)]]);
+  const itemGroups = groupItemsByCategory(displayItems);
+
+  itemGroups.forEach((group) => {
+    if (group.categoryName) {
+      encoder.bold(true).text(group.categoryName.toUpperCase()).bold(false).newline();
+    }
+
+    group.items.forEach((item) => {
+      encoder.table(columns, [[`${item.quantity}x ${toTitleCase(item.product.name)}`, formatCurrency(item.quantity * item.unitPrice)]]);
+    });
   });
 
   encoder.size(1, 1);

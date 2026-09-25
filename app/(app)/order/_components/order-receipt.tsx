@@ -2,7 +2,7 @@ import { formatCurrency } from "@/_lib/format-currency";
 import { formatDateTime } from "@/_lib/format-date";
 
 import { TOrderResponse } from "../interface";
-import { getChargedTakeoutFee } from "../order-math";
+import { getChargedTakeoutFee, groupItemsByCategory } from "../order-math";
 import { toTitleCase } from "@/_lib/to-title-case";
 import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 
@@ -45,6 +45,7 @@ export function OrderReceipt({
   }
 
   const receiptObservation = order.observation ?? observation;
+  const itemGroups = groupItemsByCategory(displayItems);
 
   return (
     <div className="order-receipt hidden px-2 h-fit print:block">
@@ -84,14 +85,26 @@ export function OrderReceipt({
         )}
       </div>
 
-      <div className="space-y-1">
-        {displayItems.map((item) => (
-          <div key={item.id} className="flex justify-between text-xs font-semibold">
-            <span className="flex gap-1">
-              {item.quantity}x <p>{toTitleCase(item.product.name)}</p>
-            </span>
+      <div className="space-y-2">
+        {itemGroups.map((group, groupIndex) => (
+          <div key={groupIndex}>
+            {group.categoryName && (
+              <p className="text-xs font-bold uppercase border-b border-dashed border-foreground/40 pb-0.5 mb-1">
+                {group.categoryName}
+              </p>
+            )}
 
-            <span>{formatCurrency(item.quantity * item.unitPrice)}</span>
+            <div className="space-y-1">
+              {group.items.map((item) => (
+                <div key={item.id} className="flex justify-between text-xs font-semibold">
+                  <span className="flex gap-1">
+                    {item.quantity}x <p>{toTitleCase(item.product.name)}</p>
+                  </span>
+
+                  <span>{formatCurrency(item.quantity * item.unitPrice)}</span>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

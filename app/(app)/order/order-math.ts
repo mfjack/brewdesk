@@ -72,13 +72,51 @@ export function mergeOrderItem(
     ...items,
     {
       id: getNewItemId(),
-      product: { id: product.id, name: product.name },
+      product: { id: product.id, name: product.name, category: { id: product.category.id, name: product.category.name } },
       quantity,
       unitPrice: product.price,
       costPrice: product.costPrice ?? 0,
       subtotal: product.price * quantity,
     },
   ];
+}
+
+export interface TReceiptItemGroup {
+  categoryName: string | null;
+  items: TOrderItem[];
+}
+
+// Groups receipt items by category, in the same order categories appear everywhere else
+// in the app (creation order, i.e. category id ascending) — so the kitchen ticket always
+// prints organized by station regardless of the order the items were added to the cart.
+// Items with no category snapshot (orders created before this field existed) land in a
+// single "Outros" group at the end.
+export function groupItemsByCategory(items: TOrderItem[]): TReceiptItemGroup[] {
+  const groupsByCategoryId = new Map<number, { categoryName: string; items: TOrderItem[] }>();
+  const uncategorizedItems: TOrderItem[] = [];
+
+  items.forEach((item) => {
+    const category = item.product.category;
+
+    if (!category) {
+      uncategorizedItems.push(item);
+      return;
+    }
+
+    const group = groupsByCategoryId.get(category.id) ?? { categoryName: category.name, items: [] };
+    group.items.push(item);
+    groupsByCategoryId.set(category.id, group);
+  });
+
+  const groups: TReceiptItemGroup[] = [...groupsByCategoryId.entries()]
+    .sort(([idA], [idB]) => idA - idB)
+    .map(([, group]) => group);
+
+  if (uncategorizedItems.length > 0) {
+    groups.push({ categoryName: "Outros", items: uncategorizedItems });
+  }
+
+  return groups;
 }
 
 export function decrementOrRemoveItem(items: TOrderItem[], itemId: number): TOrderItem[] {

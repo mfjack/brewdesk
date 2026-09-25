@@ -131,6 +131,9 @@ export interface TSupplyItem {
 export interface TOrderItemProduct {
   id: number;
   name: string;
+  // Optional because items on orders created before this field existed have no category
+  // snapshot stored in their JSON — receipts fall back to an "Outros" group for those.
+  category?: { id: number; name: string };
 }
 
 export interface TOrderItem {
