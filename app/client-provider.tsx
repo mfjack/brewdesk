@@ -16,6 +16,7 @@ const TABLE_QUERY_KEYS: Record<string, string[]> = {
   operators: ["settings"],
   orders: ["orders", "order", "report"],
   establishments: ["settings"],
+  tasks: ["tasks"],
 };
 
 function invalidateQueryKeys(queryClient: QueryClient, queryKeys: string[]) {

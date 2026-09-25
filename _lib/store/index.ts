@@ -4,6 +4,7 @@ import { orderStore } from "./orders";
 import { settingsStore } from "./settings";
 import { supplierStore } from "./suppliers";
 import { supplyItemStore } from "./supply-items";
+import { taskStore } from "./tasks";
 
 export const localStore = {
   ...categoryStore,
@@ -12,4 +13,5 @@ export const localStore = {
   ...settingsStore,
   ...supplierStore,
   ...supplyItemStore,
+  ...taskStore,
 };

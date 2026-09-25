@@ -46,26 +46,26 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas" className="print:hidden">
-      <SidebarHeader />
+      <SidebarHeader>
+        <div className="flex flex-col items-center gap-2 pb-4 pt-2">
+          {settings?.logoUrl && (
+            <Image
+              src={settings.logoUrl}
+              alt=""
+              className="h-16 w-16 rounded-full object-cover ring-1 ring-foreground/10"
+              width={64}
+              height={64}
+            />
+          )}
+
+          <SidebarGroupLabel className="font-bold text-base">{settings?.name}</SidebarGroupLabel>
+        </div>
+      </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <div className="flex flex-col items-center gap-2 pb-6 pt-2">
-            {settings?.logoUrl && (
-              <Image
-                src={settings.logoUrl}
-                alt=""
-                className="h-16 w-16 rounded-full object-cover ring-1 ring-foreground/10"
-                width={64}
-                height={64}
-              />
-            )}
-
-            <SidebarGroupLabel className="font-bold text-base">{settings?.name}</SidebarGroupLabel>
-          </div>
-
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-4">
+            <SidebarMenu className="space-y-3">
               {visibleNavLinks.map(({ icon: Icon, label, path }) => (
                 <SidebarMenuItem key={path}>
                   <SidebarMenuButton variant="outline" asChild>

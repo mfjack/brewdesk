@@ -192,6 +192,24 @@ export interface TFeatureFlags {
   thermalPrinterPaperWidth: TThermalPrinterPaperWidth;
 }
 
+export type TTaskRecurrence = "once" | "daily" | "weekly" | "monthly";
+export type TTaskPeriod = "opening" | "closing";
+
+export interface TTask {
+  id: number;
+  title: string;
+  recurrence: TTaskRecurrence;
+  // Only meaningful (and only editable) when recurrence is "weekly" — which days of the
+  // week the task is due on. Ignored for the other recurrences.
+  weekdays: Weekday[];
+  // Purely an organizational label (opening/closing checklist) — doesn't affect when the
+  // task is due or shown, just which tab it groups under.
+  period: TTaskPeriod;
+  assignedOperatorId: number | null;
+  lastCompletedAt: string | null;
+  createdAt: string;
+}
+
 export interface TStoreSettings {
   name: string;
   cnpj: string | null;
