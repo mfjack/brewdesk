@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { Card, CardContent } from "@/_components/ui/card";
@@ -24,6 +25,9 @@ import { formatCurrency } from "@/_lib/format-currency";
 import { formatDate } from "@/_lib/format-date";
 import { buildCsv, downloadCsv } from "@/_lib/csv";
 import { buildAndDownloadPdf } from "@/_lib/pdf";
+import { buildReportReceiptBytes } from "@/_lib/report-encoder";
+import { isThermalPrintingEnabled, printThermalReceipt } from "@/_lib/thermal-printer";
+import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 
 const HourlyBarChart = dynamic(() => import("./_components/hourly-bar-chart").then((mod) => mod.HourlyBarChart), {
   ssr: false,
@@ -79,6 +83,7 @@ export default function ReportPage() {
   const hasCustomRange = Boolean(customRange.start && customRange.end);
   const { data: reportData, isLoading } = useGetReportData(dateRange, customRange);
   const { data: productReportData } = useGetProductReportData(dateRange, selectedProduct, customRange);
+  const { data: settings } = useGetSettings();
 
   if (isLoading || !reportData) {
     return (
@@ -172,6 +177,38 @@ export default function ReportPage() {
     const fileRangeLabel = dateRange === "custom" && hasCustomRange ? `${customRange.start}_a_${customRange.end}` : dateRange;
 
     downloadCsv(`tably-relatorio-${fileRangeLabel}-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  }
+
+  function handlePrintReport() {
+    if (!reportData) {
+      return;
+    }
+
+    if (!isThermalPrintingEnabled()) {
+      window.print();
+
+      return;
+    }
+
+    void (async () => {
+      try {
+        const bytes = buildReportReceiptBytes({
+          dateRangeLabel: activeRangeLabel,
+          reportData,
+          selectedProduct,
+          productReportData,
+          settings,
+        });
+
+        await printThermalReceipt(bytes);
+        toast.success("Relatório impresso com sucesso!");
+      } catch (error) {
+        toast.error(
+          `Não foi possível imprimir na impressora térmica${error instanceof Error ? ` (${error.message})` : ""}. Imprimindo pelo navegador.`,
+        );
+        window.print();
+      }
+    })();
   }
 
   function handleExportPdf() {
@@ -279,7 +316,7 @@ export default function ReportPage() {
               Exportar PDF
             </Button>
 
-            <Button size="lg" onClick={() => window.print()}>
+            <Button size="lg" onClick={handlePrintReport}>
               <Printer />
               Imprimir relatório
             </Button>

@@ -17,7 +17,7 @@ export interface TReceiptEncoderOptions {
 
 // Standard font-A column counts for these paper widths across ESC/POS thermal printers —
 // printing at the wrong column count causes the line wrap point to land in the wrong place.
-function getEncoderColumns(paperWidth: TStoreSettings["featureFlags"]["thermalPrinterPaperWidth"] | undefined): number {
+export function getEncoderColumns(paperWidth: TStoreSettings["featureFlags"]["thermalPrinterPaperWidth"] | undefined): number {
   return paperWidth === "58mm" ? 32 : 42;
 }
 
