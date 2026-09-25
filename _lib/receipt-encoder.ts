@@ -15,6 +15,12 @@ export interface TReceiptEncoderOptions {
   groupedCustomerNames?: string[];
 }
 
+// Standard font-A column counts for these paper widths across ESC/POS thermal printers —
+// printing at the wrong column count causes the line wrap point to land in the wrong place.
+function getEncoderColumns(paperWidth: TStoreSettings["featureFlags"]["thermalPrinterPaperWidth"] | undefined): number {
+  return paperWidth === "58mm" ? 32 : 42;
+}
+
 export function buildReceiptBytes({
   order,
   settings,
@@ -37,7 +43,10 @@ export function buildReceiptBytes({
 
   const receiptObservation = order.observation ?? observation;
 
-  const encoder = new ReceiptPrinterEncoder({ language: "esc-pos" });
+  const encoder = new ReceiptPrinterEncoder({
+    language: "esc-pos",
+    columns: getEncoderColumns(settings?.featureFlags.thermalPrinterPaperWidth),
+  });
   const priceColumnWidth = 10;
   const columns = [
     { width: encoder.columns - priceColumnWidth, align: "left" as const },
@@ -123,7 +132,11 @@ export function buildReceiptBytes({
     encoder.newline().align("center").text(settings.receiptFooterMessage).newline();
   }
 
-  encoder.newline(6).cut();
+  // Feeds enough blank paper for the last printed line to clear the physical gap between
+  // the print head and the cutter blade before cutting — too little feed here cuts above
+  // content that hasn't passed the cutter yet, leaving it stuck on the roll to print
+  // (looking like leftover content from the previous receipt) the next time something feeds.
+  encoder.newline(10).cut();
 
   return encoder.encode();
 }

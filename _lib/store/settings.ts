@@ -10,6 +10,7 @@ export const defaultFeatureFlags: TStoreSettings["featureFlags"] = {
   creditSale: false,
   orderTickets: true,
   receiptCategories: true,
+  thermalPrinterPaperWidth: "80mm",
 };
 export const defaultTakeoutFee = 2;
 

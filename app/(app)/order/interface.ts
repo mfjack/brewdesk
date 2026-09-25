@@ -180,6 +180,8 @@ export interface TOperator {
   isSelfService: boolean;
 }
 
+export type TThermalPrinterPaperWidth = "58mm" | "80mm";
+
 export interface TFeatureFlags {
   takeout: boolean;
   orderGrouping: boolean;
@@ -187,6 +189,7 @@ export interface TFeatureFlags {
   creditSale: boolean;
   orderTickets: boolean;
   receiptCategories: boolean;
+  thermalPrinterPaperWidth: TThermalPrinterPaperWidth;
 }
 
 export interface TStoreSettings {

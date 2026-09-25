@@ -50,7 +50,15 @@ export function OrderReceipt({
 
   return (
     <div className="order-receipt hidden px-2 h-fit print:block">
-      <h1 className="text-base font-bold text-center my-2">{settings?.name}</h1>
+      {/* Scoped to only while this component is mounted (i.e. only during an actual receipt
+          print job) instead of a named `@page receipt` rule — Chrome doesn't reliably honor
+          named pages, so that override silently fell back to the shared `@page { margin:
+          1cm }` below, leaving a real 1cm gap above the title on every receipt. Other print
+          views (report, shopping list) never mount alongside this one, so this can't affect
+          them. */}
+      <style>{"@media print { @page { size: 80mm auto; margin: 0; } }"}</style>
+
+      <h1 className="text-base font-bold text-center mt-0 mb-2">{settings?.name}</h1>
 
       <div className="border-b pb-2 mb-2 text-start">
         {settings?.cnpj && <p className="text-xs">CNPJ: {settings.cnpj}</p>}

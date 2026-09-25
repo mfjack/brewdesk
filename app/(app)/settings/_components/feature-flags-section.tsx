@@ -13,7 +13,11 @@ import type { TFeatureFlags, TStoreSettings } from "../../order/interface";
 
 import { useUpdateSettings } from "../mutation/useUpdateSettings";
 
-const OTHER_FEATURE_FLAG_OPTIONS: { key: keyof TFeatureFlags; label: string; description: string; defaultValue: boolean }[] = [
+// Excludes non-boolean settings (like thermalPrinterPaperWidth) from this generic
+// on/off list — those get their own dedicated control instead of a plain Switch.
+type TBooleanFeatureFlagKey = { [K in keyof TFeatureFlags]: TFeatureFlags[K] extends boolean ? K : never }[keyof TFeatureFlags];
+
+const OTHER_FEATURE_FLAG_OPTIONS: { key: TBooleanFeatureFlagKey; label: string; description: string; defaultValue: boolean }[] = [
   {
     key: "orderTickets",
     label: "Comandas",
@@ -53,7 +57,7 @@ export function FeatureFlagsSection({ settings }: { settings: TStoreSettings | u
   const takeoutFeeId = useId();
   const [takeoutFeeInput, setTakeoutFeeInput] = useState<string | null>(null);
 
-  function handleToggle(key: keyof TFeatureFlags, value: boolean) {
+  function handleToggle(key: TBooleanFeatureFlagKey, value: boolean) {
     if (!settings) {
       return;
     }

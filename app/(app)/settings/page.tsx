@@ -36,7 +36,7 @@ export default function SettingsPage() {
 
         <Separator className="my-6 max-w-lg" />
 
-        <ThermalPrinterSection />
+        <ThermalPrinterSection settings={settings} />
 
         {isMaster && (
           <>
