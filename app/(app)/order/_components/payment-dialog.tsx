@@ -17,7 +17,6 @@ export interface TPaymentDialog {
   onOpenChange: (open: boolean) => void;
   order: TOrderResponse | null;
   description?: string;
-  disableSplit?: boolean;
   onEditOrder?: () => void;
   requirePaymentMethod?: boolean;
   error?: string | null;
@@ -40,7 +39,6 @@ export function PaymentDialog({
   onOpenChange,
   order,
   description = "Confirme o recebimento do pagamento da comanda.",
-  disableSplit = false,
   onEditOrder,
   requirePaymentMethod = false,
   error,
@@ -59,7 +57,7 @@ export function PaymentDialog({
 }: TPaymentDialog) {
   const { data: settings } = useGetSettings();
 
-  const isSplitBillEnabled = (settings?.featureFlags.splitBill ?? true) && !disableSplit;
+  const isSplitBillEnabled = settings?.featureFlags.splitBill ?? true;
 
   const availablePaymentMethods = paymentMethodOptions.filter((option) => option.value !== "CONTA");
 

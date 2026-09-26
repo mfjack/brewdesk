@@ -5,7 +5,7 @@ import { Card } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
 import { useGetOrders } from "../order/query/useGetOrders";
 import { TOrderResponse } from "../order/interface";
-import { getGroupedOrders } from "../order/order-math";
+import { getKitchenGroupedOrders } from "../order/order-math";
 import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import { useUpdateOrderStatus } from "../order/mutation/useUpdateOrderStatus";
@@ -131,8 +131,9 @@ export default function KitchenPage() {
                     )}
 
                     <GroupedOrdersBadge
-                      groupedOrders={settings?.featureFlags.orderGrouping ? getGroupedOrders(order, orders) : []}
+                      groupedOrders={settings?.featureFlags.orderGrouping ? getKitchenGroupedOrders(order, orders) : []}
                       variant="board"
+                      label="Junto com"
                     />
 
                     {order.orderItems.length > 0 && (

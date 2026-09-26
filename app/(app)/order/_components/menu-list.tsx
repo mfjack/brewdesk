@@ -1,4 +1,4 @@
-import { Trash2, NotebookPen, User, DollarSign, Pencil, Wallet, Printer } from "lucide-react";
+import { Trash2, NotebookPen, User, DollarSign, Pencil, Wallet, Printer, Users } from "lucide-react";
 
 import { useEffect } from "react";
 
@@ -6,7 +6,6 @@ import { Button } from "@/_components/ui/button";
 import { Separator } from "@/_components/ui/separator";
 import { Card } from "@/_components/ui/card";
 import { Switch } from "@/_components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/_components/ui/select";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/_components/ui/dialog";
 
@@ -21,6 +20,61 @@ import { useGetSettings } from "@/app/(app)/settings/query/useGetSettings";
 
 import { Input } from "@/_components/ui/input";
 import { toTitleCase } from "@/_lib/to-title-case";
+
+function CartItemCard({
+  item,
+  removable,
+  onRemove,
+  disabled,
+}: {
+  item: TOrderItem;
+  removable: boolean;
+  onRemove?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Card className={`flex flex-row items-center justify-between p-4 mb-3 ${removable ? "" : "opacity-80"}`}>
+      <div className="flex items-center gap-6">
+        <span
+          className="z-10 flex h-6 w-6 items-center justify-center
+            rounded-full bg-background text-xs font-bold text-foreground shadow"
+        >
+          {item.quantity}
+        </span>
+
+        <div className="flex flex-col items-start">
+          <p className="text-md font-bold">{toTitleCase(item.product.name)}</p>
+
+          <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
+        </div>
+      </div>
+
+      {removable && (
+        <Button size="icon-lg" variant="ghost" className="bg-background" onClick={onRemove} disabled={disabled}>
+          <Trash2 className="text-destructive" />
+        </Button>
+      )}
+    </Card>
+  );
+}
+
+// A plain label for a read-only section (an already-sent linked order); becomes a real
+// toggle button — same filled/outline convention as the category tabs above — once there
+// are two carts being built at once ("Junto com", not yet sent), so it's clear at a glance
+// that it's clickable and which one is currently getting the new items.
+function CartSectionHeader({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
+  if (!onClick) {
+    return <p className="text-xs font-bold uppercase text-muted-foreground mb-1">{label}</p>;
+  }
+
+  return (
+    <Button type="button" variant={active ? "default" : "outline"} size="sm" className="self-start mb-1" onClick={onClick}>
+      <Users />
+      {label}
+      {active && " — adicionando aqui"}
+    </Button>
+  );
+}
 
 export function MenuList({
   order,
@@ -42,10 +96,20 @@ export function MenuList({
   nameError,
   isTakeoutDraft,
   onIsTakeoutDraftChange,
-  groupableOrders,
-  groupWithOrderId,
-  onGroupWithOrderIdChange,
   groupedOrders,
+  kitchenGroupedOrders,
+  secondaryCustomerName,
+  secondaryOrderItems,
+  onRemoveSecondaryItem,
+  activeCartTarget,
+  onSelectCartTarget,
+  isJuntoComDialogOpen,
+  onOpenJuntoComDialog,
+  onJuntoComDialogOpenChange,
+  juntoComNameDraft,
+  onJuntoComNameDraftChange,
+  onConfirmJuntoComName,
+  onRemoveJuntoCom,
 
   onRegisterConta,
 
@@ -95,6 +159,18 @@ export function MenuList({
   const isOrderTicketsEnabled = settings?.featureFlags.orderTickets ?? true;
   const isCreditSaleEnabled = settings?.featureFlags.creditSale ?? false;
 
+  // Shows every linked order's items here for visibility, whether linked for combined
+  // payment ("Juntar comanda") or just to prepare/print together ("Junto com") — dedup in
+  // case an order somehow ends up linked both ways.
+  const linkedOrders = isOrderGroupingEnabled
+    ? [...groupedOrders, ...kitchenGroupedOrders].filter(
+        (linkedOrder, index, all) => all.findIndex((candidate) => candidate.id === linkedOrder.id) === index,
+      )
+    : [];
+
+  // A second person's cart being built alongside this one, not sent yet.
+  const hasSecondaryCart = secondaryCustomerName.trim().length > 0;
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.key === "Enter" && hasItems && !isSending) {
@@ -115,92 +191,86 @@ export function MenuList({
     <div className="w-full min-w-0 md:h-screen md:w-1/2">
       {order && (
         <div className="flex flex-col md:h-full">
-          {order.customerName && (
-            <>
-              <div className="p-6.5 flex items-center justify-between gap-2 text-sm text-muted-foreground">
-                <div>
-                  <p>
-                    Cliente: <span className="font-bold">{toTitleCase(order.customerName)}</span>
-                  </p>
+          <div className="px-4 h-18 flex items-center justify-between gap-2 text-sm text-muted-foreground">
+            <div>
+              {order.customerName && (
+                <p>
+                  Cliente: <span className="font-bold">{toTitleCase(order.customerName)}</span>
+                </p>
+              )}
 
-                  <GroupedOrdersBadge groupedOrders={isOrderGroupingEnabled ? groupedOrders : []} />
-                </div>
-              </div>
+              <GroupedOrdersBadge groupedOrders={isOrderGroupingEnabled ? groupedOrders : []} />
+              <GroupedOrdersBadge groupedOrders={isOrderGroupingEnabled ? kitchenGroupedOrders : []} label="Junto com" />
 
-              <Separator className="h-px bg-border" />
-            </>
-          )}
+              {secondaryCustomerName && (
+                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Users size={12} />
+                  Junto com: <span className="font-medium">{toTitleCase(secondaryCustomerName)}</span>
+                </p>
+              )}
+            </div>
+
+            {isOrderGroupingEnabled && (
+              <Button type="button" variant="outline" onClick={onOpenJuntoComDialog}>
+                <Users />
+                Junto com
+              </Button>
+            )}
+          </div>
+          <Separator className="h-px bg-border" />
 
           <div className="flex-1 flex-col gap-4 p-4 overflow-y-auto no-scrollbar">
-            {(order.orderItems?.length ?? 0) === 0 && (isOrderGroupingEnabled ? groupedOrders.length === 0 : true) ? (
+            {(order.orderItems?.length ?? 0) === 0 && linkedOrders.length === 0 && !hasSecondaryCart ? (
               <p className="flex h-full justify-center items-center text-sm text-muted-foreground">
                 Adicione itens do cardápio à comanda.
               </p>
             ) : (
               <div className="flex flex-col gap-1">
-                {isOrderGroupingEnabled && groupedOrders.length > 0 && (
-                  <p className="text-xs font-bold uppercase text-muted-foreground mb-1">{toTitleCase(order.customerName)}</p>
+                {(linkedOrders.length > 0 || hasSecondaryCart) && (
+                  <CartSectionHeader
+                    label={toTitleCase(order.customerName || "Você")}
+                    active={activeCartTarget === "primary"}
+                    onClick={hasSecondaryCart ? () => onSelectCartTarget("primary") : undefined}
+                  />
                 )}
 
                 {order.orderItems.map((item: TOrderItem) => (
-                  <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3">
-                    <div className="flex items-center gap-6">
-                      <span
-                        className="z-10 flex h-6 w-6 items-center justify-center
-                          rounded-full bg-background text-xs font-bold text-foreground shadow"
-                      >
-                        {item.quantity}
-                      </span>
-
-                      <div className="flex flex-col items-start">
-                        <p className="text-md font-bold">{toTitleCase(item.product.name)}</p>
-
-                        <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
-                      </div>
-                    </div>
-
-                    <Button
-                      size="icon-lg"
-                      variant="ghost"
-                      className="bg-background"
-                      onClick={() => onRemoveItem(item.id)}
-                      disabled={isRemovingItem}
-                    >
-                      <Trash2 className="text-destructive" />
-                    </Button>
-                  </Card>
+                  <CartItemCard
+                    key={item.id}
+                    item={item}
+                    removable
+                    onRemove={() => onRemoveItem(item.id)}
+                    disabled={isRemovingItem}
+                  />
                 ))}
 
-                {/* Grouped comandas stay separate records (each still has its own id and
-                    history), so their items are shown here read-only, sectioned by name —
-                    to change one, switch to that comanda directly ("Alterar pedido" there). */}
-                {isOrderGroupingEnabled &&
-                  groupedOrders.map((groupedOrder) => (
-                    <div key={groupedOrder.id} className="mt-3">
-                      <p className="text-xs font-bold uppercase text-muted-foreground mb-1">
-                        {toTitleCase(groupedOrder.customerName)}
-                      </p>
+                {hasSecondaryCart && (
+                  <div className="mt-2 flex flex-col gap-1">
+                    <CartSectionHeader
+                      label={toTitleCase(secondaryCustomerName)}
+                      active={activeCartTarget === "secondary"}
+                      onClick={() => onSelectCartTarget("secondary")}
+                    />
 
-                      {groupedOrder.orderItems.map((item: TOrderItem) => (
-                        <Card key={item.id} className="flex flex-row items-center justify-between p-4 mb-3 opacity-80">
-                          <div className="flex items-center gap-6">
-                            <span
-                              className="z-10 flex h-6 w-6 items-center justify-center
-                                rounded-full bg-background text-xs font-bold text-foreground shadow"
-                            >
-                              {item.quantity}
-                            </span>
+                    {secondaryOrderItems.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Nenhum item ainda.</p>
+                    ) : (
+                      secondaryOrderItems.map((item: TOrderItem) => (
+                        <CartItemCard key={item.id} item={item} removable onRemove={() => onRemoveSecondaryItem(item.id)} />
+                      ))
+                    )}
+                  </div>
+                )}
 
-                            <div className="flex flex-col items-start">
-                              <p className="text-md font-bold">{toTitleCase(item.product.name)}</p>
+                {linkedOrders.map((linkedOrder) => (
+                  <div key={linkedOrder.id} className="mt-3 flex flex-col gap-1">
+                    <CartSectionHeader label={toTitleCase(linkedOrder.customerName)} />
 
-                              <p className="text-xs text-muted-foreground">{formatCurrency(item.unitPrice)}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ))}
+                    {linkedOrder.orderItems.map((item: TOrderItem) => (
+                      <CartItemCard key={item.id} item={item} removable={false} />
+                    ))}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -295,32 +365,6 @@ export function MenuList({
                 </div>
               )}
 
-              {isOrderGroupingEnabled && groupableOrders.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Junto com</label>
-                  <p className="text-xs text-muted-foreground">
-                    Pra avisar a cozinha que essa comanda deve ser preparada junto com outra já aberta.
-                  </p>
-
-                  <Select
-                    value={groupWithOrderId ? String(groupWithOrderId) : "none"}
-                    onValueChange={(value) => onGroupWithOrderIdChange(value === "none" ? null : Number(value))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Nenhuma" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhuma</SelectItem>
-                      {groupableOrders.map((groupableOrder) => (
-                        <SelectItem key={groupableOrder.id} value={String(groupableOrder.id)}>
-                          {toTitleCase(groupableOrder.customerName)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
 
@@ -383,7 +427,6 @@ export function MenuList({
                   ? "Confirme o recebimento do pagamento da comanda."
                   : "Venda rápida: confirme o pagamento e finalize sem precisar abrir uma comanda."
             }
-            disableSplit={isOrderGroupingEnabled && groupedOrders.length > 0}
             requirePaymentMethod={isPayingExistingComanda}
             error={stockError}
             paymentMethod={paymentMethod}
@@ -428,6 +471,49 @@ export function MenuList({
                   disabled={isCancelling}
                 >
                   {isCancelling ? "Cancelando..." : "Cancelar comanda"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isJuntoComDialogOpen} onOpenChange={onJuntoComDialogOpenChange}>
+            <DialogContent className="sm:max-w-sm" onInteractOutside={(event) => event.preventDefault()}>
+              <DialogHeader className="flex flex-col gap-0.5">
+                <DialogTitle>Junto com</DialogTitle>
+                <DialogDescription>
+                  Adicione o nome de quem está junto — os itens que você adicionar a partir de agora vão pro pedido dela, e as
+                  duas comandas são enviadas e impressas juntas pra cozinha, mas com pagamento separado.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+
+                <Input
+                  autoFocus
+                  placeholder="Nome do cliente"
+                  className="pl-9"
+                  value={juntoComNameDraft}
+                  onChange={(event) => onJuntoComNameDraftChange(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && juntoComNameDraft.trim()) {
+                      event.preventDefault();
+
+                      onConfirmJuntoComName();
+                    }
+                  }}
+                />
+              </div>
+
+              <DialogFooter className="flex-row gap-2">
+                {hasSecondaryCart && (
+                  <Button type="button" variant="outline" className="flex-1" onClick={onRemoveJuntoCom}>
+                    Remover
+                  </Button>
+                )}
+
+                <Button className="flex-1" onClick={onConfirmJuntoComName} disabled={!juntoComNameDraft.trim()}>
+                  {hasSecondaryCart ? "Salvar" : "Adicionar"}
                 </Button>
               </DialogFooter>
             </DialogContent>

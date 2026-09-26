@@ -2,7 +2,7 @@ import ReceiptPrinterEncoder from "@point-of-sale/receipt-printer-encoder";
 
 import type { TStoreSettings } from "@/app/(app)/order/interface";
 import type { HourlyPeak, ProductReportStats, ProductStat, ReportStats } from "@/app/(app)/report/query/useGetReportData";
-import { getEncoderColumns } from "@/_lib/receipt-encoder";
+import { buildReceiptColumns, getEncoderColumns } from "@/_lib/receipt-encoder";
 import { formatCurrency } from "@/_lib/format-currency";
 import { formatDateTime } from "@/_lib/format-date";
 
@@ -14,7 +14,12 @@ export interface TReportEncoderOptions {
   settings: TStoreSettings | undefined;
 }
 
-function printProductTable(encoder: ReceiptPrinterEncoder, columns: ReturnType<typeof buildColumns>, title: string, products: ProductStat[]) {
+function printProductTable(
+  encoder: ReceiptPrinterEncoder,
+  columns: ReturnType<typeof buildReceiptColumns>,
+  title: string,
+  products: ProductStat[],
+) {
   encoder.bold(true).text(title.toUpperCase()).bold(false).newline();
 
   if (products.length === 0) {
@@ -26,15 +31,6 @@ function printProductTable(encoder: ReceiptPrinterEncoder, columns: ReturnType<t
   products.forEach((product) => {
     encoder.table(columns, [[`${product.name} (${product.quantity}un.)`, formatCurrency(product.revenue)]]);
   });
-}
-
-function buildColumns(totalColumns: number) {
-  const priceColumnWidth = 10;
-
-  return [
-    { width: totalColumns - priceColumnWidth, align: "left" as const },
-    { width: priceColumnWidth, align: "right" as const },
-  ];
 }
 
 // Mirrors <ReportReceipt>'s content (same sections, same numbers) so a shop whose only
@@ -51,7 +47,7 @@ export function buildReportReceiptBytes({
     language: "esc-pos",
     columns: getEncoderColumns(settings?.featureFlags.thermalPrinterPaperWidth),
   });
-  const columns = buildColumns(encoder.columns);
+  const columns = buildReceiptColumns(encoder.columns);
 
   const peaksWithSales: HourlyPeak[] = reportData.hourlyPeaks
     .filter((peak) => peak.orders > 0)

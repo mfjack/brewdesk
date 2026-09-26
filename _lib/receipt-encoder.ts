@@ -1,9 +1,9 @@
 import ReceiptPrinterEncoder from "@point-of-sale/receipt-printer-encoder";
 
-import type { TOrderResponse, TStoreSettings } from "@/app/(app)/order/interface";
+import type { TOrderItem, TOrderResponse, TStoreSettings } from "@/app/(app)/order/interface";
 import { getChargedTakeoutFee, groupItemsByCategory } from "@/app/(app)/order/order-math";
 import { formatCurrency } from "@/_lib/format-currency";
-import { formatDateTime } from "@/_lib/format-date";
+import { formatDate, formatTime } from "@/_lib/format-date";
 import { toTitleCase } from "@/_lib/to-title-case";
 
 export interface TReceiptEncoderOptions {
@@ -12,13 +12,53 @@ export interface TReceiptEncoderOptions {
   observation?: string;
   printMode: "full" | "additional";
   printedItemQuantities?: Record<number, number>;
-  groupedCustomerNames?: string[];
+  // Prints these orders' own items right after the primary order's, each under its own
+  // "Cliente:" line and subtotal, on this same physical ticket — used for "Junto com"
+  // (orders linked only to be prepared/printed together, never for payment).
+  additionalOrders?: TOrderResponse[];
 }
+
+type TReceiptColumns = { width: number; align: "left" | "right" }[];
 
 // Standard font-A column counts for these paper widths across ESC/POS thermal printers —
 // printing at the wrong column count causes the line wrap point to land in the wrong place.
 export function getEncoderColumns(paperWidth: TStoreSettings["featureFlags"]["thermalPrinterPaperWidth"] | undefined): number {
   return paperWidth === "58mm" ? 32 : 42;
+}
+
+export function buildReceiptColumns(totalColumns: number): TReceiptColumns {
+  const priceColumnWidth = 10;
+
+  return [
+    { width: totalColumns - priceColumnWidth, align: "left" },
+    { width: priceColumnWidth, align: "right" },
+  ];
+}
+
+// Items always print grouped/sorted by category — the feature flag only decides whether the
+// category name header is printed above each group, not the ordering itself. Returns the
+// items' combined subtotal, since "additional" mode needs it and has no order.total to use.
+function writeOrderItems(
+  encoder: ReceiptPrinterEncoder,
+  columns: TReceiptColumns,
+  items: TOrderItem[],
+  showCategoryNames: boolean,
+): number {
+  encoder.size(1, 2);
+
+  groupItemsByCategory(items).forEach((group) => {
+    if (showCategoryNames && group.categoryName) {
+      encoder.bold(true).text(group.categoryName.toUpperCase()).bold(false).newline();
+    }
+
+    group.items.forEach((item) => {
+      encoder.table(columns, [[`${item.quantity}x ${toTitleCase(item.product.name)}`, formatCurrency(item.quantity * item.unitPrice)]]);
+    });
+  });
+
+  encoder.size(1, 1);
+
+  return items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 }
 
 export function buildReceiptBytes({
@@ -27,9 +67,10 @@ export function buildReceiptBytes({
   observation,
   printMode,
   printedItemQuantities = {},
-  groupedCustomerNames = [],
+  additionalOrders = [],
 }: TReceiptEncoderOptions): Uint8Array | null {
   const isAdditional = printMode === "additional";
+  const isCombined = additionalOrders.length > 0;
 
   const displayItems = isAdditional
     ? order.orderItems
@@ -42,16 +83,13 @@ export function buildReceiptBytes({
   }
 
   const receiptObservation = order.observation ?? observation;
+  const showCategoryNames = settings?.featureFlags.receiptCategories ?? true;
 
   const encoder = new ReceiptPrinterEncoder({
     language: "esc-pos",
     columns: getEncoderColumns(settings?.featureFlags.thermalPrinterPaperWidth),
   });
-  const priceColumnWidth = 10;
-  const columns = [
-    { width: encoder.columns - priceColumnWidth, align: "left" as const },
-    { width: priceColumnWidth, align: "right" as const },
-  ];
+  const columns = buildReceiptColumns(encoder.columns);
 
   encoder.initialize().align("center").bold(true).text(settings?.name ?? "").bold(false).newline();
 
@@ -70,7 +108,7 @@ export function buildReceiptBytes({
   encoder
     .rule()
     .align("left")
-    .text(`Data: ${formatDateTime(order.createdAt)}`)
+    .text(`Data: ${formatDate(order.createdAt)}, ${formatTime(order.createdAt)}`)
     .newline()
     .text("Cliente: ")
     .bold(true)
@@ -79,54 +117,58 @@ export function buildReceiptBytes({
     .newline();
 
   if (order.isTakeout) {
-    encoder.align("center").bold(true).text("*** PARA LEVAR ***").bold(false).newline();
-  }
-
-  if (groupedCustomerNames.length > 0) {
-    encoder
-      .align("center")
-      .bold(true)
-      .text(`*** JUNTO COM: ${groupedCustomerNames.join(", ").toUpperCase()} ***`)
-      .bold(false)
-      .newline();
+    encoder.align("center").bold(true).text("*** PARA LEVAR ***").bold(false).newline().align("left");
   }
 
   if (receiptObservation) {
-    encoder.align("left").text("Observação: ").bold(true).text(receiptObservation).bold(false).newline();
+    encoder.text("Observação: ").bold(true).text(receiptObservation).bold(false).newline();
   }
 
   encoder.rule();
 
-  encoder.size(1, 2);
-
-  // Items always print grouped/sorted by category — the feature flag only decides whether
-  // the category name header is printed above each group, not the ordering itself.
-  const itemGroups = groupItemsByCategory(displayItems);
-  const showCategoryNames = settings?.featureFlags.receiptCategories ?? true;
-
-  itemGroups.forEach((group) => {
-    if (showCategoryNames && group.categoryName) {
-      encoder.bold(true).text(group.categoryName.toUpperCase()).bold(false).newline();
-    }
-
-    group.items.forEach((item) => {
-      encoder.table(columns, [[`${item.quantity}x ${toTitleCase(item.product.name)}`, formatCurrency(item.quantity * item.unitPrice)]]);
-    });
-  });
-
-  encoder.size(1, 1);
+  const primarySubtotal = writeOrderItems(encoder, columns, displayItems, showCategoryNames);
 
   if (!isAdditional && order.isTakeout) {
     encoder.table(columns, [["Embalagem para levar", formatCurrency(getChargedTakeoutFee(order))]]);
   }
 
-  const total = isAdditional ? displayItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0) : order.total;
+  const primaryTotal = isAdditional ? primarySubtotal : order.total;
 
   encoder
     .rule()
     .bold(true)
-    .table(columns, [[isAdditional ? "Subtotal Adicionais" : "Total", formatCurrency(total)]])
+    .table(columns, [[isAdditional ? "Subtotal Adicionais" : isCombined ? "Subtotal" : "Total", formatCurrency(primaryTotal)]])
     .bold(false);
+
+  let combinedTotal = order.total;
+
+  additionalOrders.forEach((additionalOrder) => {
+    encoder
+      .rule()
+      .text("Cliente: ")
+      .bold(true)
+      .text((additionalOrder.customerName || "Sem nome").toUpperCase())
+      .bold(false)
+      .newline();
+
+    if (additionalOrder.isTakeout) {
+      encoder.align("center").bold(true).text("*** PARA LEVAR ***").bold(false).newline().align("left");
+    }
+
+    writeOrderItems(encoder, columns, additionalOrder.orderItems, showCategoryNames);
+
+    if (additionalOrder.isTakeout) {
+      encoder.table(columns, [["Embalagem para levar", formatCurrency(getChargedTakeoutFee(additionalOrder))]]);
+    }
+
+    encoder.bold(true).table(columns, [["Subtotal", formatCurrency(additionalOrder.total)]]).bold(false);
+
+    combinedTotal += additionalOrder.total;
+  });
+
+  if (isCombined) {
+    encoder.rule().bold(true).table(columns, [["Total Geral", formatCurrency(combinedTotal)]]).bold(false);
+  }
 
   if (settings?.receiptFooterMessage) {
     encoder.newline().align("center").text(settings.receiptFooterMessage).newline();

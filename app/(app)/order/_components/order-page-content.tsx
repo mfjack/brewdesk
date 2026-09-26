@@ -28,9 +28,11 @@ import {
   decrementOrRemoveItem,
   DRAFT_ORDER_ID,
   getGroupedOrders,
+  getKitchenGroupedOrders,
   isDraftOrder,
   isOrderPaid,
   mergeOrderItem,
+  splitPaymentsAcrossOrders,
 } from "../order-math";
 import { getActiveOperator, useIsSelfServiceOperator } from "@/_lib/operator-session";
 import { buildReservedSupplyQuantities, getMaxProducibleQuantity } from "@/_lib/recipe-cost";
@@ -45,6 +47,8 @@ import { isThermalPrintingEnabled, printThermalReceipt } from "@/_lib/thermal-pr
 type PrintJob = {
   order: TOrderResponse;
   mode: "full" | "additional";
+  // "Junto com" (kitchenGroupId) orders — printed as their own sections on this same ticket.
+  additionalOrders?: TOrderResponse[];
 };
 
 export default function OrderPageContent() {
@@ -70,7 +74,14 @@ export default function OrderPageContent() {
 
   const [isTakeoutDraft, setIsTakeoutDraft] = useState(false);
 
-  const [groupWithOrderId, setGroupWithOrderId] = useState<number | null>(null);
+  // "Junto com": a second person's cart, built alongside the primary one in this same PDV
+  // session — sent as its own separate order (kitchen-linked to the primary) once "Imprimir
+  // pedido" runs, so each keeps its own payment despite being built and printed together.
+  const [secondaryCustomerName, setSecondaryCustomerName] = useState("");
+  const [secondaryOrderItems, setSecondaryOrderItems] = useState<TOrderItem[]>([]);
+  const [activeCartTarget, setActiveCartTarget] = useState<"primary" | "secondary">("primary");
+  const [isJuntoComDialogOpen, setIsJuntoComDialogOpen] = useState(false);
+  const [juntoComNameDraft, setJuntoComNameDraft] = useState("");
 
   const [nameError, setNameError] = useState<string | null>(null);
 
@@ -132,19 +143,15 @@ export default function OrderPageContent() {
   const hydratedSupplyItems = useHydratedData(supplyItems);
   const hydratedFilteredProducts = useHydratedData(filteredProducts);
 
-  const groupableOrders = useMemo(
-    () =>
-      orders
-        .filter((order) => !isOrderPaid(order) && order.status !== "OPEN" && order.id !== currentOrder?.id)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 4),
-    [orders, currentOrder?.id],
-  );
-
   const isOrderGroupingEnabled = settings?.featureFlags.orderGrouping ?? true;
 
   const groupedOrders = useMemo(
     () => (currentOrder && isOrderGroupingEnabled ? getGroupedOrders(currentOrder, orders) : []),
+    [currentOrder, orders, isOrderGroupingEnabled],
+  );
+
+  const kitchenGroupedOrders = useMemo(
+    () => (currentOrder && isOrderGroupingEnabled ? getKitchenGroupedOrders(currentOrder, orders) : []),
     [currentOrder, orders, isOrderGroupingEnabled],
   );
 
@@ -173,6 +180,12 @@ export default function OrderPageContent() {
     };
   }, [paymentOrders]);
 
+  // "Junto com" orders print together on the same physical ticket, in "full" mode only —
+  // an "additional" (reprint-new-items) job shouldn't re-print the whole linked order again.
+  function getAdditionalOrdersForPrint(order: TOrderResponse, mode: "full" | "additional"): TOrderResponse[] {
+    return mode === "full" && isOrderGroupingEnabled ? getKitchenGroupedOrders(order, orders) : [];
+  }
+
   function handleCategoryClick(categoryId: number) {
     const category = categories?.find((cat: TCategory) => cat.id === categoryId);
 
@@ -188,6 +201,7 @@ export default function OrderPageContent() {
     mode: "full" | "additional",
     printedQty: Record<number, number>,
     onAfterPrint?: () => void,
+    additionalOrders: TOrderResponse[] = [],
   ) {
     void (async () => {
       let printedViaThermal = false;
@@ -204,7 +218,7 @@ export default function OrderPageContent() {
             observation,
             printMode: mode,
             printedItemQuantities: order.printedItemQuantities,
-            groupedCustomerNames: getGroupedOrders(order, orders).map((groupedOrder) => groupedOrder.customerName),
+            additionalOrders,
           });
 
           if (bytes) {
@@ -237,15 +251,11 @@ export default function OrderPageContent() {
     })();
   }
 
-  async function materializeDraftOrder(
-    draftOrder: TOrderResponse,
-    customerName: string,
-    isTakeout = false,
-  ): Promise<TOrderResponse> {
+  async function materializeOrder(orderItems: TOrderItem[], customerName: string, isTakeout = false): Promise<TOrderResponse> {
     return createOrderWithItems.mutateAsync({
       customerName,
       operatorName: getActiveOperator()?.name,
-      items: draftOrder.orderItems.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+      items: orderItems.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       isTakeout,
     });
   }
@@ -303,7 +313,7 @@ export default function OrderPageContent() {
 
     try {
       const order = isDraftOrder(currentOrder)
-        ? await materializeDraftOrder(currentOrder, trimmedName, isTakeoutDraft)
+        ? await materializeOrder(currentOrder.orderItems, trimmedName, isTakeoutDraft)
         : currentOrder;
 
       const paidOrder = await updateOrderStatus.mutateAsync({
@@ -346,6 +356,27 @@ export default function OrderPageContent() {
   }
 
   function handleAddProduct(product: TProduct) {
+    if (activeCartTarget === "secondary") {
+      let blockedMessage: string | null = null;
+
+      setSecondaryOrderItems((prev) => {
+        const reservedQuantities = buildReservedSupplyQuantities(prev, products ?? []);
+        const available = computeAvailableStock(product, prev, reservedQuantities);
+
+        if (available !== null && available <= 0) {
+          blockedMessage = `Estoque insuficiente para "${product.name}".`;
+
+          return prev;
+        }
+
+        return mergeOrderItem(prev, product, 1, () => product.id);
+      });
+
+      setStockError(blockedMessage);
+
+      return;
+    }
+
     if (!currentOrder || isDraftOrder(currentOrder)) {
       let blockedMessage: string | null = null;
 
@@ -362,6 +393,7 @@ export default function OrderPageContent() {
           operatorName: null,
           payments: [],
           groupId: null,
+          kitchenGroupId: null,
           contaSettledAt: null,
         };
 
@@ -498,7 +530,6 @@ export default function OrderPageContent() {
     setCustomerNameDraft("");
     setNameError(null);
     setIsTakeoutDraft(false);
-    setGroupWithOrderId(null);
     setNameDialogIntent("send");
     setIsNameDialogOpen(true);
   }
@@ -540,10 +571,10 @@ export default function OrderPageContent() {
       return;
     }
 
-    await sendOrder(trimmedName, isTakeoutDraft, groupWithOrderId);
+    await sendOrder(trimmedName, isTakeoutDraft);
   }
 
-  async function sendOrder(customerName: string, isTakeout?: boolean, groupWithOrderId?: number | null) {
+  async function sendOrder(customerName: string, isTakeout?: boolean) {
     if (!currentOrder || currentOrder.orderItems.length === 0 || sendingOrderRef.current) {
       return;
     }
@@ -553,8 +584,15 @@ export default function OrderPageContent() {
 
     try {
       const order = isDraftOrder(currentOrder)
-        ? await materializeDraftOrder(currentOrder, customerName, isTakeout)
+        ? await materializeOrder(currentOrder.orderItems, customerName, isTakeout)
         : currentOrder;
+
+      // "Junto com": the second person's cart built alongside this one becomes its own real
+      // order here, kitchen-linked to this one (never for payment) — created before this
+      // order's own update so that update can set the link in the same call.
+      const hasSecondaryCart = secondaryCustomerName.trim().length > 0 && secondaryOrderItems.length > 0;
+
+      const secondaryOrder = hasSecondaryCart ? await materializeOrder(secondaryOrderItems, secondaryCustomerName) : null;
 
       const updatedOrder = await updateOrderStatus.mutateAsync({
         orderId: order.id,
@@ -562,8 +600,12 @@ export default function OrderPageContent() {
         observation,
         customerName,
         isTakeout,
-        groupWithOrderId,
+        kitchenGroupWithOrderId: secondaryOrder?.id,
       });
+
+      const updatedSecondaryOrder = secondaryOrder
+        ? await updateOrderStatus.mutateAsync({ orderId: secondaryOrder.id, status: "PENDING" })
+        : null;
 
       const printedQty: Record<number, number> = {};
 
@@ -576,12 +618,19 @@ export default function OrderPageContent() {
         printedItemQuantities: printedQty,
       };
 
+      const additionalOrders = updatedSecondaryOrder
+        ? [updatedSecondaryOrder]
+        : getAdditionalOrdersForPrint(orderWithPrintedItems, "full");
+
       setCurrentOrder(orderWithPrintedItems);
       setPrintedItemQuantities(printedQty);
+      setSecondaryCustomerName("");
+      setSecondaryOrderItems([]);
+      setActiveCartTarget("primary");
 
       // Forces the <OrderReceipt> for this job to commit to the DOM before schedulePrint
       // runs, so window.print() has real content instead of racing an arbitrary delay.
-      flushSync(() => setPrintJob({ order: orderWithPrintedItems, mode: "full" }));
+      flushSync(() => setPrintJob({ order: orderWithPrintedItems, mode: "full", additionalOrders }));
 
       toast.success("Pedido enviado com sucesso!");
 
@@ -590,6 +639,7 @@ export default function OrderPageContent() {
         "full",
         printedQty,
         isSelfServiceEnabled ? () => resetCart() : () => handleRequestPaymentAfterSend(),
+        additionalOrders,
       );
     } catch (error) {
       setStockError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
@@ -625,6 +675,9 @@ export default function OrderPageContent() {
     setObservation("");
     setPrintedItemQuantities({});
     setSyncedOrderId(null);
+    setSecondaryCustomerName("");
+    setSecondaryOrderItems([]);
+    setActiveCartTarget("primary");
   }
 
   function resetCart() {
@@ -651,13 +704,14 @@ export default function OrderPageContent() {
       });
 
       const orderForPrint: TOrderResponse = { ...currentOrder, status: "PENDING", printedItemQuantities: printedQty };
+      const additionalOrders = getAdditionalOrdersForPrint(orderForPrint, "full");
 
       setCurrentOrder(orderForPrint);
       setPrintedItemQuantities(printedQty);
       setIsEditOrderDialogOpen(false);
-      flushSync(() => setPrintJob({ order: orderForPrint, mode: "full" }));
+      flushSync(() => setPrintJob({ order: orderForPrint, mode: "full", additionalOrders }));
 
-      schedulePrint(orderForPrint, "full", printedQty);
+      schedulePrint(orderForPrint, "full", printedQty, undefined, additionalOrders);
 
       toast.success("Pedido reenviado com sucesso!");
     } catch (error) {
@@ -693,6 +747,34 @@ export default function OrderPageContent() {
     }
   }
 
+  function handleOpenJuntoComDialog() {
+    setJuntoComNameDraft(secondaryCustomerName);
+    setIsJuntoComDialogOpen(true);
+  }
+
+  function handleConfirmJuntoComName() {
+    const trimmedName = juntoComNameDraft.trim();
+
+    if (!trimmedName) {
+      return;
+    }
+
+    setSecondaryCustomerName(trimmedName);
+    setActiveCartTarget("secondary");
+    setIsJuntoComDialogOpen(false);
+  }
+
+  function handleRemoveJuntoCom() {
+    setSecondaryCustomerName("");
+    setSecondaryOrderItems([]);
+    setActiveCartTarget("primary");
+    setIsJuntoComDialogOpen(false);
+  }
+
+  function handleRemoveSecondaryItem(itemId: number) {
+    setSecondaryOrderItems((prev) => decrementOrRemoveItem(prev, itemId));
+  }
+
   function openPaymentDialog() {
     if (!currentOrder || currentOrder.orderItems.length === 0 || isSendingOrder) {
       return;
@@ -721,7 +803,6 @@ export default function OrderPageContent() {
     setCustomerNameDraft("");
     setNameError(null);
     setIsTakeoutDraft(false);
-    setGroupWithOrderId(null);
     setNameDialogIntent("payment");
     setIsNameDialogOpen(true);
   }
@@ -756,7 +837,7 @@ export default function OrderPageContent() {
 
     try {
       const order = isDraftOrder(currentOrder)
-        ? await materializeDraftOrder(currentOrder, currentOrder.customerName, currentOrder.isTakeout)
+        ? await materializeOrder(currentOrder.orderItems, currentOrder.customerName, currentOrder.isTakeout)
         : currentOrder;
 
       if (paymentMethod !== null) {
@@ -807,15 +888,22 @@ export default function OrderPageContent() {
 
     try {
       const order = isDraftOrder(currentOrder)
-        ? await materializeDraftOrder(currentOrder, "", currentOrder.isTakeout)
+        ? await materializeOrder(currentOrder.orderItems, "", currentOrder.isTakeout)
         : currentOrder;
 
-      await updateOrderStatus.mutateAsync({
-        orderId: order.id,
-        status: "PAID",
-        observation,
-        payments,
-      });
+      const ordersToPay = groupedOrders.length > 0 ? [order, ...groupedOrders] : [order];
+      const paymentsPerOrder = splitPaymentsAcrossOrders(payments, ordersToPay.map((orderToPay) => orderToPay.total));
+
+      await Promise.all(
+        ordersToPay.map((orderToPay, index) =>
+          updateOrderStatus.mutateAsync({
+            orderId: orderToPay.id,
+            status: "PAID",
+            observation: orderToPay.id === order.id ? observation : undefined,
+            payments: paymentsPerOrder[index],
+          }),
+        ),
+      );
 
       setIsPaymentDialogOpen(false);
       setIsSplitOpen(false);
@@ -837,7 +925,7 @@ export default function OrderPageContent() {
           observation={observation}
           printMode={printJob.mode}
           printedItemQuantities={printedItemQuantities}
-          groupedCustomerNames={getGroupedOrders(printJob.order, orders).map((groupedOrder) => groupedOrder.customerName)}
+          additionalOrders={printJob.additionalOrders}
         />
       )}
 
@@ -879,10 +967,20 @@ export default function OrderPageContent() {
             nameError={nameError}
             isTakeoutDraft={isTakeoutDraft}
             onIsTakeoutDraftChange={setIsTakeoutDraft}
-            groupableOrders={groupableOrders}
-            groupWithOrderId={groupWithOrderId}
-            onGroupWithOrderIdChange={setGroupWithOrderId}
             groupedOrders={groupedOrders}
+            kitchenGroupedOrders={kitchenGroupedOrders}
+            secondaryCustomerName={secondaryCustomerName}
+            secondaryOrderItems={secondaryOrderItems}
+            onRemoveSecondaryItem={handleRemoveSecondaryItem}
+            activeCartTarget={activeCartTarget}
+            onSelectCartTarget={setActiveCartTarget}
+            isJuntoComDialogOpen={isJuntoComDialogOpen}
+            onOpenJuntoComDialog={handleOpenJuntoComDialog}
+            onJuntoComDialogOpenChange={setIsJuntoComDialogOpen}
+            juntoComNameDraft={juntoComNameDraft}
+            onJuntoComNameDraftChange={setJuntoComNameDraft}
+            onConfirmJuntoComName={handleConfirmJuntoComName}
+            onRemoveJuntoCom={handleRemoveJuntoCom}
             onRegisterConta={handleRegisterConta}
             onRequestPayment={handleRequestPayment}
             isPaymentDialogOpen={isPaymentDialogOpen}

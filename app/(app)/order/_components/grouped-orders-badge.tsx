@@ -7,9 +7,17 @@ interface TGroupedOrdersBadge {
   groupedOrders: TOrderResponse[];
   variant?: "compact" | "board";
   className?: string;
+  // Defaults to the "Juntar comanda" (combined payment) label — pass "Junto com" for the
+  // separate, payment-independent kitchen-grouping badge.
+  label?: string;
 }
 
-export function GroupedOrdersBadge({ groupedOrders, variant = "compact", className = "" }: TGroupedOrdersBadge) {
+export function GroupedOrdersBadge({
+  groupedOrders,
+  variant = "compact",
+  className = "",
+  label = "Pagamento junto com",
+}: TGroupedOrdersBadge) {
   if (groupedOrders.length === 0) {
     return null;
   }
@@ -20,7 +28,7 @@ export function GroupedOrdersBadge({ groupedOrders, variant = "compact", classNa
     return (
       <div className={`flex items-center gap-1 ${className}`}>
         <Users size={14} />
-        <span className="text-sm font-bold">JUNTO COM:</span>
+        <span className="text-sm font-bold">{label.toUpperCase()}:</span>
         <span className="text-sm font-medium">{names}</span>
       </div>
     );
@@ -29,7 +37,7 @@ export function GroupedOrdersBadge({ groupedOrders, variant = "compact", classNa
   return (
     <p className={`flex items-center gap-1 text-xs text-muted-foreground ${className}`}>
       <Users size={12} />
-      Junto com: <span className="font-medium">{names}</span>
+      {label}: <span className="font-medium">{names}</span>
     </p>
   );
 }

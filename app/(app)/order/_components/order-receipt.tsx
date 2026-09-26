@@ -1,5 +1,5 @@
 import { formatCurrency } from "@/_lib/format-currency";
-import { formatDateTime } from "@/_lib/format-date";
+import { formatDate, formatTime } from "@/_lib/format-date";
 
 import { TOrderResponse } from "../interface";
 import { getChargedTakeoutFee, groupItemsByCategory } from "../order-math";
@@ -15,12 +15,6 @@ interface TOrderReceipt {
 
   printedItemQuantities?: Record<number, number>;
 
-  groupedCustomerNames?: string[];
-
-  // Prints these orders' own items on the same physical ticket, each under its own
-  // "Cliente:" section right after the primary order's, instead of the default "*** JUNTO
-  // COM ***" banner-only behavior — used when the operator explicitly asks to combine two
-  // people's orders into one printout instead of each printing its own separate ticket.
   additionalOrders?: TOrderResponse[];
 }
 
@@ -29,11 +23,13 @@ function OrderReceiptSection({
   isAdditional,
   printedItemQuantities,
   showCategoryNames,
+  showCustomerName = true,
 }: {
   order: TOrderResponse;
   isAdditional: boolean;
   printedItemQuantities: Record<number, number>;
   showCategoryNames: boolean;
+  showCustomerName?: boolean;
 }) {
   const displayItems = isAdditional
     ? order.orderItems
@@ -49,10 +45,12 @@ function OrderReceiptSection({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-1 text-xs">
-        <span>Cliente:</span>
-        <span className="text-base font-medium uppercase">{order.customerName || "Sem nome"}</span>
-      </div>
+      {showCustomerName && (
+        <div className="flex items-baseline gap-1 text-xs">
+          <span>Cliente:</span>
+          <span className="text-sm font-bold uppercase">{order.customerName || "Sem nome"}</span>
+        </div>
+      )}
 
       {order.isTakeout && <p className="text-center text-base font-bold">*** PARA LEVAR ***</p>}
 
@@ -124,7 +122,6 @@ export function OrderReceipt({
   observation,
   printMode,
   printedItemQuantities = {},
-  groupedCustomerNames = [],
   additionalOrders = [],
 }: TOrderReceipt) {
   const { data: settings } = useGetSettings();
@@ -147,12 +144,6 @@ export function OrderReceipt({
 
   return (
     <div className="order-receipt hidden px-2 h-fit print:block">
-      {/* Scoped to only while this component is mounted (i.e. only during an actual receipt
-          print job) instead of a named `@page receipt` rule — Chrome doesn't reliably honor
-          named pages, so that override silently fell back to the shared `@page { margin:
-          1cm }` below, leaving a real 1cm gap above the title on every receipt. Other print
-          views (report, shopping list) never mount alongside this one, so this can't affect
-          them. */}
       <style>{"@media print { @page { size: 80mm auto; margin: 0; } }"}</style>
 
       <h1 className="text-base font-bold text-center mt-0 mb-2">{settings?.name}</h1>
@@ -169,14 +160,15 @@ export function OrderReceipt({
         {settings?.phone && <p className="text-xs">Tel: {settings.phone}</p>}
       </div>
 
-      <div className="border-b pb-2 mb-2 text-xs">
-        <p>Data: {formatDateTime(order.createdAt)}</p>
+      <div className="border-b pb-2 mb-2 text-xs space-y-1">
+        <p>
+          Data: {formatDate(order.createdAt)}, {formatTime(order.createdAt)}
+        </p>
 
-        {!isCombined && groupedCustomerNames.length > 0 && (
-          <p className="mt-1 text-center text-base font-bold">
-            *** JUNTO COM: {groupedCustomerNames.join(", ").toUpperCase()} ***
-          </p>
-        )}
+        <div className="flex items-baseline gap-1">
+          <span>Cliente:</span>
+          <span className="text-sm font-bold uppercase">{order.customerName || "Sem nome"}</span>
+        </div>
 
         {observation && !order.observation && (
           <p>
@@ -191,6 +183,7 @@ export function OrderReceipt({
           isAdditional={isAdditional}
           printedItemQuantities={printedItemQuantities}
           showCategoryNames={showCategoryNames}
+          showCustomerName={false}
         />
 
         {additionalOrders.map((additionalOrder) => (
