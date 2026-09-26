@@ -477,7 +477,7 @@ export function MenuList({
           </Dialog>
 
           <Dialog open={isJuntoComDialogOpen} onOpenChange={onJuntoComDialogOpenChange}>
-            <DialogContent className="sm:max-w-sm" onInteractOutside={(event) => event.preventDefault()}>
+            <DialogContent className="sm:max-w-sm">
               <DialogHeader className="flex flex-col gap-0.5">
                 <DialogTitle>Junto com</DialogTitle>
                 <DialogDescription>
