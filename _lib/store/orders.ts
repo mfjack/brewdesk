@@ -19,6 +19,7 @@ export interface TUpdateOrderStatusInput {
   customerName?: string;
   isTakeout?: boolean;
   groupWithOrderId?: number | null;
+  kitchenGroupWithOrderId?: number | null;
   payments?: TOrderPayment[];
 }
 
@@ -35,6 +36,7 @@ interface TOrderRow {
   operator_name: string | null;
   payments: TOrderPayment[];
   group_id: number | null;
+  kitchen_group_id: number | null;
   conta_settled_at: string | null;
 }
 
@@ -52,6 +54,7 @@ function fromRow(row: TOrderRow): TOrderResponse {
     operatorName: row.operator_name,
     payments: row.payments ?? [],
     groupId: row.group_id,
+    kitchenGroupId: row.kitchen_group_id,
     contaSettledAt: row.conta_settled_at,
   };
 }
@@ -445,6 +448,7 @@ export const orderStore = {
     customerName,
     isTakeout,
     groupWithOrderId,
+    kitchenGroupWithOrderId,
     payments,
   }: TUpdateOrderStatusInput): Promise<TOrderResponse> => {
     const orderRow = await fetchOrderRow(orderId);
@@ -467,21 +471,33 @@ export const orderStore = {
       update.total = computeOrderTotal(order.orderItems, isTakeout, takeoutFee);
     }
 
-    if (groupWithOrderId !== undefined) {
-      if (groupWithOrderId === null) {
-        update.group_id = null;
-      } else {
-        const targetRow = await fetchOrderRow(groupWithOrderId);
-        const groupId = targetRow.group_id ?? targetRow.id;
-
-        const { error: targetError } = await supabase.from("orders").update({ group_id: groupId }).eq("id", groupWithOrderId);
-
-        if (targetError) {
-          throw new Error(targetError.message);
-        }
-
-        update.group_id = groupId;
+    // Shared by group_id ("Juntar comanda", combined payment) and kitchen_group_id ("Junto
+    // com", combined kitchen ticket only) — linking reuses the target's existing group for
+    // that column if it already has one, so a third order can join the same group, otherwise
+    // it starts a new group keyed by the target's own id.
+    async function linkGroup(column: "group_id" | "kitchen_group_id", targetOrderId: number | null): Promise<number | null> {
+      if (targetOrderId === null) {
+        return null;
       }
+
+      const targetRow = await fetchOrderRow(targetOrderId);
+      const groupId = (targetRow[column] as number | null) ?? targetRow.id;
+
+      const { error: targetError } = await supabase.from("orders").update({ [column]: groupId }).eq("id", targetOrderId);
+
+      if (targetError) {
+        throw new Error(targetError.message);
+      }
+
+      return groupId;
+    }
+
+    if (groupWithOrderId !== undefined) {
+      update.group_id = await linkGroup("group_id", groupWithOrderId);
+    }
+
+    if (kitchenGroupWithOrderId !== undefined) {
+      update.kitchen_group_id = await linkGroup("kitchen_group_id", kitchenGroupWithOrderId);
     }
 
     if (payments !== undefined) {

@@ -10,12 +10,29 @@ export function isOrderPaid(order: TOrderResponse): boolean {
   return order.status === "PAID";
 }
 
-export function getGroupedOrders(order: TOrderResponse, allOrders: TOrderResponse[]): TOrderResponse[] {
-  if (!order.groupId) {
+function getOrdersSharingGroup(
+  order: TOrderResponse,
+  allOrders: TOrderResponse[],
+  groupIdField: "groupId" | "kitchenGroupId",
+): TOrderResponse[] {
+  const groupId = order[groupIdField];
+
+  if (!groupId) {
     return [];
   }
 
-  return allOrders.filter((candidate) => candidate.id !== order.id && candidate.groupId === order.groupId);
+  return allOrders.filter((candidate) => candidate.id !== order.id && candidate[groupIdField] === groupId);
+}
+
+// "Juntar comanda" — orders linked to combine payment (and split bill) as one, at checkout.
+export function getGroupedOrders(order: TOrderResponse, allOrders: TOrderResponse[]): TOrderResponse[] {
+  return getOrdersSharingGroup(order, allOrders, "groupId");
+}
+
+// "Junto com" — orders linked only to show and print together for the kitchen; each keeps
+// its own separate payment, unlike getGroupedOrders.
+export function getKitchenGroupedOrders(order: TOrderResponse, allOrders: TOrderResponse[]): TOrderResponse[] {
+  return getOrdersSharingGroup(order, allOrders, "kitchenGroupId");
 }
 
 // A category with a preset price (e.g. "Açaí 500ml" at R$15) adds that price to the order
@@ -70,6 +87,47 @@ export function buildOrderPayment(method: TPaymentMethod, amount: number, amount
   const amountReceived = amountReceivedInput ?? 0;
 
   return { method, amount, amountReceived, changeDue: computeChangeDue(amountReceived, amount) };
+}
+
+// A split bill's payments (e.g. "Pessoa 1 pagou Pix, Pessoa 2 pagou Dinheiro") are computed
+// against one combined total, but grouped ("Junto com") orders are still separate database
+// rows, each needing its own payments that sum to its own total — otherwise its history/detail
+// view would show payments that don't add up. This walks the payments in order, handing each
+// order only as much as it needs and carrying the rest to the next one, splitting a payment
+// in two whenever it straddles the boundary between two orders' totals (scaling a split CASH
+// payment's amountReceived/changeDue down proportionally, since only a fraction of it is this
+// order's share). Every method/amount is preserved exactly in aggregate across the result,
+// which is all cash-reconciliation reports actually add up.
+export function splitPaymentsAcrossOrders(payments: TOrderPayment[], orderTotals: number[]): TOrderPayment[][] {
+  const remaining = payments.map((payment) => ({ ...payment }));
+  let index = 0;
+
+  return orderTotals.map((orderTotal) => {
+    let amountLeft = orderTotal;
+    const result: TOrderPayment[] = [];
+
+    while (amountLeft > 0.005 && index < remaining.length) {
+      const payment = remaining[index];
+      const take = Math.min(payment.amount, amountLeft);
+      const fraction = payment.amount > 0 ? take / payment.amount : 1;
+
+      result.push({
+        ...payment,
+        amount: take,
+        amountReceived: payment.amountReceived !== null ? payment.amountReceived * fraction : null,
+        changeDue: payment.changeDue !== null ? payment.changeDue * fraction : null,
+      });
+
+      payment.amount -= take;
+      amountLeft -= take;
+
+      if (payment.amount <= 0.005) {
+        index += 1;
+      }
+    }
+
+    return result;
+  });
 }
 
 export function mergeOrderItem(

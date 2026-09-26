@@ -35,10 +35,25 @@ export interface TMenuList {
   nameError?: string | null;
   isTakeoutDraft: boolean;
   onIsTakeoutDraftChange: (value: boolean) => void;
-  groupableOrders: TOrderResponse[];
-  groupWithOrderId: number | null;
-  onGroupWithOrderIdChange: (orderId: number | null) => void;
+  // "Juntar comanda" — combines payment (below) for orders linked via groupId.
   groupedOrders: TOrderResponse[];
+  // "Junto com" — already-sent orders linked via kitchenGroupId just to show and print
+  // together for the kitchen; unlike groupedOrders, this never affects the total or payment.
+  kitchenGroupedOrders: TOrderResponse[];
+  // "Junto com", still being built: a second person's cart in this same PDV session, not
+  // sent yet — becomes its own order (kitchen-linked to the primary) once this one is sent.
+  secondaryCustomerName: string;
+  secondaryOrderItems: TOrderItem[];
+  onRemoveSecondaryItem: (itemId: number) => void;
+  activeCartTarget: "primary" | "secondary";
+  onSelectCartTarget: (target: "primary" | "secondary") => void;
+  isJuntoComDialogOpen: boolean;
+  onOpenJuntoComDialog: () => void;
+  onJuntoComDialogOpenChange: (open: boolean) => void;
+  juntoComNameDraft: string;
+  onJuntoComNameDraftChange: (value: string) => void;
+  onConfirmJuntoComName: () => void;
+  onRemoveJuntoCom: () => void;
 
   onRegisterConta: () => void;
 
@@ -47,9 +62,9 @@ export interface TMenuList {
   onPaymentDialogOpenChange: (open: boolean) => void;
   onEditOrderFromPayment?: () => void;
   isPayingExistingComanda: boolean;
-  // Same as `order` when it's not grouped with anything; when grouped, a synthetic order
-  // combining every linked comanda's items/total under one name — this is what the payment
-  // dialog and split-bill calculator actually charge, so "Junto com" pays as one.
+  // Same as `order` when it's not linked to anything; when linked via "Juntar comanda", a
+  // synthetic order combining every linked comanda's items/total under one name — this is
+  // what the payment dialog and split-bill calculator actually charge.
   paymentOrder: TOrderResponse | null;
   paymentMethod: TPaymentMethod | null;
   onPaymentMethodChange: (method: TPaymentMethod) => void;
@@ -178,6 +193,7 @@ export interface TOrderResponse {
   operatorName: string | null;
   payments: TOrderPayment[];
   groupId: number | null;
+  kitchenGroupId: number | null;
   contaSettledAt: string | null;
 }
 
